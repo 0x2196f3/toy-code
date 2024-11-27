@@ -24,16 +24,16 @@ comment_symbols = {
     'txt': '#'
 }
 
-def remove_comments(file_path, file_format):
+def remove_comments_and_empty_lines(file_path, file_format):
     """
-    Removes all comment lines from an input text file.
+    Removes all comment lines and empty lines from an input text file.
 
     Args:
         file_path (str): Path to the input text file.
         file_format (str): Format of the input text file.
 
     Returns:
-        str: The input text with all comment lines removed.
+        str: The input text with all comment lines and empty lines removed.
     """
     comment_symbol = comment_symbols.get(file_format.lower())
     if comment_symbol is None:
@@ -42,7 +42,7 @@ def remove_comments(file_path, file_format):
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
-    cleaned_lines = [line for line in lines if not line.strip().startswith(comment_symbol)]
+    cleaned_lines = [line for line in lines if line.strip() and not line.strip().startswith(comment_symbol)]
 
     return ''.join(cleaned_lines)
 
@@ -61,9 +61,9 @@ def overwrite_file(file_path, content):
 
 def process_file(file_path, file_format):
     try:
-        cleaned_content = remove_comments(file_path, file_format)
+        cleaned_content = remove_comments_and_empty_lines(file_path, file_format)
         overwrite_file(file_path, cleaned_content)
-        print(f"Comments removed from {file_path}")
+        print(f"Comments and empty lines removed from {file_path}")
     except ValueError as e:
         print(e)
 
@@ -78,7 +78,7 @@ def process_folder(folder_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Remove comments from text files")
+    parser = argparse.ArgumentParser(description="Remove comments and empty lines from text files")
     parser.add_argument("-r", "--recursive", action="store_true", help="Recursively search for text files in the folder")
     args = parser.parse_args()
 
@@ -93,3 +93,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
