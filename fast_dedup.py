@@ -1,7 +1,11 @@
 import os
 import subprocess
 import platform
+import logging
 from collections import defaultdict
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def calculate_md5(file_path):
     """Calculate the MD5 checksum of a file using the appropriate command based on the OS."""
@@ -22,25 +26,36 @@ def deduplicate_files(directory):
     size_map = defaultdict(list)
     
     # First pass: index files by size
+    logging.info("Indexing files by size...")
     for root, _, files in os.walk(directory):
         for file in files:
             file_path = os.path.join(root, file)
             file_size = os.path.getsize(file_path)
             size_map[file_size].append(file_path)
 
+    logging.info("Indexing complete. Found %d unique file sizes.", len(size_map))
+
     # Second pass: check for duplicates by size and MD5
+    total_files = sum(len(paths) for paths in size_map.values())
+    processed_files = 0
+
     for file_size, file_paths in size_map.items():
         if len(file_paths) > 1:  # Only check if there are potential duplicates
             md5_map = {}
             for file_path in file_paths:
                 file_md5 = calculate_md5(file_path)
+                processed_files += 1
+                logging.info("Processing file %d of %d: %s", processed_files, total_files, file_path)
+
                 if file_md5 in md5_map:
                     # If the MD5 already exists, delete the file
-                    print(f"Deleting duplicate file: {file_path}")
+                    logging.warning("Deleting duplicate file: %s", file_path)
                     os.remove(file_path)
                 else:
                     # Otherwise, add it to the hashmap
                     md5_map[file_md5] = file_path
+
+    logging.info("Deduplication complete. Processed %d files.", processed_files)
 
 if __name__ == "__main__":
     directory_path = "./"  # input("Enter the directory path to deduplicate files: ")
