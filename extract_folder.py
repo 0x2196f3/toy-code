@@ -18,7 +18,7 @@ for item in os.listdir(current_directory):
             # Check if the file already exists in the destination
             if not os.path.exists(destination_file):
                 # Copy the file to the current directory
-                shutil.copy2(source_file, destination_file)
-                print(f'Copied: {source_file} to {destination_file}')
+                shutil.move(source_file, destination_file)
+                print(f'Moved: {source_file} to {destination_file}')
             else:
                 print(f'Skipped (already exists): {destination_file}')
