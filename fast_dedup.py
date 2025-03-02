@@ -60,3 +60,4 @@ def deduplicate_files(directory):
 if __name__ == "__main__":
     directory_path = "./"  # input("Enter the directory path to deduplicate files: ")
     deduplicate_files(directory_path)
+    input()
