@@ -58,6 +58,6 @@ def deduplicate_files(directory):
     logging.info("Deduplication complete. Processed %d files.", processed_files)
 
 if __name__ == "__main__":
-    directory_path = "./"  # input("Enter the directory path to deduplicate files: ")
+    directory_path = os.path.dirname(os.path.abspath(__file__)) # input("Enter the directory path to deduplicate files: ")
     deduplicate_files(directory_path)
     input()
