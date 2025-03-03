@@ -42,7 +42,7 @@ def print_chart(file_sizes_by_hour, file_counts_by_hour):
         print(f"{hour} | {total_size / (1024 * 1024 * 1024):<10.2f} | {avg_speed:<16.2f} | {file_count:<10}")
 
 if __name__ == "__main__":
-    directory = './twqsl'
+    directory = './downloads'
     file_sizes_by_hour, file_counts_by_hour = list_files_and_summarize_sizes(directory)
     print_chart(file_sizes_by_hour, file_counts_by_hour)
     input()
