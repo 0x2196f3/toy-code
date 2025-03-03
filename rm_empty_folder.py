@@ -14,4 +14,6 @@ def remove_empty_folders(path):
                 pass
 
 if __name__ == "__main__":
-    remove_empty_folders('./')
+    remove_empty_folders(os.path.dirname(os.path.abspath(__file__)))
+    print("done")
+    input()
