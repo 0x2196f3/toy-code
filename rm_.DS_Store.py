@@ -3,7 +3,7 @@ import os
 def remove_ds_store_files(directory):
     for root, dirs, files in os.walk(directory):
         for file in files:
-            if file == 'Thumbs.db':
+            if file == '.DS_Store':
                 file_path = os.path.join(root, file)
                 try:
                     os.remove(file_path)
