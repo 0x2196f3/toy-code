@@ -1,8 +1,8 @@
 import os
 
 # Define source and destination directories
-source_dir = './empty'
-dest_dir = './'
+source_dir = './'
+dest_dir = './empty'
 
 # Ensure destination directory exists
 os.makedirs(dest_dir, exist_ok=True)
