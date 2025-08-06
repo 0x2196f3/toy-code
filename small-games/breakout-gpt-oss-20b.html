@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Breakout – Pure HTML / CSS / JS</title>
+<title>Breakout</title>
 <style>
   html, body {margin:0; height:100%; overflow:hidden;}
-  canvas {display:block; background:#111; margin:auto;}
+  canvas {display:block; margin:auto; background:#111;}
   #overlay {
     position:absolute;
     top:0; left:0; right:0; bottom:0;
@@ -13,11 +13,7 @@
     background:rgba(0,0,0,0.7); color:#fff; font-family:Arial, sans-serif;
     font-size:24px; text-align:center; pointer-events:none;
   }
-  #overlay button {
-    margin-top:20px; padding:10px 20px; font-size:18px;
-    cursor:pointer; background:#28a745; color:#fff; border:none;
-    border-radius:4px; pointer-events:auto;
-  }
+  #overlay button {pointer-events:auto;}
 </style>
 </head>
 <body>
@@ -26,35 +22,40 @@
 
 <script>
 (() => {
+  /* ---------- Elements ---------- */
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
   const overlay = document.getElementById('overlay');
-
-  /* ---------- Canvas size ---------- */
-  const setCanvasSize = () => {
-    canvas.width = window.innerWidth * 0.9;
-    canvas.height = window.innerHeight * 0.9;
-  };
-  setCanvasSize();
-  window.addEventListener('resize', setCanvasSize);
 
   /* ---------- Game constants ---------- */
   const PADDLE_HEIGHT = 10;
   const PADDLE_WIDTH = 120;
   const PADDLE_MARGIN_BOTTOM = 30;
   const BALL_RADIUS = 8;
-  const BRICK_ROW_COUNT = 5;
-  const BRICK_COLUMN_COUNT = 10;
+
+  /* Brick layout – these are the only values used to size the canvas */
+  const BRICK_ROWS = 5;
+  const BRICK_COLS = 10;
   const BRICK_WIDTH = 60;
   const BRICK_HEIGHT = 20;
   const BRICK_PADDING = 10;
-  const BRICK_OFFSET_TOP = 30;
+  const BRICK_OFFSET_TOP = 60;
   const BRICK_OFFSET_LEFT = 30;
+
+
+  /* ---------- Canvas size (derived from bricks) ---------- */
+  const canvasWidth = BRICK_COLS * (BRICK_WIDTH + BRICK_PADDING) + 2 * BRICK_OFFSET_LEFT;
+  const canvasHeight =
+      BRICK_ROWS * (BRICK_HEIGHT + BRICK_PADDING) + 2 * BRICK_OFFSET_TOP
+      + PADDLE_MARGIN_BOTTOM + 200; // extra for ball & some padding
+
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
 
   /* ---------- Game state ---------- */
   let paddleX = (canvas.width - PADDLE_WIDTH) / 2;
   let ballX = canvas.width / 2;
-  let ballY = canvas.height - 40;
+  let ballY = canvas.height - PADDLE_MARGIN_BOTTOM - BALL_RADIUS - 10;
   let ballSpeedX = 3;
   let ballSpeedY = -3;
   let rightPressed = false;
@@ -65,10 +66,15 @@
 
   /* ---------- Bricks ---------- */
   const bricks = [];
-  for (let c = 0; c < BRICK_COLUMN_COUNT; c++) {
+  for (let c = 0; c < BRICK_COLS; c++) {
     bricks[c] = [];
-    for (let r = 0; r < BRICK_ROW_COUNT; r++) {
-      bricks[c][r] = { x: 0, y: 0, status: 1 };
+    for (let r = 0; r < BRICK_ROWS; r++) {
+      bricks[c][r] = {
+        x: 0,
+        y: 0,
+        status: 1,
+        color: getRandomColor()
+      };
     }
   }
 
@@ -88,7 +94,8 @@
     else if (e.key === 'Left' || e.key === 'ArrowLeft') leftPressed = false;
   }
   function mouseMoveHandler(e) {
-    const relativeX = e.clientX - canvas.getBoundingClientRect().left;
+    const rect = canvas.getBoundingClientRect();
+    const relativeX = e.clientX - rect.left;
     if (relativeX > 0 && relativeX < canvas.width) {
       paddleX = relativeX - PADDLE_WIDTH / 2;
     }
@@ -102,10 +109,17 @@
     }
   }
 
-  /* ---------- Reset functions ---------- */
+  /* ---------- Helper ---------- */
+  function getRandomColor() {
+    const r = Math.floor(Math.random() * 200) + 55;   // avoid too dark colors
+    const g = Math.floor(Math.random() * 200) + 55;
+    const b = Math.floor(Math.random() * 200) + 55;
+    return `rgb(${r},${g},${b})`;
+  }
+
   function resetBallAndPaddle() {
     ballX = canvas.width / 2;
-    ballY = canvas.height - 40;
+    ballY = canvas.height - PADDLE_MARGIN_BOTTOM - BALL_RADIUS - 10;
     ballSpeedX = 3 * (Math.random() > 0.5 ? 1 : -1);
     ballSpeedY = -3;
     paddleX = (canvas.width - PADDLE_WIDTH) / 2;
@@ -113,8 +127,8 @@
 
   /* ---------- Collision detection ---------- */
   function collisionDetection() {
-    for (let c = 0; c < BRICK_COLUMN_COUNT; c++) {
-      for (let r = 0; r < BRICK_ROW_COUNT; r++) {
+    for (let c = 0; c < BRICK_COLS; c++) {
+      for (let r = 0; r < BRICK_ROWS; r++) {
         const b = bricks[c][r];
         if (b.status === 1) {
           if (
@@ -126,7 +140,7 @@
             ballSpeedY = -ballSpeedY;
             b.status = 0;
             score += 10;
-            // Simple speed boost after hitting a brick
+            // Slight speed boost
             if (ballSpeedX > 0) ballSpeedX += 0.5; else ballSpeedX -= 0.5;
           }
         }
@@ -147,14 +161,15 @@
     ctx.closePath();
   }
   function drawBricks() {
-    for (let c = 0; c < BRICK_COLUMN_COUNT; c++) {
-      for (let r = 0; r < BRICK_ROW_COUNT; r++) {
-        if (bricks[c][r].status === 1) {
+    for (let c = 0; c < BRICK_COLS; c++) {
+      for (let r = 0; r < BRICK_ROWS; r++) {
+        const b = bricks[c][r];
+        if (b.status === 1) {
           const brickX = c * (BRICK_WIDTH + BRICK_PADDING) + BRICK_OFFSET_LEFT;
           const brickY = r * (BRICK_HEIGHT + BRICK_PADDING) + BRICK_OFFSET_TOP;
-          bricks[c][r].x = brickX;
-          bricks[c][r].y = brickY;
-          ctx.fillStyle = '#ff6600';
+          b.x = brickX;
+          b.y = brickY;
+          ctx.fillStyle = b.color;
           ctx.fillRect(brickX, brickY, BRICK_WIDTH, BRICK_HEIGHT);
         }
       }
@@ -168,7 +183,7 @@
   function drawLives() {
     ctx.font = '16px Arial';
     ctx.fillStyle = '#fff';
-    ctx.fillText('Lives: ' + lives, canvas.width - 65, 20);
+    ctx.fillText('Lives: ' + lives, canvas.width - 70, 20);
   }
 
   /* ---------- Game loop ---------- */
@@ -184,21 +199,21 @@
 
     collisionDetection();
 
-    // Ball collision with walls
+    /* Ball & walls */
     if (ballX + ballSpeedX > canvas.width - BALL_RADIUS || ballX + ballSpeedX < BALL_RADIUS) {
       ballSpeedX = -ballSpeedX;
     }
     if (ballY + ballSpeedY < BALL_RADIUS) {
       ballSpeedY = -ballSpeedY;
     } else if (ballY + ballSpeedY > canvas.height - PADDLE_MARGIN_BOTTOM - BALL_RADIUS) {
-      // Check paddle collision
+      /* Paddle collision */
       if (ballX > paddleX && ballX < paddleX + PADDLE_WIDTH) {
         ballSpeedY = -ballSpeedY;
-        // Adjust ball speed based on where it hits the paddle
+        // Adjust horizontal speed based on hit point
         const hitPos = (ballX - paddleX) / PADDLE_WIDTH; // 0 .. 1
-        ballSpeedX = (hitPos - 0.5) * 6; // max horizontal speed 3
+        ballSpeedX = (hitPos - 0.5) * 6;
       } else {
-        // Missed the paddle
+        /* Missed */
         lives--;
         if (!lives) {
           overlay.style.display = 'flex';
@@ -211,31 +226,25 @@
       }
     }
 
-    // Update ball position
+    /* Move ball */
     ballX += ballSpeedX;
     ballY += ballSpeedY;
 
-    // Update paddle position
-    if (rightPressed && paddleX < canvas.width - PADDLE_WIDTH) {
-      paddleX += 7;
-    } else if (leftPressed && paddleX > 0) {
-      paddleX -= 7;
-    }
+    /* Move paddle */
+    if (rightPressed && paddleX < canvas.width - PADDLE_WIDTH) paddleX += 7;
+    else if (leftPressed && paddleX > 0) paddleX -= 7;
 
-    // Check for win
-    let allBricksCleared = true;
-    for (let c = 0; c < BRICK_COLUMN_COUNT; c++) {
-      for (let r = 0; r < BRICK_ROW_COUNT; r++) {
-        if (bricks[c][r].status === 1) {
-          allBricksCleared = false;
-          break;
-        }
+    /* Win condition */
+    let allCleared = true;
+    for (let c = 0; c < BRICK_COLS; c++) {
+      for (let r = 0; r < BRICK_ROWS; r++) {
+        if (bricks[c][r].status === 1) { allCleared = false; break; }
       }
-      if (!allBricksCleared) break;
+      if (!allCleared) break;
     }
-    if (allBricksCleared) {
+    if (allCleared) {
       overlay.style.display = 'flex';
-      overlay.innerHTML = 'YOU WON!<br>Score: ' + score + '<br>Press <strong>ENTER</strong> to Play Again';
+      overlay.innerHTML = `YOU WON!<br>Score: ${score}<br>Press <strong>ENTER</strong> to Play Again`;
       isGameRunning = false;
       return;
     }
