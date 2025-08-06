@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tetris – pure HTML/CSS/JS</title>
+<style>
+  body{font-family:monospace;background:#222;color:#fff;margin:0;display:flex;justify-content:center;align-items:center;height:100vh;}
+  #game{display:flex;flex-direction:column;align-items:center;}
+  canvas{background:#000;border:2px solid #555;}
+  .info{margin-top:10px;display:flex;gap:15px;font-size:1.2rem;}
+  .overlay{
+      position:absolute;top:0;left:0;width:100%;height:100%;
+      display:flex;justify-content:center;align-items:center;
+      background:rgba(0,0,0,0.8);color:#fff;font-size:3rem;display:none;
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <canvas id="board" width="200" height="400"></canvas>
+  <div class="info">
+    <div id="score">Score: 0</div>
+    <div id="lines">Lines: 0</div>
+    <div id="level">Level: 1</div>
+  </div>
+</div>
+<div id="overlay" class="overlay">Game Over</div>
+
+<script>
+/* ------------------  CONFIGURATION ------------------ */
+const COLS = 10;
+const ROWS = 20;
+const CELL = 20;          // pixel size of a single cell
+const START_SPEED = 1000; // ms per drop at level 1
+const MIN_SPEED = 100;    // minimum ms per drop
+const SPEED_DECREMENT = 50; // ms decrease per level
+const SCORE_TABLE = [0, 40, 100, 300, 1200]; // single, double, triple, tetris
+
+/* ------------------  SHAPES ------------------ */
+const SHAPES = [
+  { // I
+    color: '#00ffff',
+    rotations: [
+      [[0,0],[1,0],[2,0],[3,0]],
+      [[1,0],[1,1],[1,2],[1,3]]
+    ]
+  },
+  { // J
+    color: '#ff00ff',
+    rotations: [
+      [[0,0],[0,1],[1,1],[2,1]],
+      [[1,0],[2,0],[1,1],[1,2]],
+      [[0,1],[1,1],[2,1],[2,2]],
+      [[1,0],[1,1],[0,2],[1,2]]
+    ]
+  },
+  { // L
+    color: '#ffff00',
+    rotations: [
+      [[2,0],[0,1],[1,1],[2,1]],
+      [[1,0],[1,1],[1,2],[2,2]],
+      [[0,1],[1,1],[2,1],[0,2]],
+      [[0,0],[1,0],[1,1],[1,2]]
+    ]
+  },
+  { // O
+    color: '#00ff00',
+    rotations: [
+      [[1,0],[2,0],[1,1],[2,1]]
+    ]
+  },
+  { // S
+    color: '#ff0000',
+    rotations: [
+      [[1,0],[2,0],[0,1],[1,1]],
+      [[1,0],[1,1],[2,1],[2,2]]
+    ]
+  },
+  { // T
+    color: '#0000ff',
+    rotations: [
+      [[1,0],[0,1],[1,1],[2,1]],
+      [[1,0],[1,1],[2,1],[1,2]],
+      [[0,1],[1,1],[2,1],[1,2]],
+      [[1,0],[0,1],[1,1],[1,2]]
+    ]
+  },
+  { // Z
+    color: '#ff8800',
+    rotations: [
+      [[0,0],[1,0],[1,1],[2,1]],
+      [[2,0],[1,1],[2,1],[1,2]]
+    ]
+  }
+];
+
+/* ------------------  GLOBAL STATE ------------------ */
+const board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+let currentPiece = null;
+let nextPiece = null;
+let score = 0;
+let lines = 0;
+let level = 1;
+let dropInterval = START_SPEED;
+let dropTimer = null;
+let gameOver = false;
+
+/* ------------------  DOM ELEMENTS ------------------ */
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const linesEl = document.getElementById('lines');
+const levelEl = document.getElementById('level');
+const overlay = document.getElementById('overlay');
+
+/* ------------------  HELPERS ------------------ */
+function randomShape() {
+  return Math.floor(Math.random() * SHAPES.length);
+}
+
+function spawnPiece() {
+  const shapeIdx = nextPiece !== null ? nextPiece : randomShape();
+  nextPiece = randomShape(); // generate following piece
+  currentPiece = {
+    shape: shapeIdx,
+    rotation: 0,
+    x: 3, // starting x position
+    y: 0
+  };
+  if (collision(currentPiece)) {
+    endGame();
+  }
+}
+
+function collision(piece, offsetX = 0, offsetY = 0, rotation = piece.rotation) {
+  const cells = SHAPES[piece.shape].rotations[rotation];
+  for (const [dx, dy] of cells) {
+    const x = piece.x + dx + offsetX;
+    const y = piece.y + dy + offsetY;
+    if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return true;
+    if (board[y][x]) return true;
+  }
+  return false;
+}
+
+function placePiece() {
+  const cells = SHAPES[currentPiece.shape].rotations[currentPiece.rotation];
+  for (const [dx, dy] of cells) {
+    const x = currentPiece.x + dx;
+    const y = currentPiece.y + dy;
+    board[y][x] = currentPiece.shape + 1; // non-zero id
+  }
+}
+
+function clearLines() {
+  let cleared = 0;
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (board[r].every(cell => cell)) {
+      board.splice(r, 1);
+      board.unshift(Array(COLS).fill(0));
+      cleared++;
+      r++; // recheck same row after shift
+    }
+  }
+  if (cleared) {
+    lines += cleared;
+    score += SCORE_TABLE[cleared] * level;
+    updateStats();
+    if (cleared === 4) { // tetris
+      levelUp();
+    } else if (cleared > 0) {
+      levelUp();
+    }
+  }
+}
+
+function levelUp() {
+  const newLevel = Math.floor(lines / 10) + 1;
+  if (newLevel > level) {
+    level = newLevel;
+    dropInterval = Math.max(MIN_SPEED, START_SPEED - (level - 1) * SPEED_DECREMENT);
+    resetDropTimer();
+    updateStats();
+  }
+}
+
+function updateStats() {
+  scoreEl.textContent = `Score: ${score}`;
+  linesEl.textContent = `Lines: ${lines}`;
+  levelEl.textContent = `Level: ${level}`;
+}
+
+function resetDropTimer() {
+  clearInterval(dropTimer);
+  dropTimer = setInterval(drop, dropInterval);
+}
+
+function endGame() {
+  gameOver = true;
+  clearInterval(dropTimer);
+  overlay.style.display = 'flex';
+}
+
+function restartGame() {
+  board.forEach(row => row.fill(0));
+  score = 0; lines = 0; level = 1; dropInterval = START_SPEED; gameOver = false;
+  overlay.style.display = 'none';
+  nextPiece = null;
+  spawnPiece();
+  updateStats();
+  resetDropTimer();
+}
+
+function rotatePiece() {
+  const newRot = (currentPiece.rotation + 1) % SHAPES[currentPiece.shape].rotations.length;
+  if (!collision(currentPiece, 0, 0, newRot)) {
+    currentPiece.rotation = newRot;
+  }
+}
+
+function move(dx, dy) {
+  if (!collision(currentPiece, dx, dy)) {
+    currentPiece.x += dx;
+    currentPiece.y += dy;
+  } else if (dy === 1) { // can't move down -> lock
+    placePiece();
+    clearLines();
+    spawnPiece();
+  }
+}
+
+function drop() {
+  move(0, 1);
+}
+
+function hardDrop() {
+  while (!collision(currentPiece, 0, 1)) {
+    currentPiece.y += 1;
+  }
+  move(0, 0); // lock piece
+}
+
+/* ------------------  DRAWING ------------------ */
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw grid background
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw placed blocks
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const val = board[r][c];
+      if (val) {
+        ctx.fillStyle = SHAPES[val - 1].color;
+        ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+        ctx.strokeStyle = '#222';
+        ctx.strokeRect(c * CELL, r * CELL, CELL, CELL);
+      }
+    }
+  }
+
+  // Draw current piece
+  if (currentPiece) {
+    const cells = SHAPES[currentPiece.shape].rotations[currentPiece.rotation];
+    ctx.fillStyle = SHAPES[currentPiece.shape].color;
+    for (const [dx, dy] of cells) {
+      const x = (currentPiece.x + dx) * CELL;
+      const y = (currentPiece.y + dy) * CELL;
+      ctx.fillRect(x, y, CELL, CELL);
+      ctx.strokeStyle = '#222';
+      ctx.strokeRect(x, y, CELL, CELL);
+    }
+  }
+}
+
+/* ------------------  INPUT HANDLING ------------------ */
+document.addEventListener('keydown', (e) => {
+  if (gameOver) {
+    if (e.key === 'r' || e.key === 'R') restartGame();
+    return;
+  }
+  switch (e.key) {
+    case 'ArrowLeft':
+      e.preventDefault();
+      move(-1, 0);
+      break;
+    case 'ArrowRight':
+      e.preventDefault();
+      move(1, 0);
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      rotatePiece();
+      break;
+    case 'ArrowDown':
+      e.preventDefault();
+      move(0, 1);
+      break;
+    case ' ':
+      e.preventDefault();
+      hardDrop();
+      break;
+  }
+});
+
+/* ------------------  MAIN LOOP ------------------ */
+function loop() {
+  if (!gameOver) draw();
+  requestAnimationFrame(loop);
+}
+
+/* ------------------  START GAME ------------------ */
+spawnPiece();
+updateStats();
+resetDropTimer();
+loop();
+</script>
+</body>
+</html>
