@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Timezone Converter</title>
+  <style>
+    /* Light mode (default) */
+    :root {
+      --bg: #ffffff;
+      --fg: #222222;
+      --panel: #f4f4f4;
+      --panel-border: #cccccc;
+    }
+    /* Dark mode if the user prefers it */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121212;
+        --fg: #eeeeee;
+        --panel: #1e1e1e;
+        --panel-border: #333333;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 1rem;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      transition: background .3s, color .3s;
+    }
+    header {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+    select, input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      font-size: 1rem;
+      border: 1px solid var(--panel-border);
+      border-radius: 4px;
+      background: var(--panel);
+      color: var(--fg);
+    }
+    .output, .current-times {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 4px;
+      line-height: 1.4;
+    }
+    .current-times div {
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <header><h1>Timezone Converter</h1></header>
+
+  <div class="current-times">
+    <div>Now in <strong><span id="liveSrcTz"></span></strong>:
+      <span id="liveSrcTime">—</span>
+    </div>
+    <div>Now in <strong><span id="liveDstTz"></span></strong>:
+      <span id="liveDstTime">—</span>
+    </div>
+  </div>
+
+  <label>
+    Source Time Zone
+    <select id="srcTz"></select>
+  </label>
+
+  <label>
+    Target Time Zone
+    <select id="dstTz"></select>
+  </label>
+
+  <label>
+    Date & Time in Source
+    <input type="datetime-local" id="srcDateTime" />
+  </label>
+
+  <div class="output">
+    <strong>Converted:</strong>
+    <div id="result">—</div>
+  </div>
+
+  <script>
+  (function(){
+    // 1) build zone list
+    const iana = typeof Intl.supportedValuesOf === 'function'
+      ? Intl.supportedValuesOf('timeZone') : [];
+    const utcOff = [];
+    for(let i=-12; i<=14; i++){
+      const sign = i>=0?'+':''; utcOff.push(`UTC${sign}${i}`);
+    }
+    const zones = [...iana, ...utcOff];
+
+    // 2) populate selects
+    const srcSel = document.getElementById('srcTz');
+    const dstSel = document.getElementById('dstTz');
+    zones.forEach(tz=>{
+      srcSel.add(new Option(tz,tz));
+      dstSel.add(new Option(tz,tz));
+    });
+
+    // defaults
+    const userZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    srcSel.value = userZone||'UTC+0';
+    dstSel.value = 'UTC+0';
+
+    // fill "now" into the datetime-local
+    const now = new Date();
+    const pad = n=>String(n).padStart(2,'0');
+    document.getElementById('srcDateTime').value =
+      `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}` +
+      `T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    // get offset (minutes) of any tz at a given date
+    function getOffset(tz, date){
+      if(tz.startsWith('UTC')){
+        const m = tz.match(/^UTC([+-]\d+)$/);
+        const h = m?parseInt(m[1],10):0;
+        return -h*60;
+      }
+      const fmt = new Intl.DateTimeFormat('en-US',{
+        timeZone: tz, timeZoneName: 'short'
+      });
+      const part = fmt.formatToParts(date)
+        .find(p=>p.type==='timeZoneName').value;
+      const m = part.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/);
+      if(!m) return 0;
+      const sign = m[1]==='+'?1:-1;
+      const hrs = +m[2], mins = m[3]?+m[3]:0;
+      return sign*(hrs*60+mins);
+    }
+
+    // convert on demand
+    function convert(){
+      const src = srcSel.value, dst = dstSel.value;
+      const inp = document.getElementById('srcDateTime').value;
+      if(!inp) return;
+
+      const ld = new Date(inp);
+      const bs = ld.getTime();
+      const offSrc = getOffset(src,ld)*60000;
+      const offDst = getOffset(dst,ld)*60000;
+
+      // UTC of that src‐time = bs - offSrc
+      const realUtc = bs - offSrc;
+      // target local ms
+      const tgtMs = realUtc + offDst;
+      const td = new Date(tgtMs);
+
+      const opt = {
+        hour12: false, year:'numeric',month:'2-digit',
+        day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'
+      };
+      if(!dst.startsWith('UTC')) opt.timeZone = dst;
+      const s = td.toLocaleString('en-GB',opt);
+      document.getElementById('result')
+        .textContent = `${s} (${dst})`;
+    }
+
+    // live clock
+    function tick(){
+      const s = srcSel.value, d = dstSel.value;
+      const t = new Date();
+      const utc = t.getTime() - t.getTimezoneOffset()*60000;
+      const msS = getOffset(s,t)*60000;
+      const msD = getOffset(d,t)*60000;
+      const ts = new Date(utc + (-msS));
+      const td = new Date(utc + (-msD));
+      const fmt = d=>d.toLocaleTimeString('en-GB',{hour12:false});
+      document.getElementById('liveSrcTz').textContent = s;
+      document.getElementById('liveDstTz').textContent = d;
+      document.getElementById('liveSrcTime').textContent = fmt(ts);
+      document.getElementById('liveDstTime').textContent = fmt(td);
+    }
+
+    // wire up events
+    [srcSel,dstSel].forEach(el=>{
+      el.addEventListener('change',()=>{
+        convert(); tick();
+      });
+    });
+    document.getElementById('srcDateTime')
+      .addEventListener('input', convert);
+
+    // kick off
+    convert(); tick();
+    setInterval(tick, 1000);
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Markdown Cheat Sheet</title>
+  <style>
+/* Light mode (default) */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --border-color: #cccccc;
+  --header-bg: #f5f5f5;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #1e1e1e;
+    --text-color: #e0e0e0;
+    --border-color: #444444;
+    --header-bg: #2a2a2a;
+  }
+}
+h2.title {
+  text-align: center;
+}
+/* Apply variables */
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0 5% 2em;
+  background-color: var(--bg-color);
+  table-layout: fixed; 
+  width: 90%;
+}
+
+th, td {
+  border: 1px solid var(--border-color);
+  padding: 0.5em;
+  vertical-align: top;
+}
+
+table th,
+table td {
+  width: 50%;
+}
+th {
+  background-color: var(--header-bg);
+}
+
+pre {
+  background-color: var(--header-bg);
+  padding: 0.5em;
+  overflow-x: auto;
+}
+
+code {
+  background-color: var(--header-bg);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+}
+
+  </style>
+</head>
+<body>
+
+  <h2 class="title">Basic Syntax</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Original Markdown</th>
+        <th>Rendered Effect</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><pre><code># H1</code></pre></td>
+        <td><h1>H1</h1></td>
+      </tr>
+      <tr>
+        <td><pre><code>## H2</code></pre></td>
+        <td><h2>H2</h2></td>
+      </tr>
+      <tr>
+        <td><pre><code>### H3</code></pre></td>
+        <td><h3>H3</h3></td>
+      </tr>
+      <tr>
+        <td><pre><code>**bold text**</code></pre></td>
+        <td><strong>bold text</strong></td>
+      </tr>
+      <tr>
+        <td><pre><code>*italicized text*</code></pre></td>
+        <td><em>italicized text</em></td>
+      </tr>
+      <tr>
+        <td><pre><code>&gt; blockquote</code></pre></td>
+        <td><blockquote>blockquote</blockquote></td>
+      </tr>
+      <tr>
+        <td><pre><code>1. First item
+2. Second item
+3. Third item</code></pre></td>
+        <td>
+          <ol>
+            <li>First item</li>
+            <li>Second item</li>
+            <li>Third item</li>
+          </ol>
+        </td>
+      </tr>
+      <tr>
+        <td><pre><code>- First item
+- Second item
+- Third item</code></pre></td>
+        <td>
+          <ul>
+            <li>First item</li>
+            <li>Second item</li>
+            <li>Third item</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td><pre><code>`code`</code></pre></td>
+        <td><code>code</code></td>
+      </tr>
+      <tr>
+        <td><pre><code>---</code></pre></td>
+        <td><hr></td>
+      </tr>
+      <tr>
+        <td><pre><code>[Markdown Guide](https://www.markdownguide.org)</code></pre></td>
+        <td><a href="https://www.markdownguide.org">Markdown Guide</a></td>
+      </tr>
+      <tr>
+        <td><pre><code>![alt text](https://www.markdownguide.org/assets/images/tux.png)</code></pre></td>
+        <td><img src="https://www.markdownguide.org/assets/images/tux.png" alt="alt text" width="50"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="title">Extended Syntax</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Original Markdown</th>
+        <th>Rendered Effect</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <pre><code>| Syntax      | Description |
+| ----------- | ----------- |
+| Header      | Title       |
+| Paragraph   | Text        |</code></pre>
+        </td>
+        <td>
+          <table>
+            <thead>
+              <tr><th>Syntax</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Header</td><td>Title</td></tr>
+              <tr><td>Paragraph</td><td>Text</td></tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <pre><code>```json
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "age": 25
+}
+```</code></pre>
+        </td>
+        <td>
+          <pre><code class="language-json">{
+  "firstName": "John",
+  "lastName": "Smith",
+  "age": 25
+}</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <pre><code>Here's a sentence with a footnote. [^1]
+
+[^1]: This is the footnote.</code></pre>
+        </td>
+        <td>
+          <p>Here's a sentence with a footnote. <sup>[1]</sup></p>
+          <p><sup>[1]</sup> This is the footnote.</p>
+        </td>
+      </tr>
+      <tr>
+        <td><pre><code>### My Great Heading {#custom-id}</code></pre></td>
+        <td><h3 id="custom-id">My Great Heading</h3></td>
+      </tr>
+      <tr>
+        <td>
+          <pre><code>term
+: definition</code></pre>
+        </td>
+        <td>
+          <dl>
+            <dt>term</dt>
+            <dd>definition</dd>
+          </dl>
+        </td>
+      </tr>
+      <tr>
+        <td><pre><code>~~The world is flat.~~</code></pre></td>
+        <td><del>The world is flat.</del></td>
+      </tr>
+      <tr>
+        <td>
+          <pre><code>- [x] Write the press release
+- [ ] Update the website
+- [ ] Contact the media</code></pre>
+        </td>
+        <td>
+          <ul>
+            <li><input type="checkbox" checked disabled> Write the press release</li>
+            <li><input type="checkbox" disabled> Update the website</li>
+            <li><input type="checkbox" disabled> Contact the media</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td><pre><code>That is so funny! :joy:</code></pre></td>
+        <td>That is so funny! 😆</td>
+      </tr>
+      <tr>
+        <td><pre><code>I need to highlight these ==very important words==.</code></pre></td>
+        <td>I need to highlight these <mark>very important words</mark>.</td>
+      </tr>
+      <tr>
+        <td><pre><code>H~2~O</code></pre></td>
+        <td>H<sub>2</sub>O</td>
+      </tr>
+      <tr>
+        <td><pre><code>X^2^</code></pre></td>
+        <td>X<sup>2</sup></td>
+      </tr>
+    </tbody>
+  </table>
+
+</body>
+</html>

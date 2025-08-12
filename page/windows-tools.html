@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows Tools</title>
+    <style>
+/* Container to center all content */
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+}
+
+/* Base styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    line-height: 1.6;
+    color: #212529;
+    background-color: #f8f9fa;
+}
+
+h1, h2 {
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+textarea {
+    width: 100%;
+    max-width: 500px;
+    height: 100px;
+    padding: 10px;
+    margin: 0 auto 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    resize: vertical;
+    font-family: monospace;
+    font-size: 14px;
+    background-color: #ffffff;
+    color: #212529;
+    display: block;
+}
+
+button {
+    padding: 8px 16px;
+    margin: 0 auto 20px;
+    border: none;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: inline-block;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Responsive layout */
+@media (max-width: 600px) {
+    textarea {
+        max-width: 100%;
+        font-size: 13px;
+    }
+
+    button {
+        width: 100%;
+        font-size: 13px;
+    }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #343a40;
+        color: #f8f9fa;
+    }
+
+    textarea {
+        background-color: #495057;
+        color: #f8f9fa;
+        border-color: #6c757d;
+    }
+
+    button {
+        background-color: #0d6efd;
+    }
+
+    button:hover {
+        background-color: #0a58ca;
+    }
+}
+
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <h1>Windows Tools</h1>
+
+    <h2>Windows10/11 LTSC Activate</h2>
+    <textarea id="textArea1" disabled>
+slmgr -ipk M7XTQ-FN8P6-TTKYV-9D4CC-J462D
+slmgr -skms kms.0t.net.cn
+slmgr -ato
+    </textarea>
+    <button onclick="download('textArea1', 'windows_ltsc.bat')">Download windows_ltsc.bat</button>
+
+    <h2>Windows10/11 Pro Activate</h2>
+    <textarea id="textArea2" disabled>
+slmgr /ipk W269N-WFGWX-YVC9B-4J6C9-T83GX
+slmgr /skms kms.03k.org
+slmgr /ato
+    </textarea>
+    <button onclick="download('textArea2', 'windows_pro.bat')">Download windows_pro.bat</button>
+	
+	<h2>Windows11 Classic Right Click Menu</h2>
+    <textarea id="textArea3" disabled>
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}]
+@=""
+
+[HKEY_CURRENT_USER\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32]
+@=""
+    </textarea>
+    <button onclick="download('textArea3', 'windows11_classic_right_click_menu.reg')">Download windows11_classic_right_click_menu.reg</button>
+	
+	<h2>Undo Windows11 Classic Right Click Menu</h2>
+    <textarea id="textArea4" disabled>
+Windows Registry Editor Version 5.00
+
+[-HKEY_CURRENT_USER\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}]
+    </textarea>
+    <button onclick="download('textArea4', 'undo_windows11_classic_right_click_menu.reg')">Download undo_windows11_classic_right_click_menu.reg</button>
+
+	<h2>All in one Activate</h2>
+	<textarea style="height: 30px;">
+irm https://get.activated.win | iex
+	</textarea>
+
+	<h2>Windows11 Bypass NRO</h2>
+	<textarea style="height: 30px;">
+OOBE/BYPASSNRO
+	</textarea>
+	
+	<h2>LTSC Add Microsoft Store</h2>
+	<textarea style="height: 30px;">
+wsreset -i
+	</textarea>
+
+	<h2>Allow SMB Guess Access</h2>
+	<textarea style="hight: 30px;">
+Set-SmbClientConfiguration -RequireSecuritySignature $false
+Set-SmbClientConfiguration -EnableInsecureGuestLogons $true
+	</textarea>
+    
+	
+	<script>
+        function download(textAreaId, filename) {
+            const textArea = document.getElementById(textAreaId);
+            const content = textArea.value;
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</div>
+</body>
+</html>

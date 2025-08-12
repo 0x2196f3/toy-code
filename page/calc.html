@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Calculator</title>
+</head>
+<body>
+	<style>
+		body {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100vh;
+			margin: 0;
+			background-color: #1e1e1e;
+			font-family: 'Courier New', Courier, monospace;
+		}
+
+		.calculator {
+			border: 1px solid #333;
+			border-radius: 10px;
+			box-shadow: 0 0 15px rgba(0,0,0,0.5);
+			overflow: hidden;
+			width: 360px;
+			background: #282c34;
+		}
+
+		.display {
+			background-color: #1e1e1e;
+			color: #61dafb;
+			padding: 10px;
+			text-align: right;
+		}
+
+		.display input {
+			width: 100%;
+			border: none;
+			background: none;
+			color: #61dafb;
+			font-size: 1.5em;
+			text-align: right;
+			padding: 0;
+			margin: 0;
+		}
+
+		.buttons {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+		}
+
+		button {
+			border: 1px solid #333;
+			border-top: none;
+			border-left: none;
+			background-color: #20232a;
+			color: #61dafb;
+			font-size: 1.1em;
+			padding: 15px;
+			cursor: pointer;
+			transition: background-color 0.3s ease;
+		}
+
+		button:hover {
+			background-color: #282c34;
+		}
+
+		.footer {
+			background-color: #20232a;
+			color: #61dafb;
+			padding: 10px;
+			text-align: center;
+			font-size: 0.9em;
+			border-top: 1px solid #333;
+		}
+
+	</style>
+	<script>
+		let isDegreeMode = true; // Default mode is degrees
+
+		function appendCharacter(character) {
+			const display = document.getElementById('display');
+			display.value += character;
+		}
+
+		function clearDisplay() {
+			const display = document.getElementById('display');
+			display.value = '';
+		}
+
+		function calculateResult() {
+			const display = document.getElementById('display');
+			try {
+				// Replace the math functions for security
+				let expression = display.value
+					.replace(/Math.sqrt/g, 'Math.sqrt')
+					.replace(/Math.sin/g, 'Math.sin')
+					.replace(/Math.asin/g, 'Math.asin')
+					.replace(/Math.cos/g, 'Math.cos')
+					.replace(/Math.acos/g, 'Math.acos')
+					.replace(/Math.tan/g, 'Math.tan')
+					.replace(/Math.atan/g, 'Math.atan')
+					.replace(/Math.log/g, 'Math.log10')
+					.replace(/Math.log10/g, 'Math.log10')
+					.replace(/Math.exp/g, 'Math.exp')
+					.replace(/Math.PI/g, 'Math.PI')
+					.replace(/Math.pow/g, 'Math.pow');
+				
+				if (isDegreeMode) {
+					expression = expression.replace(/Math.sin\(/g, 'Math.sin(')
+											.replace(/Math.cos\(/g, 'Math.cos(')
+											.replace(/Math.tan\(/g, 'Math.tan(');
+				} else {
+					expression = expression.replace(/Math.sin\(/g, 'Math.sin(Math.PI/180*')
+											.replace(/Math.cos\(/g, 'Math.cos(Math.PI/180*')
+											.replace(/Math.tan\(/g, 'Math.tan(Math.PI/180*');
+				}
+				
+				const result = eval(expression);
+				display.value = result;
+			} catch (e) {
+				display.value = 'Error';
+			}
+		}
+
+		function toggleMode() {
+			isDegreeMode = !isDegreeMode;
+			alert(`Mode switched to ${isDegreeMode ? 'Degrees' : 'Radians'}`);
+		}
+
+	</script>
+    <div class="calculator">
+        <div class="display">
+            <input type="text" id="display" disabled>
+        </div>
+        <div class="buttons">
+            <!-- Row 1 -->
+            <button onclick="clearDisplay()">C</button>
+            <button onclick="appendCharacter('/')">÷</button>
+            <button onclick="appendCharacter('*')">x</button>
+            <button onclick="appendCharacter('-')">-</button>
+            <!-- Row 2 -->
+            <button onclick="appendCharacter('7')">7</button>
+            <button onclick="appendCharacter('8')">8</button>
+            <button onclick="appendCharacter('9')">9</button>
+            <button onclick="appendCharacter('+')">+</button>
+            <!-- Row 3 -->
+            <button onclick="appendCharacter('4')">4</button>
+            <button onclick="appendCharacter('5')">5</button>
+            <button onclick="appendCharacter('6')">6</button>
+            <button onclick="appendCharacter('^')">^</button>
+            <!-- Row 4 -->
+            <button onclick="appendCharacter('1')">1</button>
+            <button onclick="appendCharacter('2')">2</button>
+            <button onclick="appendCharacter('3')">3</button>
+            <button onclick="calculateResult()">=</button>
+            <!-- Row 5 -->
+            <button onclick="appendCharacter('0')">0</button>
+            <button onclick="appendCharacter('(')">(</button>
+            <button onclick="appendCharacter(')')">)</button>
+            <button onclick="appendCharacter('Math.sqrt(')">√</button>
+            <!-- Row 6 -->
+            <button onclick="appendCharacter('Math.exp(')">e^x</button>
+            <button onclick="appendCharacter('Math.sin(')">sin</button>
+            <button onclick="appendCharacter('Math.asin(')">sin⁻¹</button>
+            <button onclick="appendCharacter('Math.cos(')">cos</button>
+            <button onclick="appendCharacter('Math.acos(')">cos⁻¹</button>
+            <!-- Row 7 -->
+            <button onclick="appendCharacter('Math.tan(')">tan</button>
+            <button onclick="appendCharacter('Math.atan(')">tan⁻¹</button>
+            <button onclick="appendCharacter('Math.log(')">log</button>
+            <button onclick="appendCharacter('Math.log10(')">ln</button>
+            <!-- Row 8 -->
+            <button onclick="appendCharacter('Math.PI')">π</button>
+            <button onclick="appendCharacter('Math.pow(')">yx</button>
+            <button onclick="toggleMode()">Mode</button>
+            <button onclick="appendCharacter('-')">(-)</button>
+        </div>
+        <div class="footer">
+            Made with Love -By Arghyadip
+        </div>
+    </div>
+</body>
+</html>

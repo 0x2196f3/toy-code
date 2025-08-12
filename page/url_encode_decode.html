@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>URL Encoder/Decoder</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      padding: 20px;           /* your original “margin:20px” */
+      font-family: Arial, sans-serif;
+      box-sizing: border-box;
+    }
+
+    h1, h2 {
+      margin: 0 0 10px;
+    }
+
+    /* — TEXTAREAS — */
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      font-family: inherit;
+      font-size: 1rem;
+      resize: none;
+      border: 1px solid #ccc;
+      /* remove fixed height */
+      height: auto;
+    }
+
+    /* make the INPUT take 60% of the *remaining* space */
+    #input {
+      flex: 4;
+      margin-bottom: 10px;
+    }
+    /* make the OUTPUT take 40% of the *remaining* space */
+    #output {
+      flex: 6;
+      margin-top: 10px;
+    }
+
+    /* — BUTTON BAR — */
+    div.buttons {
+      margin: 0 0 10px;
+    }
+    button {
+      padding: 10px 15px;
+      margin-right: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    /* — DARK MODE — */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #343a40;
+        color: #f8f9fa;
+      }
+      textarea {
+        background-color: #495057;
+        color: #f8f9fa;
+        border: 1px solid #ced4da;
+      }
+      button {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>URL Encoder / Decoder</h1>
+
+  <textarea id="input" placeholder="Enter text or URL string here..."></textarea>
+  <div>
+    <button onclick="urlEncode()">Encode for URL</button>
+    <button onclick="urlDecode()">Decode from URL</button>
+  </div>
+
+  <h2>Output:</h2>
+  <textarea id="output" placeholder="Result will appear here..." readonly></textarea>
+
+  <script>
+    function urlEncode() {
+      const text = document.getElementById('input').value;
+      // encodeURIComponent safely encodes all characters that are not valid in a URL component
+      const encoded = encodeURIComponent(text);
+      document.getElementById('output').value = encoded;
+    }
+
+    function urlDecode() {
+      const text = document.getElementById('input').value;
+      try {
+        // decodeURIComponent will throw if the input is malformed
+        const decoded = decodeURIComponent(text);
+        document.getElementById('output').value = decoded;
+      } catch (e) {
+        document.getElementById('output').value = 'Invalid URL-encoded string';
+      }
+    }
+  </script>
+
+</body>
+</html>

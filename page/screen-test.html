@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+
+  <title>Screen test page</title>
+  <meta name="description" content="HTML page to test a monitor screen">
+  <meta name="author" content="sajonoso@users.noreply.github.com">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="shortcut icon" type="image/x-icon"
+    href="data:image/x-icon;base64,00000100010001010000010018003000000016000000280000000100000002000000010018000000000000000000000000000000000000000000000000000000ff0000000000" />
+
+  <!-- <link rel="stylesheet" href="css/styles.css?v=1.0"> -->
+  <style>
+    .fullscreen {
+      width: 100vw;
+      height: 100vh;
+      padding: 0;
+      margin: 0;
+    }
+
+    .noscroll {
+      overflow-x: hidden;
+      overflow-y: hidden;
+    }
+
+    #page1 {
+      background-color: rgb(255, 0, 0);
+    }
+
+    #page2 {
+      background-color: rgb(0, 255, 0);
+    }
+
+    #page3 {
+      background-color: rgb(0, 0, 255);
+    }
+
+    #page4 {
+      background-color: rgb(0, 0, 0);
+    }
+
+    #page5 {
+      background-color: rgb(255, 255, 255);
+    }
+
+    #gradient1 {
+      width: 100vw;
+      height: 50vh;
+      background: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(255, 255, 255) 100%);
+    }
+
+    #gradient2 {
+      width: 100vw;
+      height: 50vh;
+      background: linear-gradient(90deg, rgb(255, 255, 255) 0%, rgb(0, 0, 0) 100%);
+    }
+
+    #gradient3 {
+      width: 50vw;
+      height: 100vh;
+      background: linear-gradient(0deg, rgb(0, 0, 0) 0%, rgb(255, 255, 255) 100%);
+      float: left;
+      display: inline-block;
+    }
+
+    #gradient4 {
+      width: 50vw;
+      height: 100vh;
+      background: linear-gradient(0deg, rgb(255, 255, 255) 0%, rgb(0, 0, 0) 100%);
+      display: inline-block;
+    }
+
+    #button-left {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 33vw;
+      height: 100vh;
+      background-color: #FFFFFF;
+      opacity: 0.3;
+    }
+
+    #button-up {
+      position: fixed;
+      left: 33vw;
+      top: 0;
+      width: 33vw;
+      height: 50vh;
+      background-color: #FF0000;
+      opacity: 0.3;
+    }
+
+    #button-down {
+      position: fixed;
+      left: 33vw;
+      top: 50vh;
+      width: 33vw;
+      height: 50vh;
+      background-color: #00FF00;
+      opacity: 0.3;
+    }
+
+    #button-right {
+      position: fixed;
+      left: 66vw;
+      top: 0;
+      width: 33vw;
+      height: 100vh;
+      background-color: #0000FF;
+      opacity: 0.3;
+    }
+  </style>
+
+</head>
+
+<body id="doc_body" class='fullscreen noscroll'>
+  <!-- <script src="js/scripts.js"></script> -->
+
+  <div id='page0' class='fullscreen noscroll'>
+    <div style="font-family:monospace; padding-left:5px">
+      <p>Test screen version 2.0</p>
+
+      <p>This is a screen test page. Cycle through each test screen with the following keys:</p>
+
+      <ul>
+        <li>left arrow: previous page</li>
+        <li>enter: toggle fullscreen</li>
+        <li>down arrow: return to this screen</li>
+        <li>right arrow: next page</li>
+      </ul>
+
+      <p>If you are on a touch screen without a keyboard touching the four quadrants will achieve the same result</p>
+      <ul>
+        <li>left quadrant (white): previous page</li>
+        <li>middle top quandrant (red): toggle fullscreen</li>
+        <li>middle bottom quadrant (green): return to this screen</li>
+        <li>right quadrant (blue): next page</li>
+      </ul>
+
+      <p>The test screens are shown in this order:</p>
+      <ul>
+        <li>1. Full red screen</li>
+        <li>2. Full green screen</li>
+        <li>3. Full blue screen</li>
+        <li>4. Full black screen</li>
+        <li>5. Full white screen</li>
+        <li>6. Pattern1 (lines)</li>
+        <li>7. Pattern2 (horizontal gradients)</li>
+        <li>8. Pattern3 (vertical gradients)</li>
+        <li>9. Info Screen</li>
+      </ul>
+    </div>
+  </div>
+  <div id='page1' class='fullscreen noscroll'></div>
+  <div id='page2' class='fullscreen noscroll'></div>
+  <div id='page3' class='fullscreen noscroll'></div>
+  <div id='page4' class='fullscreen noscroll'></div>
+  <div id='page5' class='fullscreen noscroll'></div>
+  <div id='page6' class='fullscreen noscroll'>
+    <svg id="testpattern" width="100%" height="100%">
+      <rect x="0" y="0" width="100%" height="100%"
+        style="fill:transparent;stroke:rgb(0,0,255);stroke-width:1;fill-opacity:0;stroke-opacity:1" />
+      <circle cx="50%" cy="50%" r="50vw" stroke="blue" stroke-width="1" fill="transparent" />
+      <circle cx="50%" cy="50%" r="50vh" stroke="green" stroke-width="1" fill="transparent" />
+
+      <circle cx="50%" cy="50%" r="1cm" stroke="red" stroke-width="1" fill="transparent" />
+      <circle cx="50%" cy="50%" r="2cm" stroke="red" stroke-width="1" fill="transparent" />
+      <circle cx="50%" cy="50%" r="3cm" stroke="red" stroke-width="1" fill="transparent" />
+
+      <line x1="0" y1="0" x2="100%" y2="100%" style="stroke:rgb(0,0,255);stroke-width:1" />
+      <line x1="100%" y1="0" x2="0" y2="100%" style="stroke:rgb(0,0,255);stroke-width:1" />
+
+      <line x1="50%" y1="0" x2="50%" y2="100%" style="stroke:rgb(0,0,255);stroke-width:1" />
+      <line x1="0" y1="50%" x2="100%" y2="50%" style="stroke:rgb(0,0,255);stroke-width:1" />
+    </svg>
+  </div>
+  <div id='page7' class='fullscreen noscroll'>
+    <div id='gradient1'></div>
+    <div id='gradient2'></div>
+  </div>
+  <div id='page8' class='fullscreen noscroll'>
+    <div id='gradient3'></div>
+    <div id='gradient4'></div>
+  </div>
+  <div id='page9' class='fullscreen noscroll'>
+    <div id="screen-info" style="font-family:monospace; padding-left:5px">
+    </div>
+  </div>
+
+  <div class="key-buttons" id="button-left" onClick="onClickHandler(event)"></div>
+  <div class="key-buttons" id="button-up" onClick="onClickHandler(event)"></div>
+  <div class="key-buttons" id="button-down" onClick="onClickHandler(event)"></div>
+  <div class="key-buttons" id="button-right" onClick="onClickHandler(event)"></div>
+
+  <script>
+    window.isFullScreen = false;
+    window.page_number = 0;
+    window.MAX_PAGES = 9;
+
+
+    const KEY_LEFT = 37;
+    const KEY_UP = 38;
+    const KEY_RIGHT = 39;
+    const KEY_DOWN = 40;
+    const KEY_ENTER = 13;
+
+    function ID(o) {
+      return document.getElementById(o);
+    }
+
+    function show_page(page_number) {
+      console.log('Showing page:', page_number);
+
+      document.querySelectorAll('.key-buttons').forEach(function (keyButton) {
+        keyButton.style.opacity = page_number == 0 ? '0.3' : '0';
+      });
+
+      if (page_number == 9) {
+        updateScreenInfo();
+      }
+
+      for (i = 0; i < MAX_PAGES; i++) {
+        if (i !== page_number) {
+          const pageCheck = ID('page' + i)
+          if (pageCheck) pageCheck.style.display = 'none';
+        }
+      }
+
+      const pageSelected = ID('page' + page_number)
+      if (pageSelected) {
+        pageSelected.style.display = 'block';
+
+        if (page_number === 6) {
+          const cln = ID('testpattern').cloneNode(true)
+          pageSelected.innerHTML = "";
+          pageSelected.appendChild(cln);
+        }
+      }
+    }
+
+    function openFullscreen() {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.mozRequestFullScreen) {
+        /* Firefox */
+        elem.mozRequestFullScreen();
+      } else if (elem.webkitRequestFullscreen) {
+        /* Chrome, Safari and Opera */
+        elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        /* IE/Edge */
+        elem.msRequestFullscreen();
+      }
+    }
+
+    function closeFullscreen() {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        /* Firefox */
+        document.mozCancelFullScreen();
+      } else if (document.webkitExitFullscreen) {
+        /* Chrome, Safari and Opera */
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        /* IE/Edge */
+        document.msExitFullscreen();
+      }
+    }
+
+    function keyDownTextField(e) {
+      var keyCode = e.keyCode;
+      console.log(keyCode);
+
+      if (keyCode === KEY_ENTER) {
+        window.isFullScreen = !window.isFullScreen;
+        if (window.isFullScreen) openFullscreen();
+        if (!window.isFullScreen) closeFullscreen();
+      } else if (keyCode === KEY_LEFT) {
+        if (window.page_number > 0) {
+          window.page_number--;
+        } else {
+          window.page_number = window.MAX_PAGES;
+        }
+        show_page(window.page_number)
+      } else if (keyCode === KEY_RIGHT) {
+        if (window.page_number < window.MAX_PAGES) {
+          window.page_number++;
+        } else {
+          window.page_number = 0;
+        }
+        show_page(window.page_number)
+      } else if (keyCode === KEY_DOWN) {
+        window.page_number = 0;
+        show_page(window.page_number)
+      } else if (keyCode === 116) {
+        //F5
+        window.top.location = window.top.location
+      }
+
+      if (e.preventDefault) e.preventDefault();
+    }
+
+    function onClickHandler(e) {
+      var key_code = '';
+      switch (e.target.id) {
+        case "button-left": key_code = KEY_LEFT; break;
+        case "button-up": key_code = KEY_ENTER; break;
+        case "button-down": key_code = KEY_DOWN; break;
+        case "button-right": key_code = KEY_RIGHT; break;
+      };
+
+      fakeEvent = { keyCode: key_code };
+      if (key_code) keyDownTextField(fakeEvent)
+    }
+
+
+    function updateScreenInfo() {
+      html = '<ul style="list-style-type: none">';
+      html += `<li>window.screen.width: ${window.screen.width}</li>`;
+      html += `<li>window.screen.height: ${window.screen.height}</li>`;
+      html += `<li>window.screen.colorDepth: ${window.screen.colorDepth}</li>`;
+      html += `<li>window.screen.pixelDepth: ${window.screen.pixelDepth}</li>`;
+      html += `<li>window.devicePixelRatio: ${window.devicePixelRatio}</li>`;
+      html += `<li>Screen Native Width: ${window.screen.width * window.devicePixelRatio}</li>`;
+      html += `<li>Screen Native Height: ${window.screen.height * window.devicePixelRatio}</li>`;
+
+      var orientationAngle = window.orientation || (window.screen.orientation && window.screen.orientation.angle);
+      html += `<li>Screen Orientation: ${orientationAngle}</li>`;
+      html += `<li>View Port Width: ${document.documentElement.clientWidth}</li>`;
+      html += `<li>View Port Height: ${document.documentElement.clientHeight}</li>`;
+      html += `<li>maxTouchPoints: ${navigator.maxTouchPoints} </li>`;
+      html += `<li>&nbsp;</li>`;
+      html += `<li>userAgent: ${navigator.userAgent} </li>`;
+      html += `<li>platform: ${navigator.platform} </li>`;
+      html += `<li>cookieEnabled: ${navigator.cookieEnabled} </li>`;
+      html += `<li>&nbsp;</li>`;
+      html += `<li>language: ${navigator.language} </li>`;
+      const tz = Intl && Intl.DateTimeFormat && Intl.DateTimeFormat().resolvedOptions().timeZone;
+      html += `<li>timezone: ${tz} </li>`;
+
+      html += '</ul>';
+
+      ID('screen-info').innerHTML = html;
+    }
+
+    document.addEventListener("keydown", keyDownTextField, false);
+  </script>
+
+</body>
+
+</html>

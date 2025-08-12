@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Code Editor</title>
+    <style>
+        body {
+			background: grey;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #editor-container {
+            background: #3a3636;
+            height: 600px;
+            width: 100%;
+            position: relative;
+        }
+        select {
+            margin-bottom: 10px;
+        }
+    </style>
+    <script>/**! * @license Ace-Editor-Web-Component - A web component to easily add a code editor or editor(s) to your web page! * VERSION: 1.0.2 * MORE INFO CAN BE FOUND AT https://github.com/MarketingPipeline/Ace-Editor-Web-Component */ let AceEditorWC_Is_AceEditorLoaded=!1;class AceEditorWC extends HTMLElement{connectedCallback(){let e=this.getAttribute("language");if(!e)return this.innerHTML=`<div class="ace-editor-component"><div class="ace-editor-wc"><div class="ace-editor-wc-pane"><div class="ace-editor-wc-title">Error!</div></div><div id="code_editor_text_value" class="ace-editor-wc-text" style="">Error: Language Attribute Is Missing For Web Component ...</div></div>`;async function t(e){"true"===(await loadAceEditor()).loaded&&CreateAceEditor(e,e.getAttribute("language").toLowerCase())}this.spellcheck=!1,this.editorTitle=e,this.getAttribute("editor-title")&&(this.editorTitle=this.getAttribute("editor-title")),this.innerHTML=`<div class="ace-editor-component"><div class="ace-editor-wc"><div class="ace-editor-wc-pane"><div class="ace-editor-wc-title">${this.editorTitle}</div><div class="ace-editor-wc-mask">Copied to the clipboard.</div><div class="ace-editor-wc-ctrl"><button class="ck-button"><img src="https://lyricat.github.io/code-knack/demo/lib/code-knack/images/icon-copy-dark.svg"><span>copy</span></button></div></div><div id="code_editor_text_value" class="ace-editor-wc-text">${this.innerHTML}</div></div></div>`,t(this),this.querySelector(".ck-button").addEventListener("click",e=>(function e(t){let i=ace.edit(t.querySelector("#code_editor_text_value"));navigator.clipboard.writeText(i.getValue()),t.querySelector(".ace-editor-wc-mask").style.display="flex",setTimeout(()=>{t.querySelector(".ace-editor-wc-mask").style.display="none"},"3000")})(this))}}function loadAceEditorScripts(e){return new Promise(function(t,i){let o=document.createElement("script");o.src=e,o.async=!1,o.onload=()=>{t(e)},o.onerror=()=>{i(e)},document.body.appendChild(o)})}if(this.Ace_Editor_Path="https://cdnjs.cloudflare.com/ajax/libs/ace/1.16.0/","undefined"!=typeof AceEditor_WC_Ace_Editor_Path&&(this.Ace_Editor_Path=AceEditor_WC_Ace_Editor_Path),this.gfgScript=[`${this.Ace_Editor_Path}ace.min.js`,`${this.Ace_Editor_Path}ext-modelist.js`,`${this.Ace_Editor_Path}ext-themelist.js`,"https://cdnjs.cloudflare.com/ajax/libs/ace/1.16.0/ext-error_marker.min.js"],"undefined"!=typeof AceEditor_WC_Ace_Editor_EXTS)for(let item in AceEditor_WC_Ace_Editor_EXTS)this.gfgScript.push(AceEditor_WC_Ace_Editor_EXTS[item]);async function loadAceEditor(){if(!1!==AceEditorWC_Is_AceEditorLoaded)return{loaded:"true"};{this.gfgScript.forEach(function(e){!1===function e(t){t||(t="http://xxx.co.uk/xxx/script.js");for(var i=document.getElementsByTagName("script"),o=i.length;o--;)if(i[o].src==t)return!0;return!1}(e)&&this.promiseData.push(loadAceEditorScripts(e))});let e=await Promise.all(this.promiseData).then(async function(){return AceEditorWC_Is_AceEditorLoaded=!0,{loaded:"true"}}).catch(function(e){return console.log(`Ace Editor WC Error: ${e} failed to load!`),{loaded:"false"}});return e}}function CreateAceEditor(e,t){ace.config.set("basePath",this.Ace_Editor_Path);let i=e.querySelector("#code_editor_text_value").textContent,o=ace.edit(e.querySelector("#code_editor_text_value"));if(o.$blockScrolling=1/0,e.getAttribute("editor-theme")){let r=ace.require("ace/ext/themelist"),c=r.themesByName;void 0!=c[e.getAttribute("editor-theme").toLowerCase()]?o.setTheme(`ace/theme/${e.getAttribute("editor-theme").toLowerCase()}`):(console.log(`Ace Editor WC Error: ${e.getAttribute("editor-theme")} is not a valid theme - setting to default.`),o.setTheme("ace/theme/monokai"))}else o.setTheme("ace/theme/monokai");if(t&&function e(){let i=ace.require("ace/ext/modelist");void 0!=i.modesByName[t]?(o.getSession().setMode(`ace/mode/${t}`),o.getSession().setAnnotations()):console.log(`Ace Editor WC Error: Ace Editor Language Mode Could Not Be Found For ${t.charAt(0).toUpperCase()+t.slice(1)}`)}(),o.setShowPrintMargin(!1),o.setValue(i),o.clearSelection(),e.getAttribute("editor-options"))o.setOptions(JSON.parse(e.getAttribute("editor-options")));else{let s=1/0;e.getAttribute("max-lines")&&(s=Number(e.getAttribute("max-lines"))),o.setOptions({maxLines:s})}}this.promiseData=[],window.customElements.define("ace-editor",AceEditorWC);</script> 
+	<style>.ace-editor-wc{position:relative;background-color:#3a3636;background-color:var(--bg,#3a3636);border-radius:10px;border:1px solid var(--border,rgba(0,0,0,.1))}.ace-editor-wc.line-number .AceEditor{padding-left:0}.ace-editor-wc img{max-width:90%!important;display:inline-block!important;border-radius:0!important;box-shadow:none!important}.ace-editor-wc .ace-editor-wc-pane{height:40px;display:flex;border-radius:3px}.ace-editor-wc .ace-editor-wc-pane .ace-editor-wc-title{flex:1;padding-left:20px;color:var(--title,#fff);display:flex;font-size:14px;font-family:Metropolis-Medium,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,'Helvetica Neue',sans-serif;align-items:center;opacity:.5;text-transform:uppercase}.ace-editor-wc .ace-editor-wc-pane .ace-editor-wc-ctrl{flex:1;display:flex;justify-content:flex-end}.ace-editor-wc .ace-editor-wc-pane button.ck-button{height:40px;padding:0 16px;font-size:14px;background:0 0;border:none;border-radius:0;color:var(--button-text,wheat);opacity:.8;outline:0;display:flex;align-items:center;box-shadow:-1px 0 0 0 var(--button-border,rgba(0,0,0,.5))}.ace-editor-wc .ace-editor-wc-pane button.ck-button:focus{outline:white solid 2px}.ace-editor-wc .ace-editor-wc-pane button.ck-button img{height:14px;margin-right:3px}.ace-editor-wc .ace-editor-wc-pane button.ck-button:hover{opacity:1}.ace-editor-wc .ace-editor-wc-pane button.ck-button:active{opacity:.6}.ace-editor-wc pre{background:0 0;color:var(--code,#fff);border-bottom-left-radius:3px;border-bottom-right-radius:3px}.ace-editor-wc .AceEditor{padding-left:16px}.ace-editor-wc .AceEditor,.ace-editor-wc .ace-editor-wc-text{font-size:14px;line-height:18px;height:auto}.ace-editor-wc .AceEditor,.ace-editor-wc .ace-editor-wc-text:focus{display:none}.ace-editor-wc .AceEditor pre,.ace-editor-wc .ace-editor-wc-text pre{padding:0 4px;font-family:Menlo,'Roboto Mono','Courier New',Courier,monospace!important}.ace-editor-wc .ace-editor-wc-text{border:none;width:100%;height:100%;border-radius:0 0 10px 10px}.ace-editor-wc .ace-editor-wc-output{display:none;background:var(--bg,#3a3636);font-family:Menlo,'Roboto Mono','Courier New',Courier,monospace!important;border-top:1px solid var(--border,rgba(0,0,0,.1))}.ace-editor-wc .ace-editor-wc-output .ace-editor-wc-output-title{color:var(--text,#fff);opacity:.6;font-size:12px;margin:0 10px 0 20px;padding:4px 0;font-family:Metropolis-Medium -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,'Helvetica Neue',sans-serif;border-bottom:1px solid rgba(255,255,255,.06)}.ace-editor-wc .ace-editor-wc-output .ace-editor-wc-output-content{color:var(--text,#fff);white-space:pre-line;padding:8px 12px 8px 20px;font-size:14px;overflow:auto;white-space:pre-wrap}.ace-editor-wc .ace-editor-wc-output.html-output .ace-editor-wc-output-content{max-width:100%!important;background:#fcfdff;margin:0 10px;color:#000;border-radius:3px;border:1px solid var(--border,rgba(0,0,0,.1))}.ace-editor-wc .ace-editor-wc-output.html-output .ace-editor-wc-output-content .katex .base{margin:10px 0}.ace-editor-wc .ace-editor-wc-footer{background-color:#3a3636;background-color:var(--bg,#3a3636);height:10px;border-bottom-left-radius:10px;border-bottom-right-radius:10px}.ace-editor-wc .ace-editor-wc-mask{display:none;position:absolute;top:0;left:0;right:0;bottom:0;color:#fff;z-index:10;align-items:center;justify-content:center;background:rgba(0,0,0,.4)}</style>
+</head>
+<body>
+    <h1>Code Editor</h1>
+	<label for="language-select">Choose a language:</label>
+	<select id="language-select"></select>
+
+	<div id="editor-container">
+		<ace-editor id="code-editor" language="javascript" style="height:100%"></ace-editor>
+	</div>
+
+	<script>
+		const languages = [
+			"abap", "abc", "actionscript", "ada", "apache_conf", "asciidoc", "assembly_x86", "autohotkey", 
+			"batchfile", "c_cpp", "csharp", "css", "dart", "diff", "dockerfile", "elixir", "elm", "erlang", 
+			"fortran", "go", "groovy", "haskell", "html", "java", "javascript", "json", "lua", "markdown", 
+			"matlab", "objectivec", "pascal", "perl", "php", "python", "ruby", "rust", "scala", "sql", 
+			"typescript", "xml", "yaml"
+		];
+
+		const languageSelect = document.getElementById('language-select');
+
+		languages.forEach(lang => {
+			const option = document.createElement('option');
+			option.value = lang;
+			option.textContent = lang.charAt(0).toUpperCase() + lang.slice(1);
+			languageSelect.appendChild(option);
+		});
+
+		languageSelect.value = "javascript";
+
+		languageSelect.addEventListener('change', function() {
+			document.getElementById('editor-container').innerHTML = `<ace-editor id="code-editor" language="${this.value}"></ace-editor>`;
+		});
+	</script>
+</body>
+</html>

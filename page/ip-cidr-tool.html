@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>IP Subnet Calculator / Checker</title>
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --border: #cccccc;
+      --btn-bg: #007bff;
+      --btn-hover: #0056b3;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1e;
+        --card-bg: #2c2c2c;
+        --text: #e0e0e0;
+        --border: #444444;
+        --btn-bg: #375a7f;
+        --btn-hover: #2c4f75;
+      }
+    }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    h1 {
+      text-align: center;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .row {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--card-bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+    button {
+      margin-top: 8px;
+      background: var(--btn-bg);
+      border: none;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background: var(--btn-hover);
+    }
+    .results {
+      margin-top: 20px;
+      padding: 12px;
+      background: var(--bg);
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .results div {
+      margin-bottom: 8px;
+    }
+    .results span.label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>IP-CIDR Calculator & Checker</h1>
+<div class="container">
+  <label>Mode:
+    <select id="mode">
+      <option value="ipv4">IPv4</option>
+      <option value="ipv6">IPv6</option>
+    </select>
+  </label>
+
+  <label>Base IP (with optional /CIDR):
+    <input type="text" id="ipBase" placeholder="e.g. 192.168.1.5/24 or 2001:db8::1/64">
+  </label>
+
+  <label>CIDR:
+    <select id="cidr"></select>
+  </label>
+
+  <button id="calcBtn">Calculate Subnet</button>
+
+  <div id="results">
+    <p>Network: <span id="network"></span></p>
+    <p>Broadcast/Last: <span id="broadcast"></span></p>
+    <p>Netmask: <span id="netmask"></span></p>
+    <p>First Host: <span id="firstHost"></span></p>
+    <p>Last Host: <span id="lastHost"></span></p>
+    <p>Total Hosts: <span id="hosts"></span></p>
+  </div>
+
+  <hr>
+
+  <label>Test IP:
+    <input type="text" id="ipCheck" placeholder="Enter an IP to check">
+  </label>
+  <button id="checkBtn">Check Membership</button>
+
+  <div id="checkResult">
+    <p id="checkText"></p>
+  </div>
+  
+  <hr>
+  <button id="genBtn">Generate Random IP in Subnet</button>
+  <p>Your random IP: <span id="genResult" style="font-weight:bold"></span></p>
+
+
+
+  <script>
+  // Populate CIDR dropdown based on IPv4/IPv6 selection
+  function populateCidrOptions() {
+    const mode = document.getElementById('mode').value;
+    const max = mode === 'ipv4' ? 32 : 128;
+    const sel = document.getElementById('cidr');
+    sel.innerHTML = '';
+    for (let i = 0; i <= max; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = '/' + i;
+      sel.appendChild(opt);
+    }
+  }
+  document.getElementById('mode').addEventListener('change', () => {
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('checkResult').style.display = 'none';
+    populateCidrOptions();
+  });
+  populateCidrOptions();
+
+
+  // --- IPv4 Helpers ---
+  function ipv4ToUInt32(ip) {
+    return ip.split('.')
+             .map(octet => parseInt(octet,10))
+             .reduce((acc, oct) => ((acc << 8) >>> 0) + oct, 0) >>> 0;
+  }
+
+  function uint32ToIpv4(n) {
+    return [
+      (n >>> 24) & 0xFF,
+      (n >>> 16) & 0xFF,
+      (n >>> 8)  & 0xFF,
+      n & 0xFF
+    ].join('.');
+  }
+
+  function maskFromCidr4(cidr) {
+    // if cidr=0, mask = 0.  otherwise top cidr bits =1
+    return cidr === 0 ? 0 : (0xFFFFFFFF << (32 - cidr)) >>> 0;
+  }
+
+
+  // --- IPv6 Helpers ---
+  // Expand a compressed IPv6 to exactly 8 hextets
+  function expandIPv6(addr) {
+    // split on "::"
+    let [left, right] = addr.split('::');
+    let leftParts  = left  ? left.split(':')  : [];
+    let rightParts = right ? right.split(':') : [];
+    // how many zeros we need to insert
+    let zerosToInsert = 8 - (leftParts.length + rightParts.length);
+    let zeros = Array(zerosToInsert).fill('0');
+    let fullParts = [...leftParts, ...zeros, ...rightParts];
+    if (fullParts.length !== 8) {
+      throw new Error('Invalid IPv6 format');
+    }
+    return fullParts.map(h => h.padStart(4, '0')).join(':');
+  }
+
+  function ipv6ToBigInt(ip) {
+    const full = expandIPv6(ip);
+    return full.split(':')
+               .reduce((acc, h) => (acc << 16n) + BigInt(parseInt(h,16)), 0n);
+  }
+
+  function bigIntToIpv6(num) {
+    let parts = [];
+    let tmp = num;
+    for (let i = 0; i < 8; i++) {
+      parts.unshift((tmp & 0xFFFFn).toString(16));
+      tmp = tmp >> 16n;
+    }
+    // now compress the longest run of zeros
+    let str = parts.join(':');
+    // regex to compress the longest zero run
+    return str.replace(/(^|:)(0(?:\:0)+)(:|$)/, '$1::$3');
+  }
+
+  function maskFromCidr6(cidr) {
+    // top cidr bits 1, rest 0, in a 128-bit BigInt
+    if (cidr === 0) return 0n;
+    return ((~0n << BigInt(128 - cidr)) & ((1n << 128n) - 1n));
+  }
+
+
+  // parse "IP[/CIDR]" from a single input
+  function parseIpAndCidr(str) {
+    let [ip, c] = str.trim().split('/');
+    if (c !== undefined && /^\d+$/.test(c)) {
+      return { ip, cidr: parseInt(c, 10) };
+    }
+    return { ip: str.trim(), cidr: null };
+  }
+
+
+  // --- Calculate Subnet Button ---
+  document.getElementById('calcBtn').addEventListener('click', () => {
+    let { ip: rawIp, cidr: embeddedCidr } =
+        parseIpAndCidr(document.getElementById('ipBase').value);
+
+    const mode = document.getElementById('mode').value;
+    const sel   = document.getElementById('cidr');
+    const max   = mode === 'ipv4' ? 32 : 128;
+
+    // if the user typed a /C in the IP field, override the dropdown
+    if (embeddedCidr !== null && embeddedCidr >= 0 && embeddedCidr <= max) {
+      sel.value = embeddedCidr;
+    }
+    const cidr = parseInt(sel.value, 10);
+
+    let network, broadcast, netmask, first, last, totalHosts;
+
+    try {
+      if (mode === 'ipv4') {
+        if (!/^\d+(\.\d+){3}$/.test(rawIp)) throw 'Bad IPv4';
+        let ip32   = ipv4ToUInt32(rawIp);
+        let mask32 = maskFromCidr4(cidr);
+        network   = ip32 & mask32;
+        broadcast = network | (~mask32 >>> 0);
+        netmask   = mask32;
+        // host counts
+        if (cidr < 31) {
+          totalHosts = 2**(32 - cidr) - 2;
+          first      = network + 1;
+          last       = broadcast - 1;
+        } else {
+          // /31 => two usable addresses, /32 => 1 host only
+          totalHosts = (cidr === 31 ? 2 : 1);
+          first      = network;
+          last       = broadcast;
+        }
+
+        document.getElementById('network').textContent   = uint32ToIpv4(network);
+        document.getElementById('broadcast').textContent = uint32ToIpv4(broadcast);
+        document.getElementById('netmask').textContent   = uint32ToIpv4(netmask);
+        document.getElementById('firstHost').textContent = uint32ToIpv4(first);
+        document.getElementById('lastHost').textContent  = uint32ToIpv4(last);
+        document.getElementById('hosts').textContent     = totalHosts;
+
+      } else { // IPv6
+        let ipBig   = ipv6ToBigInt(rawIp);
+        let maskBig = maskFromCidr6(cidr);
+        network   = ipBig & maskBig;
+        broadcast = network | (~maskBig & ((1n << 128n) - 1n));
+        netmask   = maskBig;
+        totalHosts = cidr < 128n
+                   ? (1n << BigInt(128 - cidr))
+                   : 1n;
+        first = network;
+        last  = broadcast;
+
+        document.getElementById('network').textContent   = bigIntToIpv6(network);
+        document.getElementById('broadcast').textContent = bigIntToIpv6(broadcast);
+        document.getElementById('netmask').textContent   = bigIntToIpv6(netmask);
+        document.getElementById('firstHost').textContent = bigIntToIpv6(first);
+        document.getElementById('lastHost').textContent  = bigIntToIpv6(last);
+        document.getElementById('hosts').textContent     = totalHosts.toString();
+      }
+
+      document.getElementById('results').style.display    = 'block';
+      document.getElementById('checkResult').style.display = 'none';
+    }
+    catch (e) {
+      alert('Error calculating subnet: ' + e);
+    }
+  });
+
+
+  // --- Check Membership Button ---
+  document.getElementById('checkBtn').addEventListener('click', () => {
+    // re‐parse base field (in case user typed in a new /CIDR)
+    let { ip: rawIp, cidr: embeddedCidr } =
+        parseIpAndCidr(document.getElementById('ipBase').value);
+
+    const mode = document.getElementById('mode').value;
+    const sel   = document.getElementById('cidr');
+    const max   = mode === 'ipv4' ? 32 : 128;
+    if (embeddedCidr !== null && embeddedCidr >= 0 && embeddedCidr <= max) {
+      sel.value = embeddedCidr;
+    }
+    const cidr = parseInt(sel.value, 10);
+
+    const netAddr = document.getElementById('network').textContent;
+    if (!netAddr) {
+      return alert('Please calculate the subnet first.');
+    }
+
+    const testIp = document.getElementById('ipCheck').value.trim();
+    let inSubnet = false;
+
+    try {
+      if (mode === 'ipv4') {
+        let net32   = ipv4ToUInt32(netAddr);
+        let mask32  = maskFromCidr4(cidr);
+        let test32  = ipv4ToUInt32(testIp);
+        inSubnet    = ((test32 & mask32) >>> 0) === net32;
+      }
+      else {
+        let netBig   = ipv6ToBigInt(netAddr);
+        let maskBig  = maskFromCidr6(cidr);
+        let testBig  = ipv6ToBigInt(testIp);
+        inSubnet     = ((testBig & maskBig) === netBig);
+      }
+    }
+    catch(e) {
+      return alert('Invalid test IP: ' + e);
+    }
+
+    const msg = inSubnet
+              ? `${testIp} IS within ${netAddr}/${cidr}`
+              : `${testIp} is NOT within ${netAddr}/${cidr}`;
+    document.getElementById('checkText').textContent = msg;
+    document.getElementById('checkResult').style.display = 'block';
+  });
+  
+  // ----------------------------------------------------------
+  // Random‐IP‐in‐Subnet Generators
+
+  // 1) IPv4: network32 = uint32, cidr = 0–32
+  function randomIpv4InSubnet(network32, cidr) {
+    const mask32 = maskFromCidr4(cidr);
+    const broadcast = (network32 | (~mask32 >>> 0)) >>> 0;
+
+    // decide first/last usable:
+    let first = network32;
+    let last  = broadcast;
+    if (cidr < 31) {
+      first = network32 + 1;
+      last  = broadcast - 1;
+    }
+
+    // random integer in [first, last]
+    const span = last - first + 1;
+    const randOffset = Math.floor(Math.random() * span);
+    return uint32ToIpv4((first + randOffset) >>> 0);
+  }
+  
+  // --- New: Always‐full IPv6 formatter ---
+  function bigIntToFullIpv6(num) {
+    let parts = new Array(8);
+	let tmp   = num;
+	for (let i = 7; i >= 0; i--) {
+	  parts[i] = (tmp & 0xFFFFn).toString(16).padStart(4, '0');
+	  tmp = tmp >> 16n;
+	}
+	return parts.join(':');
+  }
+
+
+  // 2) IPv6: networkBig = BigInt, cidr = 0–128
+  function randomIpv6InSubnetBig(networkBig, cidr) {
+  const maskBig   = maskFromCidr6(cidr);
+  const broadcast = networkBig | (~maskBig & ((1n << 128n) - 1n));
+
+  const first = networkBig;
+  const last  = broadcast;
+  const span  = last - first + 1n;
+
+  // How many random bits we need to cover [0, span)
+  const bitsNeeded = span.toString(2).length;
+  const rounds     = Math.ceil(bitsNeeded / 32);
+
+  // Build a big random number by concatenating 32-bit chunks
+  let rand = 0n;
+  for (let i = 0; i < rounds; i++) {
+    // r32 in [0, 2^32)
+    const r32 = BigInt(Math.floor(Math.random() * 0x1_0000_0000));
+    rand = (rand << 32n) | r32;
+  }
+
+  // Reduce into [0, span)
+  rand = rand % span;
+
+  // Shift into the subnet range
+  return first + rand;
+}
+
+
+  // ----------------------------------------------------------
+  // Hook up the UI button:
+
+  document.getElementById('genBtn').addEventListener('click', () => {
+    const mode    = document.getElementById('mode').value;
+    const cidr    = parseInt(document.getElementById('cidr').value, 10);
+    const netAddr = document.getElementById('network').textContent;
+
+    if (!netAddr) {
+      return alert('Please calculate the subnet first.');
+    }
+
+    let randomIp;
+    try {
+      if (mode === 'ipv4') {
+        const net32 = ipv4ToUInt32(netAddr);
+        randomIp = randomIpv4InSubnet(net32, cidr);
+      } else {
+        const netBig = ipv6ToBigInt(netAddr);
+		const randBig = randomIpv6InSubnetBig(netBig, cidr);
+		console.log(randBig);
+		randomIp = bigIntToFullIpv6(randBig);
+      }
+      document.getElementById('genResult').textContent = randomIp;
+    }
+    catch (e) {
+      alert('Error generating random IP: ' + e);
+    }
+  });
+  </script>
+  </div>
+</body>
+</html>
