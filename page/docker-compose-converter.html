@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Compose Converter</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #212529;
+            --header-color: #343a40;
+            --border-color: #dee2e6;
+            --input-bg: #ffffff;
+            --output-bg: #e9ecef;
+            --button-bg: #007bff;
+            --button-text: #ffffff;
+            --button-hover-bg: #0056b3;
+            --copy-button-bg: #28a745;
+            --copy-button-hover-bg: #218838;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --text-color: #e0e0e0;
+                --header-color: #e0e0e0;
+                --border-color: #444;
+                --input-bg: #1e1e1e;
+                --output-bg: #2a2a2a;
+                --button-bg: #0d6efd;
+                --button-text: #ffffff;
+                --button-hover-bg: #0b5ed7;
+                --copy-button-bg: #198754;
+                --copy-button-hover-bg: #146c43;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 1rem;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            color: var(--header-color);
+            font-weight: 500;
+        }
+
+        .converter-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 992px) {
+            .converter-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .converter-panel {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .converter-panel h2 {
+            padding: 0.75rem 1rem;
+            background-color: var(--input-bg);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .input-area, .output-area {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            gap: 0.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 0.75rem;
+            font-family: var(--font-family-monospace);
+            font-size: 0.9rem;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--button-bg);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .action-button {
+            padding: 0.6rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--button-text);
+            background-color: var(--button-bg);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .action-button:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+        .output-wrapper {
+            position: relative;
+        }
+        
+        pre {
+            background-color: var(--output-bg);
+            padding: 1rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 200px;
+            border: 1px solid var(--border-color);
+        }
+
+        code {
+            font-family: var(--font-family-monospace);
+            font-size: 0.9rem;
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            background-color: var(--copy-button-bg);
+            color: var(--button-text);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+        
+        .copy-button:hover {
+             opacity: 1;
+             background-color: var(--copy-button-hover-bg);
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.9em;
+            margin-top: 0.5rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Docker Compose Converter</h1>
+            <p>Convert between `docker run` CLI commands and `docker-compose.yml` files.</p>
+        </header>
+
+        <main class="converter-grid">
+            <section class="converter-panel">
+                <h2>Docker CLI → Docker Compose</h2>
+                <div class="input-area">
+                    <label for="cli-input">Enter a single `docker run` command:</label>
+                    <textarea id="cli-input" spellcheck="false">docker run -d --name my-nginx -p 8080:80 -v nginx-data:/usr/share/nginx/html --restart unless-stopped nginx:latest</textarea>
+                    <button id="to-compose-btn" class="action-button">Convert to Compose</button>
+                    <div id="cli-error" class="error-message"></div>
+                </div>
+                <div class="output-area">
+                    <label>Resulting `docker-compose.yml`:</label>
+                    <div class="output-wrapper">
+                        <pre><code id="compose-output"></code></pre>
+                        <button class="copy-button" onclick="copyToClipboard('compose-output')">Copy</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="converter-panel">
+                <h2>Docker Compose → Docker CLI</h2>
+                <div class="input-area">
+                    <label for="compose-input">Enter `docker-compose.yml` content:</label>
+                    <textarea id="compose-input" spellcheck="false">version: '3.8'
+services:
+  web:
+    image: my-app:1.0
+    container_name: my-web-app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=database
+    networks:
+      - app-net
+    volumes:
+      - /local/path:/app/data
+      - named-volume:/app/cache
+networks:
+  app-net:
+    driver: bridge
+volumes:
+  named-volume: {}
+</textarea>
+                    <button id="to-cli-btn" class="action-button">Convert to CLI</button>
+                    <div id="compose-error" class="error-message"></div>
+                </div>
+                <div class="output-area">
+                     <label>Resulting `docker` commands:</label>
+                     <div class="output-wrapper">
+                        <pre><code id="cli-output"></code></pre>
+                        <button class="copy-button" onclick="copyToClipboard('cli-output')">Copy</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // --- Simple Command Parser ---
+        // A full parser is complex; this handles common cases with quotes.
+        function parseDockerCommand(command) {
+            // Normalize and remove 'docker run'
+            let cmd = command.trim().replace(/^docker run\s+/, '');
+
+            const args = [];
+            let currentArg = '';
+            let inQuote = false;
+            let quoteChar = '';
+
+            for (let i = 0; i < cmd.length; i++) {
+                const char = cmd[i];
+                if (char === ' ' && !inQuote) {
+                    if (currentArg) {
+                        args.push(currentArg);
+                        currentArg = '';
+                    }
+                } else if ((char === '"' || char === "'") && !inQuote) {
+                    inQuote = true;
+                    quoteChar = char;
+                } else if (char === quoteChar && inQuote) {
+                    inQuote = false;
+                } else {
+                    currentArg += char;
+                }
+            }
+            if (currentArg) args.push(currentArg);
+            
+            const result = {
+                image: '',
+                name: null,
+                ports: [],
+                volumes: [],
+                environment: [],
+                networks: [],
+                restart: null,
+                detach: false,
+                interactive: false,
+                tty: false,
+                labels: [],
+                extra_hosts: [],
+                command: []
+            };
+
+            let i = 0;
+            while (i < args.length) {
+                const arg = args[i];
+                const nextArg = args[i + 1];
+
+                const consumeNext = () => {
+                    if (!nextArg) throw new Error(`Option ${arg} requires an argument.`);
+                    i += 2;
+                    return nextArg;
+                };
+
+                switch (arg) {
+                    case '-d':
+                    case '--detach':
+                        result.detach = true; i++; break;
+                    case '-i':
+                    case '--interactive':
+                        result.interactive = true; i++; break;
+                    case '-t':
+                    case '--tty':
+                        result.tty = true; i++; break;
+                    case '-it':
+                    case '-ti':
+                         result.interactive = true; result.tty = true; i++; break;
+                    case '--name':
+                        result.name = consumeNext(); break;
+                    case '-p':
+                    case '--publish':
+                        result.ports.push(consumeNext()); break;
+                    case '-v':
+                    case '--volume':
+                        result.volumes.push(consumeNext()); break;
+                    case '-e':
+                    case '--env':
+                        result.environment.push(consumeNext()); break;
+                    case '--network':
+                        result.networks.push(consumeNext()); break;
+                    case '--restart':
+                        result.restart = consumeNext(); break;
+                    case '-l':
+                    case '--label':
+                        result.labels.push(consumeNext()); break;
+                    case '--add-host':
+                        result.extra_hosts.push(consumeNext()); break;
+                    default:
+                        if (arg.startsWith('-')) {
+                            // Simple flags without values might need special handling if added
+                             console.warn(`Unrecognized flag: ${arg}`);
+                             i++;
+                        } else {
+                           // This must be the image or command part
+                           if (!result.image) {
+                               result.image = arg;
+                           } else {
+                               result.command.push(arg);
+                           }
+                           i++;
+                        }
+                        break;
+                }
+            }
+
+            if (!result.image) throw new Error('Could not find an image name in the command.');
+
+            return result;
+        }
+
+
+        // --- Conversion Logic ---
+
+        function cliToCompose(command) {
+            try {
+                const parsed = parseDockerCommand(command);
+                const serviceName = parsed.name || parsed.image.split(/[:@]/)[0].replace(/[^a-zA-Z0-9-]/g, '') || 'app';
+
+                const service = {
+                    image: parsed.image
+                };
+
+                if (parsed.name) service.container_name = parsed.name;
+                if (parsed.ports.length > 0) service.ports = parsed.ports;
+                if (parsed.volumes.length > 0) service.volumes = parsed.volumes;
+                if (parsed.environment.length > 0) service.environment = parsed.environment;
+                if (parsed.networks.length > 0) service.networks = parsed.networks;
+                if (parsed.restart) service.restart = parsed.restart;
+                if (parsed.interactive) service.stdin_open = true;
+                if (parsed.tty) service.tty = true;
+                if (parsed.labels.length > 0) service.labels = parsed.labels;
+                if (parsed.extra_hosts.length > 0) service.extra_hosts = parsed.extra_hosts;
+                if (parsed.command.length > 0) service.command = parsed.command;
+
+                const composeObj = {
+                    version: '3.8',
+                    services: {
+                        [serviceName]: service
+                    }
+                };
+                
+                // Add top-level networks if they don't look like pre-existing ones
+                if(parsed.networks.length > 0) {
+                    composeObj.networks = {};
+                    parsed.networks.forEach(net => {
+                        if(net !== 'host' && net !== 'bridge' && net !== 'none') {
+                           composeObj.networks[net] = { external: false }; // A sensible default
+                        }
+                    });
+                    if (Object.keys(composeObj.networks).length === 0) delete composeObj.networks;
+                }
+
+                return jsyaml.dump(composeObj, { indent: 2, noRefs: true });
+            } catch (e) {
+                console.error('CLI to Compose Error:', e);
+                document.getElementById('cli-error').textContent = `Error: ${e.message}`;
+                document.getElementById('cli-error').style.display = 'block';
+                return '';
+            }
+        }
+
+        function composeToCli(yamlString) {
+            try {
+                const composeObj = jsyaml.load(yamlString);
+                if (!composeObj || typeof composeObj.services !== 'object') {
+                    throw new Error('Invalid docker-compose file: "services" key not found.');
+                }
+
+                const commands = [];
+                const serviceNames = Object.keys(composeObj.services);
+
+                // 1. Create Networks
+                if (composeObj.networks) {
+                    for (const netName in composeObj.networks) {
+                        const net = composeObj.networks[netName];
+                        if (!net || net.external) continue;
+                        let cmd = `docker network create`;
+                        if(net.driver) cmd += ` --driver ${net.driver}`;
+                        // Add other network options here if needed
+                        cmd += ` ${netName}`;
+                        commands.push(cmd);
+                    }
+                }
+                
+                // 2. Create Volumes
+                if (composeObj.volumes) {
+                     for (const volName in composeObj.volumes) {
+                        const vol = composeObj.volumes[volName];
+                        if (!vol || vol.external) continue;
+                        commands.push(`docker volume create ${volName}`);
+                    }
+                }
+                
+                if (commands.length > 0) commands.push(''); // Add a newline for readability
+
+                // 3. Create Services
+                for (const serviceName of serviceNames) {
+                    const service = composeObj.services[serviceName];
+                    let cmd = ['docker run -d'];
+
+                    cmd.push(`--name ${service.container_name || serviceName}`);
+
+                    if (service.restart) cmd.push(`--restart ${service.restart}`);
+                    if (service.stdin_open && service.tty) cmd.push('-it');
+                    else if (service.stdin_open) cmd.push('-i');
+                    else if (service.tty) cmd.push('-t');
+
+                    if (service.ports) {
+                        service.ports.forEach(p => cmd.push(`-p "${p}"`));
+                    }
+                    if (service.volumes) {
+                        service.volumes.forEach(v => cmd.push(`-v "${v}"`));
+                    }
+                    if (service.environment) {
+                        if (Array.isArray(service.environment)) {
+                            service.environment.forEach(e => cmd.push(`-e "${e}"`));
+                        } else {
+                            Object.entries(service.environment).forEach(([k, v]) => cmd.push(`-e "${k}=${v}"`));
+                        }
+                    }
+                     if (service.networks) {
+                        const networks = Array.isArray(service.networks) ? service.networks : Object.keys(service.networks);
+                        networks.forEach(n => cmd.push(`--network ${n}`));
+                    }
+                     if (service.labels) {
+                        const labels = Array.isArray(service.labels) ? service.labels : Object.entries(service.labels).map(([k,v]) => `${k}=${v}`);
+                        labels.forEach(l => cmd.push(`--label "${l}"`));
+                    }
+                     if (service.extra_hosts) {
+                        service.extra_hosts.forEach(h => cmd.push(`--add-host "${h}"`));
+                    }
+                    
+                    cmd.push(service.image);
+
+                    if (service.command) {
+                        const commandParts = Array.isArray(service.command) ? service.command.join(' ') : service.command;
+                        cmd.push(commandParts);
+                    }
+
+                    commands.push(cmd.join(' \\\n  '));
+                }
+
+                return commands.join('\n\n');
+
+            } catch (e) {
+                console.error('Compose to CLI Error:', e);
+                document.getElementById('compose-error').textContent = `Error: ${e.message}`;
+                document.getElementById('compose-error').style.display = 'block';
+                return '';
+            }
+        }
+
+
+        // --- Event Listeners and UI ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cliInput = document.getElementById('cli-input');
+            const composeOutput = document.getElementById('compose-output');
+            const toComposeBtn = document.getElementById('to-compose-btn');
+            const cliError = document.getElementById('cli-error');
+
+            const composeInput = document.getElementById('compose-input');
+            const cliOutput = document.getElementById('cli-output');
+            const toCliBtn = document.getElementById('to-cli-btn');
+            const composeError = document.getElementById('compose-error');
+
+            // Initial conversion on load
+            composeOutput.textContent = cliToCompose(cliInput.value);
+            cliOutput.textContent = composeToCli(composeInput.value);
+
+
+            toComposeBtn.addEventListener('click', () => {
+                cliError.style.display = 'none';
+                const result = cliToCompose(cliInput.value);
+                composeOutput.textContent = result;
+            });
+
+            toCliBtn.addEventListener('click', () => {
+                composeError.style.display = 'none';
+                const result = composeToCli(composeInput.value);
+                cliOutput.textContent = result;
+            });
+        });
+
+        function copyToClipboard(elementId) {
+            const textToCopy = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // Optional: Show a "Copied!" message
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+    </script>
+</body>
+</html>
