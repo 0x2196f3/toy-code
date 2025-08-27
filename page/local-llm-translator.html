@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Local LLM Translator</title>
+    <script>
+        // IIFE to set theme immediately and prevent flash of unstyled content (FOUC)
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('theme');
+                // If a theme is saved, apply it. Otherwise, default to dark.
+                const theme = savedTheme || 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {
+                // Fallback if localStorage is unavailable
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -18,7 +32,7 @@
             --button-border-color: #dadce0;
         }
 
-        body[data-theme='dark'] {
+        html[data-theme='dark'] body {
             --bg-color: #202124;
             --panel-bg: #303134;
             --text-color: #e8eaed;
@@ -51,7 +65,9 @@
             border-radius: 8px;
             box-shadow: 0 1px 6px var(--shadow-color);
             overflow: hidden;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, height 0.3s, border-radius 0.3s;
+            display: flex;
+            flex-direction: column;
         }
 
         header {
@@ -61,6 +77,7 @@
             padding: 12px 20px;
             border-bottom: 1px solid var(--border-color);
             transition: border-color 0.3s;
+            flex-shrink: 0;
         }
 
         header h1 { font-size: 22px; margin: 0; font-weight: 500; }
@@ -73,7 +90,7 @@
         }
         .icon-btn:hover { background-color: var(--hover-bg); }
 
-        .main-content { display: flex; flex-wrap: wrap; gap: 2px; background-color: var(--border-color); }
+        .main-content { display: flex; flex-wrap: wrap; gap: 2px; background-color: var(--border-color); flex-grow: 1; }
         .panel { flex: 1 1 400px; display: flex; flex-direction: column; background-color: var(--panel-bg); transition: background-color 0.3s; }
         .language-selector { padding: 10px 15px; border-bottom: 1px solid var(--border-color); transition: border-color 0.3s; }
         
@@ -85,8 +102,16 @@
         .language-selector select { border-color: transparent; }
         .language-selector select:hover { background-color: var(--hover-bg); }
 
+        .textarea-wrapper {
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
         textarea {
-            flex-grow: 1; padding: 15px; border: none; resize: none; font-size: 18px;
+            flex-grow: 1; padding: 15px; padding-bottom: 30px; /* space for char count */
+            border: none; resize: none; font-size: 18px;
             line-height: 1.6; min-height: 300px; background-color: transparent;
             color: var(--text-color); transition: color 0.3s;
         }
@@ -98,6 +123,14 @@
             color: var(--primary-text); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s;
         }
         #translate-btn:hover { opacity: 0.9; }
+
+        .char-count {
+            position: absolute;
+            bottom: 8px;
+            right: 15px;
+            font-size: 12px;
+            color: var(--secondary-text-color);
+        }
 
         .loader {
             position: absolute; top: 15px; left: 15px; border: 4px solid var(--hover-bg);
@@ -130,6 +163,29 @@
         #save-settings-btn { background-color: var(--primary-color); color: var(--primary-text); }
         #cancel-settings-btn { background-color: var(--panel-bg); color: var(--text-color); border-color: var(--button-border-color); }
         #cancel-settings-btn:hover { background-color: var(--hover-bg); }
+
+        /* Mobile full-screen styles */
+        @media (max-width: 600px) {
+            body {
+                padding: 0;
+            }
+            .translator-container {
+                height: 100vh;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            .main-content {
+                flex-direction: column;
+                flex-grow: 1;
+            }
+            .panel {
+                flex-basis: auto;
+                flex-grow: 1;
+            }
+            textarea {
+                min-height: 150px; /* Adjust as needed for smaller screens */
+            }
+        }
     </style>
 </head>
 <body>
@@ -146,14 +202,18 @@
         <main class="main-content">
             <div class="panel source-panel">
                 <div class="language-selector"><select id="source-lang"></select></div>
-                <textarea id="source-text" placeholder="Enter text..."></textarea>
+                <div class="textarea-wrapper">
+                    <textarea id="source-text" placeholder="Enter text..."></textarea>
+                    <div id="source-char-count" class="char-count">0</div>
+                </div>
                  <div class="panel-footer"><button id="translate-btn">Translate</button></div>
             </div>
             <div class="panel result-panel">
                 <div class="language-selector"><select id="dest-lang"></select></div>
-                <div style="position: relative; flex-grow: 1;">
-                     <textarea id="result-text" placeholder="Translation" readonly></textarea>
-                     <div class="loader" id="loader"></div>
+                <div class="textarea-wrapper">
+                    <textarea id="result-text" placeholder="Translation" readonly></textarea>
+                    <div class="loader" id="loader"></div>
+                    <div id="result-char-count" class="char-count">0</div>
                 </div>
             </div>
         </main>
@@ -176,6 +236,7 @@
                 <label for="server-url">Server Base URL</label>
                 <input type="text" id="server-url">
                 <small id="ollama-url-hint">Enter the base URL. E.g., `http://localhost:11434`</small>
+                <small id="ollama-cors-hint" style="display: none;">⚠️ Your Ollama server must be configured to accept requests from this page (CORS). See documentation on setting `OLLAMA_ORIGINS` to `*`.</small>
                 <small id="openai-url-hint" style="display: none;">Enter the base URL. E.g., `http://localhost:8080`</small>
             </div>
             <div class="form-group">
@@ -185,7 +246,7 @@
             <div class="form-group">
                 <label for="model-name">Model Name</label>
                 <input type="text" id="model-name">
-                 <small>For Ollama: `gemma:2b`. For OpenAI-compatible: model file path or identifier.</small>
+                 <small>For Ollama: `gemma3:270m`. For OpenAI-compatible: model file path or identifier.</small>
             </div>
             <div class="form-group">
                 <label for="prompt-template">Prompt Template</label>
@@ -208,6 +269,8 @@
                 destLang: document.getElementById('dest-lang'),
                 sourceText: document.getElementById('source-text'),
                 resultText: document.getElementById('result-text'),
+                sourceCharCount: document.getElementById('source-char-count'),
+                resultCharCount: document.getElementById('result-char-count'),
                 settingsBtn: document.getElementById('settings-btn'),
                 themeToggleBtn: document.getElementById('theme-toggle-btn'),
                 translateBtn: document.getElementById('translate-btn'),
@@ -221,6 +284,7 @@
                 promptTemplate: document.getElementById('prompt-template'),
                 loader: document.getElementById('loader'),
                 ollamaUrlHint: document.getElementById('ollama-url-hint'),
+                ollamaCorsHint: document.getElementById('ollama-cors-hint'),
                 openaiUrlHint: document.getElementById('openai-url-hint'),
             };
 
@@ -234,7 +298,7 @@
             const DEFAULT_PROMPT = `As an expert translator, your task is to translate the given text. Identify the source language if it is set to 'auto'. Translate from {{source_language}} to {{destination_language}}. Provide ONLY the translated text, without any additional explanations, conversational text, or notes about the languages.\n\nText: "{{text}}"`;
             const DEFAULTS = {
                 apiType: 'ollama', serverUrl: 'http://localhost:11434', apiKey: '',
-                model: 'gemma:2b', prompt: DEFAULT_PROMPT, sourceLang: 'auto', destLang: 'English'
+                model: 'gemma3:270m', prompt: DEFAULT_PROMPT, sourceLang: 'auto', destLang: 'English'
             };
             let currentSettings = {};
 
@@ -295,34 +359,33 @@
                     date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
                     expires = "; expires=" + date.toUTCString();
                 }
-                document.cookie = `${name}=${value || ""}${expires}; path=/; SameSite=Lax`;
+                document.cookie = `${name}=${encodeURIComponent(value) || ""}${expires}; path=/; SameSite=Lax`;
             };
 
             const getCookie = (name) => {
                 const ca = document.cookie.split(';');
                 for (let c of ca) {
                     c = c.trim();
-                    if (c.startsWith(name + "=")) return c.substring(name.length + 1);
+                    if (c.startsWith(name + "=")) return decodeURIComponent(c.substring(name.length + 1));
                 }
                 return null;
             };
 
             // --- Theme Management ---
             const applyTheme = (theme) => {
-                document.body.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-theme', theme);
                 localStorage.setItem('theme', theme);
             };
-            const toggleTheme = () => applyTheme(localStorage.getItem('theme') === 'light' ? 'dark' : 'light');
-            const initializeTheme = () => {
-                const savedTheme = localStorage.getItem('theme');
-                const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-                applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
+            const toggleTheme = () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
             };
             
             // --- UI Functions ---
             const updateUrlHint = (apiType) => {
                 const isOllama = apiType === 'ollama';
                 dom.ollamaUrlHint.style.display = isOllama ? 'block' : 'none';
+                dom.ollamaCorsHint.style.display = isOllama ? 'block' : 'none';
                 dom.openaiUrlHint.style.display = isOllama ? 'none' : 'block';
             };
 
@@ -330,6 +393,10 @@
                 Object.keys(LANGUAGES).forEach(lang => dom.destLang.add(new Option(lang, lang)));
                 dom.sourceLang.add(new Option('Auto Detect', 'auto'));
                 Object.keys(LANGUAGES).forEach(lang => dom.sourceLang.add(new Option(lang, lang)));
+            };
+
+            const updateCharCount = (textarea, countElement) => {
+                countElement.textContent = textarea.value.length;
             };
 
             const loadSettings = () => {
@@ -374,11 +441,14 @@
                 const text = dom.sourceText.value.trim();
                 if (!text) {
                     dom.resultText.value = '';
+                    updateCharCount(dom.resultText, dom.resultCharCount);
                     return;
                 }
 
                 dom.loader.style.display = 'block';
                 dom.resultText.value = '';
+                updateCharCount(dom.resultText, dom.resultCharCount);
+
 
                 const finalPrompt = currentSettings.prompt
                     .replace('{{text}}', text.replace(/"/g, '\\"'))
@@ -399,6 +469,7 @@
                     dom.resultText.value = hint + `--- Technical Details ---\nError: ${error.message}`;
                 } finally {
                     dom.loader.style.display = 'none';
+                    updateCharCount(dom.resultText, dom.resultCharCount);
                 }
             };
 
@@ -414,20 +485,20 @@
                 dom.saveSettingsBtn.addEventListener('click', saveSettings);
                 dom.apiType.addEventListener('change', () => updateUrlHint(dom.apiType.value));
                 
-                const handleLangChange = (cookieName, langEl) => () => {
-                     setCookie(cookieName, langEl.value, 365);
-                     if (dom.sourceText.value.trim()) translate();
-                };
-                dom.sourceLang.addEventListener('change', handleLangChange('translator_src', dom.sourceLang));
-                dom.destLang.addEventListener('change', handleLangChange('translator_dst', dom.destLang));
+                dom.sourceText.addEventListener('input', () => updateCharCount(dom.sourceText, dom.sourceCharCount));
+
+                // Save language preference on change, but don't auto-translate
+                dom.sourceLang.addEventListener('change', () => setCookie('translator_src', dom.sourceLang.value, 365));
+                dom.destLang.addEventListener('change', () => setCookie('translator_dst', dom.destLang.value, 365));
             };
 
             // --- Initialization ---
             const init = () => {
-                initializeTheme();
                 populateLanguages();
                 loadSettings();
                 addEventListeners();
+                updateCharCount(dom.sourceText, dom.sourceCharCount);
+                updateCharCount(dom.resultText, dom.resultCharCount);
             };
 
             init();
