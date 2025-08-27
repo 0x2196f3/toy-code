@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local LLM Chat</title>
+    <style>
+        :root {
+            --body-bg: #f4f4f9;
+            --chat-bg: #ffffff;
+            --header-bg: #ffffff;
+            --user-msg-bg: #007bff;
+            --user-msg-color: #ffffff;
+            --bot-msg-bg: #e9e9eb;
+            --bot-msg-color: #000000;
+            --input-bg: #ffffff;
+            --input-color: #000000;
+            --border-color: #dddddd;
+            --button-bg: #007bff;
+            --button-color: #ffffff;
+            --button-hover-bg: #0056b3;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --modal-bg: rgba(0, 0, 0, 0.5);
+            --modal-content-bg: #fefefe;
+            --error-color: #dc3545;
+            --icon-fill: #555;
+            --icon-fill-hover: #000;
+            --toast-bg: #333;
+            --toast-color: #fff;
+            --details-bg: #f0f0f0;
+        }
+
+        [data-theme="dark"] {
+            --body-bg: #121212;
+            --chat-bg: #1e1e1e;
+            --header-bg: #1e1e1e;
+            --user-msg-bg: #377dff;
+            --bot-msg-bg: #333333;
+            --bot-msg-color: #e0e0e0;
+            --input-bg: #2c2c2c;
+            --input-color: #e0e0e0;
+            --border-color: #444444;
+            --shadow-color: rgba(255, 255, 255, 0.05);
+            --modal-content-bg: #2c2c2c;
+            --error-color: #ff5c5c;
+            --icon-fill: #aaa;
+            --icon-fill-hover: #fff;
+            --toast-bg: #e0e0e0;
+            --toast-color: #121212;
+            --details-bg: #2a2a2a;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--body-bg);
+            color: var(--bot-msg-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--chat-bg);
+            box-shadow: 0 0 20px var(--shadow-color);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--header-bg);
+        }
+
+        .header h1 {
+            font-size: 1.2em;
+            margin: 0;
+        }
+
+        .header .controls button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 10px;
+        }
+        
+        .header .controls button svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--icon-fill);
+        }
+        
+        .header .controls button:hover svg {
+            fill: var(--icon-fill-hover);
+        }
+
+        #chat-container {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background-color: var(--user-msg-bg);
+            color: var(--user-msg-color);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-message {
+            background-color: var(--bot-msg-bg);
+            color: var(--bot-msg-color);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .bot-message.error {
+            background-color: var(--error-color);
+            color: white;
+        }
+        
+        .bot-message p {
+            margin: 0;
+        }
+        
+        .bot-message p:not(:last-child) {
+            margin-bottom: 1em;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background-color: var(--bot-msg-color);
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        .input-area {
+            display: flex;
+            padding: 15px 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        #message-input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            background-color: var(--input-bg);
+            color: var(--input-color);
+            resize: none;
+            font-size: 1em;
+            line-height: 1.4;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        #message-input:focus {
+            outline: none;
+            border-color: var(--user-msg-bg);
+        }
+
+        #send-button {
+            background-color: var(--button-bg);
+            color: var(--button-color);
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #send-button:hover {
+            background-color: var(--button-hover-bg);
+        }
+        
+        #send-button svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        /* Settings Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: var(--modal-bg);
+        }
+
+        .modal-content {
+            background-color: var(--modal-content-bg);
+            margin: 10% auto;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            width: 90%;
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group.inline {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .form-group.inline > div {
+            flex: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            color: var(--input-color);
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .modal-buttons {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        #save-settings-button {
+            background-color: var(--button-bg);
+            color: white;
+        }
+        
+        #close-settings-button {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast {
+            background-color: var(--toast-bg);
+            color: var(--toast-color);
+            padding: 12px 20px;
+            border-radius: 25px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            font-size: 0.9em;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translateY(20px);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="header">
+            <h1>Local LLM Chat</h1>
+            <div class="controls">
+                <button id="theme-button" title="Toggle Theme">
+                    <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-5.4-5.4c0-1.81 1.87-3.21 3.21-3.21S13.8 5.4 13.8 7.21c0 .46.04.92.1 1.36a9.01 9.01 0 0 0-1.9-10.57z"/></svg>
+                </button>
+                <button id="clear-button" title="Clear Chat">
+                    <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+                <button id="settings-button" title="Settings">
+                     <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61-.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l-.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+                </button>
+            </div>
+        </header>
+        
+        <div id="chat-container">
+            </div>
+
+        <div class="input-area">
+            <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
+            <button id="send-button" title="Send Message">
+                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h2>Settings</h2>
+            
+            <div class="form-group">
+                <label for="api-type">API Type</label>
+                <select id="api-type">
+                    <option value="ollama">Ollama</option>
+                    <option value="openai">OpenAI-Compatible</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="server-url">Server URL</label>
+                <input type="text" id="server-url" placeholder="http://localhost:11434">
+            </div>
+
+            <div class="form-group">
+                <label for="api-key">API Key (optional)</label>
+                <input type="password" id="api-key" placeholder="Enter your API key if needed">
+            </div>
+
+            <div class="form-group">
+                <label for="model-name">Model Name</label>
+                <input type="text" id="model-name" placeholder="gemma">
+            </div>
+
+            <div class="form-group inline">
+                <div>
+                    <label for="temperature">Temperature</label>
+                    <input type="number" id="temperature" min="0" max="2" step="0.1" placeholder="1.0">
+                </div>
+                <div>
+                    <label for="top-p">Top P</label>
+                    <input type="number" id="top-p" min="0" max="1" step="0.05" placeholder="1.0">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="system-prompt">System Prompt</label>
+                <textarea id="system-prompt" placeholder="Optional: Define the AI's role and behavior."></textarea>
+            </div>
+
+            <div class="modal-buttons">
+                <button id="close-settings-button">Close</button>
+                <button id="save-settings-button">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const chatContainer = document.getElementById('chat-container');
+            const messageInput = document.getElementById('message-input');
+            const sendButton = document.getElementById('send-button');
+            const clearButton = document.getElementById('clear-button');
+            const settingsButton = document.getElementById('settings-button');
+            const themeButton = document.getElementById('theme-button');
+            const settingsModal = document.getElementById('settings-modal');
+            const closeSettingsButton = document.getElementById('close-settings-button');
+            const saveSettingsButton = document.getElementById('save-settings-button');
+            const toastContainer = document.getElementById('toast-container');
+            
+            // Settings Form Elements
+            const apiTypeSelect = document.getElementById('api-type');
+            const serverUrlInput = document.getElementById('server-url');
+            const apiKeyInput = document.getElementById('api-key');
+            const modelNameInput = document.getElementById('model-name');
+            const temperatureInput = document.getElementById('temperature');
+            const topPInput = document.getElementById('top-p');
+            const systemPromptInput = document.getElementById('system-prompt');
+            
+            let conversationHistory = [];
+            let abortController = null;
+
+            // --- Toast Notification Management ---
+            const showToast = (message, duration = 3000) => {
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.textContent = message;
+                toastContainer.appendChild(toast);
+
+                // Animate in
+                setTimeout(() => {
+                    toast.classList.add('show');
+                }, 100);
+
+                // Animate out and remove
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    toast.addEventListener('transitionend', () => {
+                        toast.remove();
+                    });
+                }, duration);
+            };
+
+            // --- Theme Management ---
+            const applyTheme = (theme) => {
+                if (theme === 'auto') {
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
+                } else {
+                    document.documentElement.dataset.theme = theme;
+                }
+            };
+            
+            const loadTheme = () => {
+                const savedTheme = localStorage.getItem('llmChatTheme') || 'auto';
+                applyTheme(savedTheme);
+            };
+
+            themeButton.addEventListener('click', () => {
+                let currentTheme = localStorage.getItem('llmChatTheme') || 'auto';
+                const newTheme = currentTheme === 'auto' ? 'light' : currentTheme === 'light' ? 'dark' : 'auto';
+                localStorage.setItem('llmChatTheme', newTheme);
+                applyTheme(newTheme);
+                showToast(`Theme set to ${newTheme}`);
+            });
+            
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (localStorage.getItem('llmChatTheme') === 'auto') {
+                    applyTheme('auto');
+                }
+            });
+
+            // --- Settings Management ---
+            const loadSettings = () => {
+                const settings = JSON.parse(localStorage.getItem('llmChatSettings'));
+                if (settings) {
+                    apiTypeSelect.value = settings.apiType || 'ollama';
+                    serverUrlInput.value = settings.serverUrl || 'http://localhost:11434';
+                    apiKeyInput.value = settings.apiKey || '';
+                    modelNameInput.value = settings.modelName || 'gemma';
+                    temperatureInput.value = settings.temperature || '1';
+                    topPInput.value = settings.topP || '1';
+                    systemPromptInput.value = settings.systemPrompt || '';
+                } else {
+                    // Default values
+                    apiTypeSelect.value = 'ollama';
+                    serverUrlInput.value = 'http://localhost:11434';
+                    modelNameInput.value = 'gemma';
+                    temperatureInput.value = '1';
+                    topPInput.value = '1';
+                }
+            };
+
+            const saveSettings = () => {
+                const settings = {
+                    apiType: apiTypeSelect.value,
+                    serverUrl: serverUrlInput.value.trim(),
+                    apiKey: apiKeyInput.value.trim(),
+                    modelName: modelNameInput.value.trim(),
+                    temperature: temperatureInput.value,
+                    topP: topPInput.value,
+                    systemPrompt: systemPromptInput.value.trim(),
+                };
+                localStorage.setItem('llmChatSettings', JSON.stringify(settings));
+                settingsModal.style.display = 'none';
+                showToast('Settings saved!');
+            };
+
+            // --- UI Interaction ---
+            const addMessage = (sender, text, className = '') => {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message', `${sender}-message`);
+                if(className) messageElement.classList.add(className);
+                
+                // Use innerHTML to support the typing indicator span
+                messageElement.innerHTML = text.replace(/\n/g, '<br>');
+
+                chatContainer.appendChild(messageElement);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                return messageElement;
+            };
+            
+            const handleSendMessage = () => {
+                const messageText = messageInput.value.trim();
+                if (!messageText) return;
+                addMessage('user', messageText);
+                conversationHistory.push({ role: 'user', content: messageText });
+                messageInput.value = '';
+                messageInput.style.height = 'auto'; // Reset height
+                streamResponse();
+            };
+
+            const streamResponse = async () => {
+                const botMessageElement = addMessage('bot', '<span class="typing-indicator"><span></span></span>');
+                abortController = new AbortController();
+
+                try {
+                    const settings = JSON.parse(localStorage.getItem('llmChatSettings'));
+                    if (!settings || !settings.serverUrl || !settings.modelName) {
+                        throw new Error("API settings are not configured. Please configure them in the settings menu.");
+                    }
+
+                    let headers = { 'Content-Type': 'application/json' };
+                    
+                    const messages = [];
+                    if (settings.systemPrompt) {
+                        messages.push({ role: 'system', content: settings.systemPrompt });
+                    }
+                    messages.push(...conversationHistory);
+                    
+                    const temp = parseFloat(settings.temperature);
+                    const topP = parseFloat(settings.topP);
+
+                    let endpoint, body;
+                    if (settings.apiType === 'ollama') {
+                        endpoint = settings.serverUrl.replace(/\/$/, '') + '/api/chat';
+                        body = {
+                            model: settings.modelName,
+                            messages: messages,
+                            stream: true,
+                            options: {}
+                        };
+                        if (!isNaN(temp)) body.options.temperature = temp;
+                        if (!isNaN(topP)) body.options.top_p = topP;
+
+                    } else { // openai-compatible
+                        endpoint = settings.serverUrl.replace(/\/$/, '') + '/v1/chat/completions';
+                        if (settings.apiKey) {
+                            headers['Authorization'] = `Bearer ${settings.apiKey}`;
+                        }
+                        body = {
+                            model: settings.modelName,
+                            messages: messages,
+                            stream: true,
+                        };
+                        if (!isNaN(temp)) body.temperature = temp;
+                        if (!isNaN(topP)) body.top_p = topP;
+                    }
+
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify(body),
+                        signal: abortController.signal,
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let fullResponse = '';
+                    botMessageElement.innerHTML = ''; // Clear typing indicator
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        const chunk = decoder.decode(value, { stream: true });
+                        const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+                        for (const line of lines) {
+                            let token = '';
+                            try {
+                                if (settings.apiType === 'ollama') {
+                                    const parsed = JSON.parse(line);
+                                    token = parsed.message?.content || '';
+                                } else { // openai-compatible
+                                    if (line.startsWith('data: ')) {
+                                        const data = line.substring(6);
+                                        if(data.trim() === '[DONE]') continue;
+                                        const parsed = JSON.parse(data);
+                                        token = parsed.choices[0]?.delta?.content || '';
+                                    }
+                                }
+                                
+                                if (token) {
+                                    fullResponse += token;
+                                    botMessageElement.innerHTML = fullResponse.replace(/\n/g, '<br>');
+                                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                                }
+                            } catch (e) {
+                                console.error('Failed to parse stream line:', line, e);
+                            }
+                        }
+                    }
+                    conversationHistory.push({ role: 'assistant', content: fullResponse });
+
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        botMessageElement.innerHTML = 'Request aborted.';
+                    } else {
+                        console.error('Error streaming response:', error);
+                        botMessageElement.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                        botMessageElement.classList.add('error');
+                    }
+                } finally {
+                    abortController = null;
+                }
+            };
+            
+            // --- Event Listeners ---
+            sendButton.addEventListener('click', handleSendMessage);
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                }
+            });
+            messageInput.addEventListener('input', () => {
+                messageInput.style.height = 'auto';
+                messageInput.style.height = (messageInput.scrollHeight) + 'px';
+            });
+            clearButton.addEventListener('click', () => {
+                // Using a custom modal for confirmation would be the next step,
+                // but for now, we stick to confirm() as it's a confirmation dialog.
+                if (confirm('Are you sure you want to clear the chat history?')) {
+                    chatContainer.innerHTML = '';
+                    conversationHistory = [];
+                    if (abortController) {
+                        abortController.abort();
+                    }
+                }
+            });
+            settingsButton.addEventListener('click', () => { settingsModal.style.display = 'block'; });
+            closeSettingsButton.addEventListener('click', () => { settingsModal.style.display = 'none'; });
+            saveSettingsButton.addEventListener('click', saveSettings);
+            window.addEventListener('click', (event) => {
+                if (event.target == settingsModal) {
+                    settingsModal.style.display = 'none';
+                }
+            });
+
+            // --- Initial Load ---
+            loadTheme();
+            loadSettings();
+        });
+    </script>
+</body>
+</html>
