@@ -28,6 +28,10 @@
             --toast-bg: #333;
             --toast-color: #fff;
             --details-bg: #f0f0f0;
+            --info-text-color: #6c757d;
+            --theme-icon-auto: #6c757d;
+            --theme-icon-light: #f39c12;
+            --theme-icon-dark: #377dff;
         }
 
         [data-theme="dark"] {
@@ -48,8 +52,12 @@
             --toast-bg: #e0e0e0;
             --toast-color: #121212;
             --details-bg: #2a2a2a;
+            --info-text-color: #888;
         }
 
+        /* This script is placed in the head to prevent the flash of unstyled content (FOUC) */
+        /* It applies the theme before the body even starts rendering. */
+        
         html, body {
             margin: 0;
             padding: 0;
@@ -77,6 +85,7 @@
             padding: 10px 20px;
             border-bottom: 1px solid var(--border-color);
             background-color: var(--header-bg);
+            flex-shrink: 0;
         }
 
         .header h1 {
@@ -96,11 +105,17 @@
             width: 24px;
             height: 24px;
             fill: var(--icon-fill);
+            transition: fill 0.2s ease-in-out;
         }
         
         .header .controls button:hover svg {
             fill: var(--icon-fill-hover);
         }
+
+        /* Theme button color states */
+        #theme-button.theme-auto svg { fill: var(--theme-icon-auto); }
+        #theme-button.theme-light svg { fill: var(--theme-icon-light); }
+        #theme-button.theme-dark svg { fill: var(--theme-icon-dark); }
 
         #chat-container {
             flex-grow: 1;
@@ -163,6 +178,8 @@
             display: flex;
             padding: 15px 20px;
             border-top: 1px solid var(--border-color);
+            align-items: flex-end;
+            flex-shrink: 0;
         }
 
         #message-input {
@@ -177,6 +194,11 @@
             line-height: 1.4;
             max-height: 100px;
             overflow-y: auto;
+            transition: max-height 0.2s ease-in-out;
+        }
+
+        #message-input.expanded {
+            max-height: 250px; /* Expanded height */
         }
 
         #message-input:focus {
@@ -184,28 +206,51 @@
             border-color: var(--user-msg-bg);
         }
 
-        #send-button {
+        .input-controls {
+            display: flex;
+            align-items: center;
+            margin-left: 10px;
+        }
+
+        .input-controls button {
             background-color: var(--button-bg);
             color: var(--button-color);
             border: none;
             border-radius: 50%;
             width: 42px;
             height: 42px;
-            margin-left: 10px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background-color 0.2s ease-in-out;
+        }
+        
+        #expand-button {
+            background-color: transparent;
+            margin-right: 5px;
+        }
+        
+        #expand-button svg {
+            fill: var(--icon-fill);
+        }
+        
+        #expand-button:hover svg {
+            fill: var(--icon-fill-hover);
         }
 
         #send-button:hover {
             background-color: var(--button-hover-bg);
         }
         
-        #send-button svg {
+        .input-controls button svg {
             width: 20px;
             height: 20px;
             fill: white;
+        }
+        
+        #expand-button svg {
+             fill: var(--icon-fill);
         }
 
         /* Settings Modal */
@@ -269,6 +314,12 @@
             min-height: 100px;
             resize: vertical;
         }
+        
+        .form-group .info-text {
+            font-size: 0.8em;
+            color: var(--info-text-color);
+            margin-top: 5px;
+        }
 
         .modal-buttons {
             text-align: right;
@@ -324,6 +375,19 @@
         }
 
     </style>
+    <script>
+        // This script is placed in the head to prevent the flash of unstyled content (FOUC).
+        // It applies the theme before the body even starts rendering.
+        (() => {
+            const savedTheme = localStorage.getItem('llmChatTheme') || 'dark'; // Default to dark
+            if (savedTheme === 'auto') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
+            } else {
+                document.documentElement.dataset.theme = savedTheme;
+            }
+        })();
+    </script>
 </head>
 <body>
 
@@ -348,9 +412,15 @@
 
         <div class="input-area">
             <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
-            <button id="send-button" title="Send Message">
-                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-            </button>
+            <div class="input-controls">
+                <button id="expand-button" title="Expand Input">
+                    <svg id="expand-icon" viewBox="0 0 24 24" style="width: 24px; height: 24px;"><path d="M20.5 11H13V3.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V11H4.5c-.28 0-.5.22-.5.5s.22.5.5.5H12v7.5c0 .28.22.5.5.5s.5-.22.5-.5V12h7.5c.28 0 .5-.22.5-.5s-.22-.5-.5-.5z"/></svg>
+                    <svg id="collapse-icon" viewBox="0 0 24 24" style="display: none; width: 24px; height: 24px;"><path d="M20.5 11.5c.28 0 .5-.22.5-.5s-.22-.5-.5-.5H3.5c-.28 0-.5.22-.5.5s.22.5.5.5h17z"/></svg>
+                </button>
+                <button id="send-button" title="Send Message">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -369,6 +439,7 @@
             <div class="form-group">
                 <label for="server-url">Server URL</label>
                 <input type="text" id="server-url" placeholder="http://localhost:11434">
+                <p class="info-text">⚠️ Your Ollama server must be configured to accept requests from this page (CORS). See documentation on setting <code>OLLAMA_ORIGINS</code> to <code>*</code>.</p>
             </div>
 
             <div class="form-group">
@@ -378,7 +449,7 @@
 
             <div class="form-group">
                 <label for="model-name">Model Name</label>
-                <input type="text" id="model-name" placeholder="gemma">
+                <input type="text" id="model-name" placeholder="gpt-oss:20b">
             </div>
 
             <div class="form-group inline">
@@ -393,8 +464,8 @@
             </div>
             
             <div class="form-group">
-                <label for="system-prompt">System Prompt</label>
-                <textarea id="system-prompt" placeholder="Optional: Define the AI's role and behavior."></textarea>
+                <label for="system-prompt">System Prompt (optional)</label>
+                <textarea id="system-prompt" placeholder="Define the AI's role and behavior."></textarea>
             </div>
 
             <div class="modal-buttons">
@@ -419,6 +490,9 @@
             const closeSettingsButton = document.getElementById('close-settings-button');
             const saveSettingsButton = document.getElementById('save-settings-button');
             const toastContainer = document.getElementById('toast-container');
+            const expandButton = document.getElementById('expand-button');
+            const expandIcon = document.getElementById('expand-icon');
+            const collapseIcon = document.getElementById('collapse-icon');
             
             // Settings Form Elements
             const apiTypeSelect = document.getElementById('api-type');
@@ -431,6 +505,7 @@
             
             let conversationHistory = [];
             let abortController = null;
+            let isInputExpanded = false;
 
             // --- Toast Notification Management ---
             const showToast = (message, duration = 3000) => {
@@ -455,22 +530,26 @@
 
             // --- Theme Management ---
             const applyTheme = (theme) => {
+                themeButton.classList.remove('theme-auto', 'theme-light', 'theme-dark');
                 if (theme === 'auto') {
                     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                     document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
+                    themeButton.classList.add('theme-auto');
                 } else {
                     document.documentElement.dataset.theme = theme;
+                    themeButton.classList.add(`theme-${theme}`);
                 }
             };
             
             const loadTheme = () => {
-                const savedTheme = localStorage.getItem('llmChatTheme') || 'auto';
+                const savedTheme = localStorage.getItem('llmChatTheme') || 'dark'; // Default to dark
                 applyTheme(savedTheme);
             };
 
             themeButton.addEventListener('click', () => {
-                let currentTheme = localStorage.getItem('llmChatTheme') || 'auto';
-                const newTheme = currentTheme === 'auto' ? 'light' : currentTheme === 'light' ? 'dark' : 'auto';
+                let currentTheme = localStorage.getItem('llmChatTheme') || 'dark';
+                // Cycle: dark -> light -> auto -> dark
+                const newTheme = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'auto' : 'dark';
                 localStorage.setItem('llmChatTheme', newTheme);
                 applyTheme(newTheme);
                 showToast(`Theme set to ${newTheme}`);
@@ -489,7 +568,7 @@
                     apiTypeSelect.value = settings.apiType || 'ollama';
                     serverUrlInput.value = settings.serverUrl || 'http://localhost:11434';
                     apiKeyInput.value = settings.apiKey || '';
-                    modelNameInput.value = settings.modelName || 'gemma';
+                    modelNameInput.value = settings.modelName || 'gpt-oss:20b';
                     temperatureInput.value = settings.temperature || '1';
                     topPInput.value = settings.topP || '1';
                     systemPromptInput.value = settings.systemPrompt || '';
@@ -497,7 +576,7 @@
                     // Default values
                     apiTypeSelect.value = 'ollama';
                     serverUrlInput.value = 'http://localhost:11434';
-                    modelNameInput.value = 'gemma';
+                    modelNameInput.value = 'gpt-oss:20b';
                     temperatureInput.value = '1';
                     topPInput.value = '1';
                 }
@@ -524,7 +603,7 @@
                 messageElement.classList.add('message', `${sender}-message`);
                 if(className) messageElement.classList.add(className);
                 
-                // Use innerHTML to support the typing indicator span
+                // Use innerHTML to support the typing indicator span and line breaks
                 messageElement.innerHTML = text.replace(/\n/g, '<br>');
 
                 chatContainer.appendChild(messageElement);
@@ -655,16 +734,34 @@
             
             // --- Event Listeners ---
             sendButton.addEventListener('click', handleSendMessage);
+            
             messageInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                // Only send with Enter if not in expanded mode and Shift is not pressed
+                if (e.key === 'Enter' && !e.shiftKey && !isInputExpanded) {
                     e.preventDefault();
                     handleSendMessage();
                 }
             });
+
             messageInput.addEventListener('input', () => {
                 messageInput.style.height = 'auto';
                 messageInput.style.height = (messageInput.scrollHeight) + 'px';
             });
+
+            expandButton.addEventListener('click', () => {
+                isInputExpanded = !isInputExpanded;
+                messageInput.classList.toggle('expanded', isInputExpanded);
+                if (isInputExpanded) {
+                    expandIcon.style.display = 'none';
+                    collapseIcon.style.display = 'block';
+                    expandButton.title = 'Collapse Input';
+                } else {
+                    expandIcon.style.display = 'block';
+                    collapseIcon.style.display = 'none';
+                    expandButton.title = 'Expand Input';
+                }
+            });
+
             clearButton.addEventListener('click', () => {
                 // Using a custom modal for confirmation would be the next step,
                 // but for now, we stick to confirm() as it's a confirmation dialog.
@@ -676,6 +773,7 @@
                     }
                 }
             });
+
             settingsButton.addEventListener('click', () => { settingsModal.style.display = 'block'; });
             closeSettingsButton.addEventListener('click', () => { settingsModal.style.display = 'none'; });
             saveSettingsButton.addEventListener('click', saveSettings);
