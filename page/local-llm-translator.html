@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local LLM Translator</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --panel-bg: #ffffff;
+            --text-color: #202124;
+            --secondary-text-color: #5f6368;
+            --border-color: #dadce0;
+            --primary-color: #1a73e8;
+            --primary-text: #ffffff;
+            --hover-bg: #f1f3f4;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --button-border-color: #dadce0;
+        }
+
+        body[data-theme='dark'] {
+            --bg-color: #202124;
+            --panel-bg: #303134;
+            --text-color: #e8eaed;
+            --secondary-text-color: #9aa0a6;
+            --border-color: #5f6368;
+            --primary-color: #8ab4f8;
+            --primary-text: #202124;
+            --hover-bg: #3c4043;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --button-border-color: #5f6368;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .translator-container {
+            width: 100%;
+            max-width: 900px;
+            background-color: var(--panel-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 6px var(--shadow-color);
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-color);
+            transition: border-color 0.3s;
+        }
+
+        header h1 { font-size: 22px; margin: 0; font-weight: 500; }
+        header .controls { display: flex; gap: 8px; }
+
+        .icon-btn {
+            background: none; border: none; font-size: 24px; cursor: pointer;
+            color: var(--secondary-text-color); padding: 8px; border-radius: 50%;
+            line-height: 1; transition: background-color 0.2s, color 0.2s;
+        }
+        .icon-btn:hover { background-color: var(--hover-bg); }
+
+        .main-content { display: flex; flex-wrap: wrap; gap: 2px; background-color: var(--border-color); }
+        .panel { flex: 1 1 400px; display: flex; flex-direction: column; background-color: var(--panel-bg); transition: background-color 0.3s; }
+        .language-selector { padding: 10px 15px; border-bottom: 1px solid var(--border-color); transition: border-color 0.3s; }
+        
+        .language-selector select, .form-group select {
+            width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;
+            background-color: var(--panel-bg); color: var(--text-color); font-size: 14px;
+            font-weight: 500; cursor: pointer; transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        .language-selector select { border-color: transparent; }
+        .language-selector select:hover { background-color: var(--hover-bg); }
+
+        textarea {
+            flex-grow: 1; padding: 15px; border: none; resize: none; font-size: 18px;
+            line-height: 1.6; min-height: 300px; background-color: transparent;
+            color: var(--text-color); transition: color 0.3s;
+        }
+        textarea:focus { outline: none; }
+        
+        .panel-footer { padding: 15px; text-align: right; }
+        #translate-btn {
+            padding: 10px 24px; font-size: 14px; font-weight: 500; background-color: var(--primary-color);
+            color: var(--primary-text); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s;
+        }
+        #translate-btn:hover { opacity: 0.9; }
+
+        .loader {
+            position: absolute; top: 15px; left: 15px; border: 4px solid var(--hover-bg);
+            border-top: 4px solid var(--primary-color); border-radius: 50%; width: 20px;
+            height: 20px; animation: spin 1s linear infinite; display: none;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%;
+            height: 100%; overflow: auto; background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: var(--panel-bg); color: var(--text-color); margin: auto; padding: 25px;
+            border: 1px solid var(--border-color); width: 90%; max-width: 500px; border-radius: 8px;
+            box-shadow: 0 4px 20px var(--shadow-color);
+        }
+        .modal-content h2 { margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color);
+            border-radius: 4px; background-color: var(--panel-bg); color: var(--text-color);
+        }
+        .form-group textarea { min-height: 120px; font-family: monospace; font-size: 13px; }
+        .form-group small { display: block; margin-top: 5px; color: var(--secondary-text-color); }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .modal-actions button { padding: 10px 20px; border-radius: 4px; border: 1px solid transparent; cursor: pointer; font-weight: 500; }
+        #save-settings-btn { background-color: var(--primary-color); color: var(--primary-text); }
+        #cancel-settings-btn { background-color: var(--panel-bg); color: var(--text-color); border-color: var(--button-border-color); }
+        #cancel-settings-btn:hover { background-color: var(--hover-bg); }
+    </style>
+</head>
+<body>
+
+    <div class="translator-container">
+        <header>
+            <h1>Local LLM Translator</h1>
+            <div class="controls">
+                <button id="theme-toggle-btn" class="icon-btn" title="Toggle Theme">🌓</button>
+                <button id="settings-btn" class="icon-btn" title="Settings">⚙️</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="panel source-panel">
+                <div class="language-selector"><select id="source-lang"></select></div>
+                <textarea id="source-text" placeholder="Enter text..."></textarea>
+                 <div class="panel-footer"><button id="translate-btn">Translate</button></div>
+            </div>
+            <div class="panel result-panel">
+                <div class="language-selector"><select id="dest-lang"></select></div>
+                <div style="position: relative; flex-grow: 1;">
+                     <textarea id="result-text" placeholder="Translation" readonly></textarea>
+                     <div class="loader" id="loader"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h2>Settings</h2>
+            <p>Configure your LLM API connection. Settings are saved in your browser's cookies.</p>
+            
+            <div class="form-group">
+                <label for="api-type">API Type</label>
+                <select id="api-type">
+                    <option value="ollama">Ollama</option>
+                    <option value="openai_compatible">OpenAI Compatible (LM Studio, Llama.cpp)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="server-url">Server Base URL</label>
+                <input type="text" id="server-url">
+                <small id="ollama-url-hint">Enter the base URL. E.g., `http://localhost:11434`</small>
+                <small id="openai-url-hint" style="display: none;">Enter the base URL. E.g., `http://localhost:8080`</small>
+            </div>
+            <div class="form-group">
+                <label for="api-key">API Key (Optional)</label>
+                <input type="text" id="api-key" placeholder="e.g., lm-studio">
+            </div>
+            <div class="form-group">
+                <label for="model-name">Model Name</label>
+                <input type="text" id="model-name">
+                 <small>For Ollama: `gemma:2b`. For OpenAI-compatible: model file path or identifier.</small>
+            </div>
+            <div class="form-group">
+                <label for="prompt-template">Prompt Template</label>
+                <textarea id="prompt-template"></textarea>
+                <small>Use `{{text}}`, `{{source_language}}`, and `{{destination_language}}` as placeholders.</small>
+            </div>
+            
+            <div class="modal-actions">
+                <button id="cancel-settings-btn">Cancel</button>
+                <button id="save-settings-btn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const dom = {
+                sourceLang: document.getElementById('source-lang'),
+                destLang: document.getElementById('dest-lang'),
+                sourceText: document.getElementById('source-text'),
+                resultText: document.getElementById('result-text'),
+                settingsBtn: document.getElementById('settings-btn'),
+                themeToggleBtn: document.getElementById('theme-toggle-btn'),
+                translateBtn: document.getElementById('translate-btn'),
+                settingsModal: document.getElementById('settings-modal'),
+                saveSettingsBtn: document.getElementById('save-settings-btn'),
+                cancelSettingsBtn: document.getElementById('cancel-settings-btn'),
+                apiType: document.getElementById('api-type'),
+                serverUrl: document.getElementById('server-url'),
+                apiKey: document.getElementById('api-key'),
+                modelName: document.getElementById('model-name'),
+                promptTemplate: document.getElementById('prompt-template'),
+                loader: document.getElementById('loader'),
+                ollamaUrlHint: document.getElementById('ollama-url-hint'),
+                openaiUrlHint: document.getElementById('openai-url-hint'),
+            };
+
+            // --- Configuration ---
+            const LANGUAGES = { 
+                'English': 'en', 'Spanish': 'es', 'French': 'fr', 'German': 'de', 
+                'Chinese (Simplified)': 'zh-CN', 'Chinese (Traditional)': 'zh-TW', 
+                'Japanese': 'ja', 'Korean': 'ko', 'Russian': 'ru', 'Arabic': 'ar', 
+                'Portuguese': 'pt', 'Italian': 'it', 'Hindi': 'hi' 
+            };
+            const DEFAULT_PROMPT = `As an expert translator, your task is to translate the given text. Identify the source language if it is set to 'auto'. Translate from {{source_language}} to {{destination_language}}. Provide ONLY the translated text, without any additional explanations, conversational text, or notes about the languages.\n\nText: "{{text}}"`;
+            const DEFAULTS = {
+                apiType: 'ollama', serverUrl: 'http://localhost:11434', apiKey: '',
+                model: 'gemma:2b', prompt: DEFAULT_PROMPT, sourceLang: 'auto', destLang: 'English'
+            };
+            let currentSettings = {};
+
+            // --- API Handler Interface & Implementations ---
+            class APIHandler {
+                async generate(prompt, settings) { throw new Error("generate() must be implemented by subclasses"); }
+            }
+
+            class OllamaAPI extends APIHandler {
+                async generate(prompt, { serverUrl, model, apiKey }) {
+                    const endpoint = `${serverUrl.replace(/\/$/, '')}/api/generate`;
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
+                        body: JSON.stringify({ model, prompt, stream: false }),
+                    });
+                    if (!response.ok) {
+                        const err = await response.json().catch(() => ({ error: response.statusText }));
+                        throw new Error(err.error);
+                    }
+                    const data = await response.json();
+                    return data.response.trim();
+                }
+            }
+
+            class OpenAICompatibleAPI extends APIHandler {
+                async generate(prompt, { serverUrl, model, apiKey }) {
+                    const endpoint = `${serverUrl.replace(/\/$/, '')}/v1/chat/completions`;
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
+                        body: JSON.stringify({
+                            model,
+                            messages: [{ role: "user", content: prompt }],
+                            stream: false,
+                        }),
+                    });
+                     if (!response.ok) {
+                        const err = await response.json().catch(() => ({ error: response.statusText }));
+                        throw new Error(err.message || err.error?.message || err.error || "Unknown API error");
+                    }
+                    const data = await response.json();
+                    return data.choices[0].message.content.trim();
+                }
+            }
+            
+            // API Factory
+            const getApiHandler = (apiType) => {
+                if (apiType === 'openai_compatible') return new OpenAICompatibleAPI();
+                return new OllamaAPI();
+            };
+
+            // --- Helper Functions ---
+            const setCookie = (name, value, days) => {
+                let expires = "";
+                if (days) {
+                    const date = new Date();
+                    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                    expires = "; expires=" + date.toUTCString();
+                }
+                document.cookie = `${name}=${value || ""}${expires}; path=/; SameSite=Lax`;
+            };
+
+            const getCookie = (name) => {
+                const ca = document.cookie.split(';');
+                for (let c of ca) {
+                    c = c.trim();
+                    if (c.startsWith(name + "=")) return c.substring(name.length + 1);
+                }
+                return null;
+            };
+
+            // --- Theme Management ---
+            const applyTheme = (theme) => {
+                document.body.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+            };
+            const toggleTheme = () => applyTheme(localStorage.getItem('theme') === 'light' ? 'dark' : 'light');
+            const initializeTheme = () => {
+                const savedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+                applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
+            };
+            
+            // --- UI Functions ---
+            const updateUrlHint = (apiType) => {
+                const isOllama = apiType === 'ollama';
+                dom.ollamaUrlHint.style.display = isOllama ? 'block' : 'none';
+                dom.openaiUrlHint.style.display = isOllama ? 'none' : 'block';
+            };
+
+            const populateLanguages = () => {
+                Object.keys(LANGUAGES).forEach(lang => dom.destLang.add(new Option(lang, lang)));
+                dom.sourceLang.add(new Option('Auto Detect', 'auto'));
+                Object.keys(LANGUAGES).forEach(lang => dom.sourceLang.add(new Option(lang, lang)));
+            };
+
+            const loadSettings = () => {
+                currentSettings = {
+                    apiType: getCookie('api_type') || DEFAULTS.apiType,
+                    serverUrl: getCookie('server_url') || DEFAULTS.serverUrl,
+                    apiKey: getCookie('api_key') || DEFAULTS.apiKey,
+                    model: getCookie('model_name') || DEFAULTS.model,
+                    prompt: getCookie('prompt_template') || DEFAULTS.prompt,
+                    sourceLang: getCookie('translator_src') || DEFAULTS.sourceLang,
+                    destLang: getCookie('translator_dst') || DEFAULTS.destLang,
+                };
+                dom.apiType.value = currentSettings.apiType;
+                dom.serverUrl.value = currentSettings.serverUrl;
+                dom.apiKey.value = currentSettings.apiKey;
+                dom.modelName.value = currentSettings.model;
+                dom.promptTemplate.value = currentSettings.prompt;
+                dom.sourceLang.value = currentSettings.sourceLang;
+                dom.destLang.value = currentSettings.destLang;
+                updateUrlHint(currentSettings.apiType);
+            };
+
+            const saveSettings = () => {
+                currentSettings.apiType = dom.apiType.value;
+                currentSettings.serverUrl = dom.serverUrl.value.trim();
+                currentSettings.apiKey = dom.apiKey.value.trim();
+                currentSettings.model = dom.modelName.value.trim();
+                currentSettings.prompt = dom.promptTemplate.value;
+                setCookie('api_type', currentSettings.apiType, 365);
+                setCookie('server_url', currentSettings.serverUrl, 365);
+                setCookie('api_key', currentSettings.apiKey, 365);
+                setCookie('model_name', currentSettings.model, 365);
+                setCookie('prompt_template', currentSettings.prompt, 365);
+                toggleSettingsModal(false);
+            };
+
+            const toggleSettingsModal = (show) => {
+                dom.settingsModal.style.display = show ? 'flex' : 'none';
+            };
+
+            const translate = async () => {
+                const text = dom.sourceText.value.trim();
+                if (!text) {
+                    dom.resultText.value = '';
+                    return;
+                }
+
+                dom.loader.style.display = 'block';
+                dom.resultText.value = '';
+
+                const finalPrompt = currentSettings.prompt
+                    .replace('{{text}}', text.replace(/"/g, '\\"'))
+                    .replace('{{source_language}}', dom.sourceLang.value)
+                    .replace('{{destination_language}}', dom.destLang.value);
+                
+                try {
+                    const apiHandler = getApiHandler(currentSettings.apiType);
+                    const translation = await apiHandler.generate(finalPrompt, currentSettings);
+                    dom.resultText.value = translation;
+                } catch (error) {
+                    let hint = "Hint: Check your Server Base URL in settings. Ensure the server is running.\n\n";
+                    if (currentSettings.apiType === 'ollama') {
+                        hint += "For Ollama, ensure `OLLAMA_ORIGINS` is set to allow browser requests.\n\n";
+                    } else {
+                        hint += "For OpenAI-compatible servers, ensure it was started with API support enabled.\n\n";
+                    }
+                    dom.resultText.value = hint + `--- Technical Details ---\nError: ${error.message}`;
+                } finally {
+                    dom.loader.style.display = 'none';
+                }
+            };
+
+            // --- Event Listeners ---
+            const addEventListeners = () => {
+                dom.settingsBtn.addEventListener('click', () => toggleSettingsModal(true));
+                dom.themeToggleBtn.addEventListener('click', toggleTheme);
+                dom.translateBtn.addEventListener('click', translate);
+                dom.cancelSettingsBtn.addEventListener('click', () => toggleSettingsModal(false));
+                dom.settingsModal.addEventListener('click', (e) => {
+                    if (e.target === dom.settingsModal) toggleSettingsModal(false);
+                });
+                dom.saveSettingsBtn.addEventListener('click', saveSettings);
+                dom.apiType.addEventListener('change', () => updateUrlHint(dom.apiType.value));
+                
+                const handleLangChange = (cookieName, langEl) => () => {
+                     setCookie(cookieName, langEl.value, 365);
+                     if (dom.sourceText.value.trim()) translate();
+                };
+                dom.sourceLang.addEventListener('change', handleLangChange('translator_src', dom.sourceLang));
+                dom.destLang.addEventListener('change', handleLangChange('translator_dst', dom.destLang));
+            };
+
+            // --- Initialization ---
+            const init = () => {
+                initializeTheme();
+                populateLanguages();
+                loadSettings();
+                addEventListeners();
+            };
+
+            init();
+        });
+    </script>
+</body>
+</html>
