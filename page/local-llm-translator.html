@@ -5,15 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Local LLM Translator</title>
     <script>
-        // IIFE to set theme immediately and prevent flash of unstyled content (FOUC)
         (function() {
             try {
                 const savedTheme = localStorage.getItem('theme');
-                // If a theme is saved, apply it. Otherwise, default to dark.
                 const theme = savedTheme || 'dark';
                 document.documentElement.setAttribute('data-theme', theme);
             } catch (e) {
-                // Fallback if localStorage is unavailable
                 document.documentElement.setAttribute('data-theme', 'dark');
             }
         })();
@@ -263,7 +260,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- DOM Elements ---
             const dom = {
                 sourceLang: document.getElementById('source-lang'),
                 destLang: document.getElementById('dest-lang'),
@@ -288,21 +284,20 @@
                 openaiUrlHint: document.getElementById('openai-url-hint'),
             };
 
-            // --- Configuration ---
             const LANGUAGES = { 
                 'English': 'en', 'Spanish': 'es', 'French': 'fr', 'German': 'de', 
                 'Chinese (Simplified)': 'zh-CN', 'Chinese (Traditional)': 'zh-TW', 
                 'Japanese': 'ja', 'Korean': 'ko', 'Russian': 'ru', 'Arabic': 'ar', 
                 'Portuguese': 'pt', 'Italian': 'it', 'Hindi': 'hi' 
             };
-            const DEFAULT_PROMPT = `As an expert translator, your task is to translate the given text. Identify the source language if it is set to 'auto'. Translate from {{source_language}} to {{destination_language}}. Provide ONLY the translated text, without any additional explanations, conversational text, or notes about the languages.\n\nText: "{{text}}"`;
+            const DEFAULT_PROMPT = `As an expert translator, translate the given text from {{source_language}} to {{destination_language}}. If the source is 'auto', identify it. Return ONLY translation, without explanations, notes, or conversation.\nText: "{{text}}"`;
+
             const DEFAULTS = {
                 apiType: 'ollama', serverUrl: 'http://localhost:11434', apiKey: '',
                 model: 'gemma3:270m', prompt: DEFAULT_PROMPT, sourceLang: 'auto', destLang: 'English'
             };
             let currentSettings = {};
 
-            // --- API Handler Interface & Implementations ---
             class APIHandler {
                 async generate(prompt, settings) { throw new Error("generate() must be implemented by subclasses"); }
             }
@@ -345,13 +340,11 @@
                 }
             }
             
-            // API Factory
             const getApiHandler = (apiType) => {
                 if (apiType === 'openai_compatible') return new OpenAICompatibleAPI();
                 return new OllamaAPI();
             };
 
-            // --- Helper Functions ---
             const setCookie = (name, value, days) => {
                 let expires = "";
                 if (days) {
@@ -371,7 +364,6 @@
                 return null;
             };
 
-            // --- Theme Management ---
             const applyTheme = (theme) => {
                 document.documentElement.setAttribute('data-theme', theme);
                 localStorage.setItem('theme', theme);
@@ -381,7 +373,6 @@
                 applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
             };
             
-            // --- UI Functions ---
             const updateUrlHint = (apiType) => {
                 const isOllama = apiType === 'ollama';
                 dom.ollamaUrlHint.style.display = isOllama ? 'block' : 'none';
@@ -460,20 +451,13 @@
                     const translation = await apiHandler.generate(finalPrompt, currentSettings);
                     dom.resultText.value = translation;
                 } catch (error) {
-                    let hint = "Hint: Check your Server Base URL in settings. Ensure the server is running.\n\n";
-                    if (currentSettings.apiType === 'ollama') {
-                        hint += "For Ollama, ensure `OLLAMA_ORIGINS` is set to allow browser requests.\n\n";
-                    } else {
-                        hint += "For OpenAI-compatible servers, ensure it was started with API support enabled.\n\n";
-                    }
-                    dom.resultText.value = hint + `--- Technical Details ---\nError: ${error.message}`;
+                    dom.resultText.value = hint + `Error: ${error.message}`;
                 } finally {
                     dom.loader.style.display = 'none';
                     updateCharCount(dom.resultText, dom.resultCharCount);
                 }
             };
 
-            // --- Event Listeners ---
             const addEventListeners = () => {
                 dom.settingsBtn.addEventListener('click', () => toggleSettingsModal(true));
                 dom.themeToggleBtn.addEventListener('click', toggleTheme);
@@ -487,12 +471,10 @@
                 
                 dom.sourceText.addEventListener('input', () => updateCharCount(dom.sourceText, dom.sourceCharCount));
 
-                // Save language preference on change, but don't auto-translate
                 dom.sourceLang.addEventListener('change', () => setCookie('translator_src', dom.sourceLang.value, 365));
                 dom.destLang.addEventListener('change', () => setCookie('translator_dst', dom.destLang.value, 365));
             };
 
-            // --- Initialization ---
             const init = () => {
                 populateLanguages();
                 loadSettings();
