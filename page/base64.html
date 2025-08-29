@@ -2,96 +2,221 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Base64 Encoder/Decoder</title>
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
-    body {
-      display: flex;
-      flex-direction: column;
-      padding: 20px;         
-      font-family: Arial, sans-serif;
-      box-sizing: border-box;
+    :root {
+      --bg-color: #f0f2f5;
+      --card-bg-color: #ffffff;
+      --text-color: #1c1e21;
+      --subtle-text-color: #606770;
+      --border-color: #dce1e6;
+      --primary-bg: #1b74e4;
+      --primary-text: #ffffff;
+      --primary-hover-bg: #1868cd;
+      --secondary-bg: #e4e6eb;
+      --secondary-text: #1c1e21;
+      --secondary-hover-bg: #d8dade;
+      --font-family: sans-serif;
     }
 
-    h1, h2 {
-      margin: 0 0 10px;
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #18191a;
+        --card-bg-color: #242526;
+        --text-color: #e4e6eb;
+        --subtle-text-color: #b0b3b8;
+        --border-color: #3e4042;
+        --primary-bg: #2d88ff;
+        --primary-text: #ffffff;
+        --primary-hover-bg: #3a8ffd;
+        --secondary-bg: #3a3b3c;
+        --secondary-text: #e4e6eb;
+        --secondary-hover-bg: #4f5051;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+        height: 100%;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem 1rem;
+      line-height: 1.5;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    label {
+      font-weight: 500;
+      color: var(--subtle-text-color);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .io-card {
+      background-color: var(--card-bg-color);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .output-wrapper {
+        position: relative;
     }
 
     textarea {
       width: 100%;
-      box-sizing: border-box;
-      padding: 8px;
-      font-family: inherit;
+      height: 150px;
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-family);
       font-size: 1rem;
-      resize: none;
-      border: 1px solid #ccc;
-      height: auto;
+      resize: vertical;
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
     }
 
-    #input {
-      flex: 4;
-      margin-bottom: 10px;
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary-bg);
+      box-shadow: 0 0 0 2px rgba(27, 116, 228, 0.3);
     }
-    #output {
-      flex: 6;
-      margin-top: 10px;
+    
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
     }
 
-    div.buttons {
-      margin: 0 0 10px;
-    }
     button {
-      padding: 10px 15px;
-      margin-right: 5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-family: var(--font-family);
       font-size: 1rem;
+      font-weight: 500;
       cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    @media (prefers-color-scheme: dark) {
-      body {
-        background-color: #343a40;
-        color: #f8f9fa;
-      }
-      textarea {
-        background-color: #495057;
-        color: #f8f9fa;
-        border: 1px solid #ced4da;
-      }
-      button {
-        background-color: #007bff;
-        color: #fff;
-        border: none;
-      }
-      button:hover {
-        background-color: #0056b3;
-      }
+    button:active {
+      transform: scale(0.97);
     }
+    
+    .btn-primary {
+      background-color: var(--primary-bg);
+      color: var(--primary-text);
+    }
+    .btn-primary:hover {
+      background-color: var(--primary-hover-bg);
+    }
+    
+    .btn-secondary {
+      background-color: var(--secondary-bg);
+      color: var(--secondary-text);
+    }
+    .btn-secondary:hover {
+      background-color: var(--secondary-hover-bg);
+    }
+
+    #copy-btn {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.875rem;
+        background-color: var(--secondary-bg);
+        color: var(--secondary-text);
+        z-index: 1;
+    }
+    
+    #copy-btn:hover {
+        background-color: var(--secondary-hover-bg);
+    }
+
   </style>
 </head>
 <body>
 
-  <h1>Base64 Encoder/Decoder</h1>
+  <main class="container">
+    <h1>Base64 Encoder/Decoder</h1>
 
-  <textarea id="input" placeholder="Enter text here..."></textarea>
+    <div class="io-card">
+      <label for="input">Input Text</label>
+      <textarea id="input" placeholder="Enter text or Base64 string here..."></textarea>
+    </div>
 
-  <div class="buttons">
-    <button onclick="encode()">Encode to Base64</button>
-    <button onclick="decode()">Decode from Base64</button>
-  </div>
+    <div class="button-group">
+      <button class="btn-primary" onclick="encode()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"/></svg>
+        Encode
+      </button>
+      <button class="btn-primary" onclick="decode()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z"/></svg>
+        Decode
+      </button>
+      <button class="btn-secondary" onclick="swapContent()" title="Swap Input and Output">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5zm14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5z"/></svg>
+        Swap
+      </button>
+    </div>
 
-  <h2>Output:</h2>
-
-  <textarea id="output" placeholder="Output will appear here..." readonly></textarea>
+    <div class="io-card">
+      <label for="output">Output</label>
+      <div class="output-wrapper">
+        <textarea id="output" placeholder="Output will appear here..." readonly></textarea>
+        <button id="copy-btn" onclick="copyOutput()">Copy</button>
+      </div>
+    </div>
+  </main>
 
   <script>
     function encode() {
       const input = document.getElementById('input').value;
-      const output = btoa(unescape(encodeURIComponent(input)));
-      document.getElementById('output').value = output;
+      try {
+        const output = btoa(unescape(encodeURIComponent(input)));
+        document.getElementById('output').value = output;
+      } catch (e) {
+        document.getElementById('output').value = 'Error: Could not encode input.';
+        console.error(e);
+      }
     }
 
     function decode() {
@@ -100,10 +225,43 @@
         const output = decodeURIComponent(escape(atob(input)));
         document.getElementById('output').value = output;
       } catch (e) {
-        document.getElementById('output').value = 'Invalid Base64 string';
+        document.getElementById('output').value = 'Error: Invalid Base64 string.';
+        console.error(e);
       }
+    }
+    
+    function copyOutput() {
+        const output = document.getElementById('output');
+        const copyBtn = document.getElementById('copy-btn');
+        const originalText = copyBtn.textContent;
+
+        if (output.value) {
+            output.select();
+            output.setSelectionRange(0, 99999); 
+            
+            try {
+                document.execCommand('copy');
+                copyBtn.textContent = 'Copied!';
+            } catch (err) {
+                copyBtn.textContent = 'Failed!';
+                console.error('Failed to copy: ', err);
+            }
+
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+            }, 2000);
+        }
+    }
+
+    function swapContent() {
+        const input = document.getElementById('input');
+        const output = document.getElementById('output');
+        const temp = input.value;
+        input.value = output.value;
+        output.value = temp;
     }
   </script>
 
 </body>
 </html>
+
