@@ -19,6 +19,8 @@
             --button-bg: #007bff;
             --button-color: #ffffff;
             --button-hover-bg: #0056b3;
+            --stop-button-bg: #dc3545;
+            --stop-button-hover-bg: #c82333;
             --shadow-color: rgba(0, 0, 0, 0.1);
             --modal-bg: rgba(0, 0, 0, 0.5);
             --modal-content-bg: #fefefe;
@@ -54,9 +56,6 @@
             --details-bg: #2a2a2a;
             --info-text-color: #888;
         }
-
-        /* This script is placed in the head to prevent the flash of unstyled content (FOUC) */
-        /* It applies the theme before the body even starts rendering. */
         
         html, body {
             margin: 0;
@@ -112,7 +111,6 @@
             fill: var(--icon-fill-hover);
         }
 
-        /* Theme button color states */
         #theme-button.theme-auto svg { fill: var(--theme-icon-auto); }
         #theme-button.theme-light svg { fill: var(--theme-icon-light); }
         #theme-button.theme-dark svg { fill: var(--theme-icon-dark); }
@@ -161,6 +159,24 @@
             margin-bottom: 1em;
         }
 
+        .bot-message details {
+            background-color: var(--details-bg);
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .bot-message summary {
+            padding: 8px 12px;
+            cursor: pointer;
+            outline: none;
+            font-weight: bold;
+        }
+        .bot-message .thinking-content {
+            padding: 0 12px 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
         .typing-indicator span {
             display: inline-block;
             width: 2px;
@@ -198,7 +214,7 @@
         }
 
         #message-input.expanded {
-            max-height: 250px; /* Expanded height */
+            max-height: 250px;
         }
 
         #message-input:focus {
@@ -243,6 +259,14 @@
             background-color: var(--button-hover-bg);
         }
         
+        #send-button.stop-mode {
+            background-color: var(--stop-button-bg);
+        }
+
+        #send-button.stop-mode:hover {
+            background-color: var(--stop-button-hover-bg);
+        }
+        
         .input-controls button svg {
             width: 20px;
             height: 20px;
@@ -253,7 +277,6 @@
              fill: var(--icon-fill);
         }
 
-        /* Settings Modal */
         .modal {
             display: none;
             position: fixed;
@@ -344,7 +367,6 @@
             color: white;
         }
 
-        /* Toast Notifications */
         #toast-container {
             position: fixed;
             bottom: 20px;
@@ -376,10 +398,8 @@
 
     </style>
     <script>
-        // This script is placed in the head to prevent the flash of unstyled content (FOUC).
-        // It applies the theme before the body even starts rendering.
         (() => {
-            const savedTheme = localStorage.getItem('llmChatTheme') || 'dark'; // Default to dark
+            const savedTheme = localStorage.getItem('llmChatTheme') || 'dark';
             if (savedTheme === 'auto') {
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
@@ -408,7 +428,7 @@
         </header>
         
         <div id="chat-container">
-            </div>
+        </div>
 
         <div class="input-area">
             <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
@@ -418,7 +438,8 @@
                     <svg id="collapse-icon" viewBox="0 0 24 24" style="display: none; width: 24px; height: 24px;"><path d="M20.5 11.5c.28 0 .5-.22.5-.5s-.22-.5-.5-.5H3.5c-.28 0-.5.22-.5.5s.22.5.5.5h17z"/></svg>
                 </button>
                 <button id="send-button" title="Send Message">
-                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    <svg id="send-icon" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    <svg id="stop-icon" viewBox="0 0 24 24" style="display: none;"><path d="M6 6h12v12H6z"/></svg>
                 </button>
             </div>
         </div>
@@ -439,7 +460,7 @@
             <div class="form-group">
                 <label for="server-url">Server URL</label>
                 <input type="text" id="server-url" placeholder="http://localhost:11434">
-                <p class="info-text">⚠️ Your Ollama server must be configured to accept requests from this page (CORS). See documentation on setting <code>OLLAMA_ORIGINS</code> to <code>*</code>.</p>
+                <p class="info-text">⚠️ Your server must be configured to accept requests from this page (CORS).</p>
             </div>
 
             <div class="form-group">
@@ -449,13 +470,13 @@
 
             <div class="form-group">
                 <label for="model-name">Model Name</label>
-                <input type="text" id="model-name" placeholder="gpt-oss:20b">
+                <input type="text" id="model-name" placeholder="llama3:latest">
             </div>
 
             <div class="form-group inline">
                 <div>
                     <label for="temperature">Temperature</label>
-                    <input type="number" id="temperature" min="0" max="2" step="0.1" placeholder="1.0">
+                    <input type="number" id="temperature" min="0" max="2" step="0.1" placeholder="0.8">
                 </div>
                 <div>
                     <label for="top-p">Top P</label>
@@ -478,11 +499,126 @@
     <div id="toast-container"></div>
 
     <script>
+        class LLMApi {
+            constructor(settings) {
+                if (this.constructor === LLMApi) {
+                    throw new Error("Abstract classes can't be instantiated.");
+                }
+                this.settings = settings;
+            }
+
+            async streamChat(messages, onToken, signal) {
+                throw new Error("Method 'streamChat()' must be implemented.");
+            }
+        }
+
+        class OllamaApi extends LLMApi {
+            async streamChat(messages, onToken, signal) {
+                const endpoint = this.settings.serverUrl.replace(/\/$/, '') + '/api/chat';
+                const body = {
+                    model: this.settings.modelName,
+                    messages: messages,
+                    stream: true,
+                    options: {}
+                };
+                const temp = parseFloat(this.settings.temperature);
+                const topP = parseFloat(this.settings.topP);
+                if (!isNaN(temp)) body.options.temperature = temp;
+                if (!isNaN(topP)) body.options.top_p = topP;
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                    signal: signal,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n').filter(line => line.trim() !== '');
+                    for (const line of lines) {
+                        try {
+                            const parsed = JSON.parse(line);
+                            const token = parsed.message?.content || '';
+                            if (token) onToken(token);
+                        } catch (e) {
+                            console.error('Failed to parse stream line:', line, e);
+                        }
+                    }
+                }
+            }
+        }
+
+        class OpenAIApi extends LLMApi {
+            async streamChat(messages, onToken, signal) {
+                const endpoint = this.settings.serverUrl.replace(/\/$/, '') + '/v1/chat/completions';
+                const headers = { 'Content-Type': 'application/json' };
+                if (this.settings.apiKey) {
+                    headers['Authorization'] = `Bearer ${this.settings.apiKey}`;
+                }
+
+                const body = {
+                    model: this.settings.modelName,
+                    messages: messages,
+                    stream: true,
+                };
+                const temp = parseFloat(this.settings.temperature);
+                const topP = parseFloat(this.settings.topP);
+                if (!isNaN(temp)) body.temperature = temp;
+                if (!isNaN(topP)) body.top_p = topP;
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(body),
+                    signal: signal,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.substring(6);
+                            if(data.trim() === '[DONE]') continue;
+                            try {
+                                const parsed = JSON.parse(data);
+                                const token = parsed.choices[0]?.delta?.content || '';
+                                if (token) onToken(token);
+                            } catch (e) {
+                                console.error('Failed to parse stream line:', data, e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            // DOM Elements
             const chatContainer = document.getElementById('chat-container');
             const messageInput = document.getElementById('message-input');
             const sendButton = document.getElementById('send-button');
+            const sendIcon = document.getElementById('send-icon');
+            const stopIcon = document.getElementById('stop-icon');
             const clearButton = document.getElementById('clear-button');
             const settingsButton = document.getElementById('settings-button');
             const themeButton = document.getElementById('theme-button');
@@ -494,7 +630,6 @@
             const expandIcon = document.getElementById('expand-icon');
             const collapseIcon = document.getElementById('collapse-icon');
             
-            // Settings Form Elements
             const apiTypeSelect = document.getElementById('api-type');
             const serverUrlInput = document.getElementById('server-url');
             const apiKeyInput = document.getElementById('api-key');
@@ -507,28 +642,22 @@
             let abortController = null;
             let isInputExpanded = false;
 
-            // --- Toast Notification Management ---
             const showToast = (message, duration = 3000) => {
                 const toast = document.createElement('div');
                 toast.className = 'toast';
                 toast.textContent = message;
                 toastContainer.appendChild(toast);
 
-                // Animate in
                 setTimeout(() => {
                     toast.classList.add('show');
                 }, 100);
 
-                // Animate out and remove
                 setTimeout(() => {
                     toast.classList.remove('show');
-                    toast.addEventListener('transitionend', () => {
-                        toast.remove();
-                    });
+                    toast.addEventListener('transitionend', () => toast.remove());
                 }, duration);
             };
 
-            // --- Theme Management ---
             const applyTheme = (theme) => {
                 themeButton.classList.remove('theme-auto', 'theme-light', 'theme-dark');
                 if (theme === 'auto') {
@@ -542,13 +671,12 @@
             };
             
             const loadTheme = () => {
-                const savedTheme = localStorage.getItem('llmChatTheme') || 'dark'; // Default to dark
+                const savedTheme = localStorage.getItem('llmChatTheme') || 'dark';
                 applyTheme(savedTheme);
             };
 
             themeButton.addEventListener('click', () => {
-                let currentTheme = localStorage.getItem('llmChatTheme') || 'dark';
-                // Cycle: dark -> light -> auto -> dark
+                const currentTheme = localStorage.getItem('llmChatTheme') || 'dark';
                 const newTheme = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'auto' : 'dark';
                 localStorage.setItem('llmChatTheme', newTheme);
                 applyTheme(newTheme);
@@ -561,23 +689,21 @@
                 }
             });
 
-            // --- Settings Management ---
             const loadSettings = () => {
                 const settings = JSON.parse(localStorage.getItem('llmChatSettings'));
                 if (settings) {
                     apiTypeSelect.value = settings.apiType || 'ollama';
                     serverUrlInput.value = settings.serverUrl || 'http://localhost:11434';
                     apiKeyInput.value = settings.apiKey || '';
-                    modelNameInput.value = settings.modelName || 'gpt-oss:20b';
-                    temperatureInput.value = settings.temperature || '1';
+                    modelNameInput.value = settings.modelName || 'llama3:latest';
+                    temperatureInput.value = settings.temperature || '0.8';
                     topPInput.value = settings.topP || '1';
                     systemPromptInput.value = settings.systemPrompt || '';
                 } else {
-                    // Default values
                     apiTypeSelect.value = 'ollama';
                     serverUrlInput.value = 'http://localhost:11434';
-                    modelNameInput.value = 'gpt-oss:20b';
-                    temperatureInput.value = '1';
+                    modelNameInput.value = 'llama3:latest';
+                    temperatureInput.value = '0.8';
                     topPInput.value = '1';
                 }
             };
@@ -597,18 +723,28 @@
                 showToast('Settings saved!');
             };
 
-            // --- UI Interaction ---
             const addMessage = (sender, text, className = '') => {
                 const messageElement = document.createElement('div');
                 messageElement.classList.add('message', `${sender}-message`);
                 if(className) messageElement.classList.add(className);
-                
-                // Use innerHTML to support the typing indicator span and line breaks
                 messageElement.innerHTML = text.replace(/\n/g, '<br>');
-
                 chatContainer.appendChild(messageElement);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
                 return messageElement;
+            };
+
+            const toggleSendButtonState = (isSending) => {
+                if (isSending) {
+                    sendButton.classList.add('stop-mode');
+                    sendButton.title = 'Stop Generating';
+                    sendIcon.style.display = 'none';
+                    stopIcon.style.display = 'block';
+                } else {
+                    sendButton.classList.remove('stop-mode');
+                    sendButton.title = 'Send Message';
+                    sendIcon.style.display = 'block';
+                    stopIcon.style.display = 'none';
+                }
             };
             
             const handleSendMessage = () => {
@@ -617,111 +753,94 @@
                 addMessage('user', messageText);
                 conversationHistory.push({ role: 'user', content: messageText });
                 messageInput.value = '';
-                messageInput.style.height = 'auto'; // Reset height
+                messageInput.style.height = 'auto';
                 streamResponse();
             };
 
             const streamResponse = async () => {
                 const botMessageElement = addMessage('bot', '<span class="typing-indicator"><span></span></span>');
                 abortController = new AbortController();
+                toggleSendButtonState(true);
 
                 try {
                     const settings = JSON.parse(localStorage.getItem('llmChatSettings'));
                     if (!settings || !settings.serverUrl || !settings.modelName) {
-                        throw new Error("API settings are not configured. Please configure them in the settings menu.");
+                        throw new Error("API settings are not configured. Please open and save your settings.");
                     }
 
-                    let headers = { 'Content-Type': 'application/json' };
+                    const apiClient = settings.apiType === 'ollama' ? new OllamaApi(settings) : new OpenAIApi(settings);
                     
                     const messages = [];
-                    if (settings.systemPrompt) {
-                        messages.push({ role: 'system', content: settings.systemPrompt });
-                    }
+                    if (settings.systemPrompt) messages.push({ role: 'system', content: settings.systemPrompt });
                     messages.push(...conversationHistory);
                     
-                    const temp = parseFloat(settings.temperature);
-                    const topP = parseFloat(settings.topP);
-
-                    let endpoint, body;
-                    if (settings.apiType === 'ollama') {
-                        endpoint = settings.serverUrl.replace(/\/$/, '') + '/api/chat';
-                        body = {
-                            model: settings.modelName,
-                            messages: messages,
-                            stream: true,
-                            options: {}
-                        };
-                        if (!isNaN(temp)) body.options.temperature = temp;
-                        if (!isNaN(topP)) body.options.top_p = topP;
-
-                    } else { // openai-compatible
-                        endpoint = settings.serverUrl.replace(/\/$/, '') + '/v1/chat/completions';
-                        if (settings.apiKey) {
-                            headers['Authorization'] = `Bearer ${settings.apiKey}`;
-                        }
-                        body = {
-                            model: settings.modelName,
-                            messages: messages,
-                            stream: true,
-                        };
-                        if (!isNaN(temp)) body.temperature = temp;
-                        if (!isNaN(topP)) body.top_p = topP;
-                    }
-
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: headers,
-                        body: JSON.stringify(body),
-                        signal: abortController.signal,
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error?.message || errorData.error || `HTTP error! status: ${response.status}`);
-                    }
-                    
-                    const reader = response.body.getReader();
-                    const decoder = new TextDecoder();
                     let fullResponse = '';
-                    botMessageElement.innerHTML = ''; // Clear typing indicator
+                    botMessageElement.innerHTML = '';
+                    
+                    let isThinking = false;
+                    let activeMarker = null;
+                    let contentBuffer = '';
+                    let currentTextContainer = document.createElement('span');
+                    botMessageElement.appendChild(currentTextContainer);
 
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
+                    const thinkingMarkers = [
+                        { start: '<thinking>', end: '</thinking>' },
+                        { start: '<think>', end: '</think>' },
+                        { start: '<thought>', end: '</thought>' },
+                        { start: '<function_calls>', end: '</function_calls>' },
+                    ];
 
-                        const chunk = decoder.decode(value, { stream: true });
-                        const lines = chunk.split('\n').filter(line => line.trim() !== '');
+                    await apiClient.streamChat(messages, (token) => {
+                        fullResponse += token;
+                        contentBuffer += token;
 
-                        for (const line of lines) {
-                            let token = '';
-                            try {
-                                if (settings.apiType === 'ollama') {
-                                    const parsed = JSON.parse(line);
-                                    token = parsed.message?.content || '';
-                                } else { // openai-compatible
-                                    if (line.startsWith('data: ')) {
-                                        const data = line.substring(6);
-                                        if(data.trim() === '[DONE]') continue;
-                                        const parsed = JSON.parse(data);
-                                        token = parsed.choices[0]?.delta?.content || '';
-                                    }
-                                }
+                        if (isThinking) {
+                            const endMarkerIndex = contentBuffer.indexOf(activeMarker.end);
+                            if (endMarkerIndex !== -1) {
+                                const thinkingContent = contentBuffer.substring(0, endMarkerIndex);
+                                currentTextContainer.textContent += thinkingContent;
+                                contentBuffer = contentBuffer.substring(endMarkerIndex + activeMarker.end.length);
                                 
-                                if (token) {
-                                    fullResponse += token;
-                                    botMessageElement.innerHTML = fullResponse.replace(/\n/g, '<br>');
-                                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                                currentTextContainer = document.createElement('span');
+                                botMessageElement.appendChild(currentTextContainer);
+                                isThinking = false;
+                                activeMarker = null;
+                            }
+                        } else {
+                            for (const marker of thinkingMarkers) {
+                                const startMarkerIndex = contentBuffer.indexOf(marker.start);
+                                if (startMarkerIndex !== -1) {
+                                    const textBefore = contentBuffer.substring(0, startMarkerIndex);
+                                    currentTextContainer.textContent += textBefore;
+                                    contentBuffer = contentBuffer.substring(startMarkerIndex + marker.start.length);
+
+                                    const details = document.createElement('details');
+                                    const summary = document.createElement('summary');
+                                    summary.textContent = 'thinking...';
+                                    const thinkingContentDiv = document.createElement('div');
+                                    thinkingContentDiv.className = 'thinking-content';
+                                    details.appendChild(summary);
+                                    details.appendChild(thinkingContentDiv);
+                                    botMessageElement.appendChild(details);
+
+                                    isThinking = true;
+                                    activeMarker = marker;
+                                    currentTextContainer = thinkingContentDiv;
+                                    break;
                                 }
-                            } catch (e) {
-                                console.error('Failed to parse stream line:', line, e);
                             }
                         }
-                    }
+                        currentTextContainer.textContent += contentBuffer;
+                        contentBuffer = '';
+
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }, abortController.signal);
+                    currentTextContainer.innerHTML = currentTextContainer.innerHTML.replace(/\n/g, '<br>');
                     conversationHistory.push({ role: 'assistant', content: fullResponse });
 
                 } catch (error) {
                     if (error.name === 'AbortError') {
-                        botMessageElement.innerHTML = 'Request aborted.';
+                        botMessageElement.innerHTML += '<br><strong>Request aborted.</strong>';
                     } else {
                         console.error('Error streaming response:', error);
                         botMessageElement.innerHTML = `<strong>Error:</strong> ${error.message}`;
@@ -729,14 +848,19 @@
                     }
                 } finally {
                     abortController = null;
+                    toggleSendButtonState(false);
                 }
             };
             
-            // --- Event Listeners ---
-            sendButton.addEventListener('click', handleSendMessage);
+            sendButton.addEventListener('click', () => {
+                if (abortController) {
+                    abortController.abort();
+                } else {
+                    handleSendMessage();
+                }
+            });
             
             messageInput.addEventListener('keydown', (e) => {
-                // Only send with Enter if not in expanded mode and Shift is not pressed
                 if (e.key === 'Enter' && !e.shiftKey && !isInputExpanded) {
                     e.preventDefault();
                     handleSendMessage();
@@ -763,8 +887,6 @@
             });
 
             clearButton.addEventListener('click', () => {
-                // Using a custom modal for confirmation would be the next step,
-                // but for now, we stick to confirm() as it's a confirmation dialog.
                 if (confirm('Are you sure you want to clear the chat history?')) {
                     chatContainer.innerHTML = '';
                     conversationHistory = [];
@@ -783,10 +905,10 @@
                 }
             });
 
-            // --- Initial Load ---
             loadTheme();
             loadSettings();
         });
     </script>
 </body>
 </html>
+
