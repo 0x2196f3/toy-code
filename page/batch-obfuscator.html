@@ -1,95 +1,177 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr" lang="fr">
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Batch Obfuscator</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-    <script>
-        function printCode() {
-            var textarea = document.getElementById('Code');
-            var textareaobf = document.getElementById('ObfCode');
-            var set = "a" + Math.random().toString(36).substring(10); //random set
-            var letters = Array.from("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ").sort(() => Math.random() - 0.5).join('');
-            var setlettre = "Set " + set + "=" + letters;
-            var code = textarea.value;
-            var codeobfu = "";
-            var lettertab = {};
-            for (var i = 0; i < letters.length; i++) {
-                lettertab[letters[i]] = "%" + set + ":~" + i + ",1%";
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --pane-bg-color: #f0f0f0;
+            --pane-border-color: #dddddd;
+            --header-color: #007bff;
+            --textarea-bg-color: #fafafa;
+            --textarea-text-color: #333333;
+            --textarea-border-color: #cccccc;
+            --textarea-placeholder-color: #999999;
+            --focus-ring-color: rgba(0, 123, 255, 0.25);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --text-color: #e0e0e0;
+                --pane-bg-color: #1e1e1e;
+                --pane-border-color: #444444;
+                --header-color: #2196F3;
+                --textarea-bg-color: #2c2c2c;
+                --textarea-text-color: #e0e0e0;
+                --textarea-border-color: #555555;
+                --textarea-placeholder-color: #777777;
+                --focus-ring-color: rgba(33, 150, 243, 0.3);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1400px;
+            height: 90vh;
+        }
+
+        .editor-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: var(--pane-bg-color);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--pane-border-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        h2 {
+            color: var(--header-color);
+            font-weight: 600;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            font-family: 'Consolas', 'Menlo', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            background-color: var(--textarea-bg-color);
+            color: var(--textarea-text-color);
+            border: 1px solid var(--textarea-border-color);
+            border-radius: 8px;
+            padding: 15px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+        }
+
+        textarea:focus {
+            border-color: var(--header-color);
+            box-shadow: 0 0 0 3px var(--focus-ring-color);
+        }
+
+        textarea::placeholder {
+            color: var(--textarea-placeholder-color);
+        }
+
+        @media (max-width: 900px) {
+            body {
+                align-items: flex-start;
+                padding: 10px;
+                height: auto;
             }
 
-            for (var i = 0; i < code.length; i++) {
+            .container {
+                flex-direction: column;
+                height: auto;
+                max-height: none;
+            }
+
+            .editor-pane {
+               min-height: 40vh;
+            }
+        }
+    </style>
+    <script>
+        function printCode() {
+            const textarea = document.getElementById('Code');
+            const textareaobf = document.getElementById('ObfCode');
+            const set = "v" + Math.random().toString(36).substring(2, 10);
+            const letters = Array.from("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ").sort(() => Math.random() - 0.5).join('');
+            const setlettre = "Set " + set + "=" + letters;
+            const code = textarea.value;
+            let codeobfu = "";
+            const lettertab = {};
+            for (let i = 0; i < letters.length; i++) {
+                lettertab[letters[i]] = "%" + set + ":~" + i + ",1%";
+            }
+            for (let i = 0; i < code.length; i++) {
                 if (lettertab[code[i]]) {
                     codeobfu += lettertab[code[i]];
                 } else {
                     codeobfu += code[i];
                 }
             }
-            textareaobf.value = '@echo off\n' + setlettre + '\ncls' + '\n' + codeobfu;
+            textareaobf.value = '@echo off\n' + 'chcp 65001>nul\n' + setlettre + '\n' + codeobfu;
         }
     </script>
-    <style>
-        table {
-            color: #888888;
-            font-size: 11px;
-            text-align: center;
-            margin: 0px auto 5px auto;
-            border: 1px solid #000000;
-        }
-
-        body {
-            background: #333333;
-            color: #000000;
-            font-family: Verdana;
-            font-size: 11px;
-            margin: 0px;
-            padding: 0px;
-            text-align: center;
-        }
-
-        textarea {
-            height: 400px;
-            width: 600px;
-            font-family: Verdana;
-            border: 1px solid #000000;
-            color: #AAAAAA;
-            font-size: 11px;
-            background: #444444;
-            display: inline;
-            margin: 0px;
-        }
-
-        .noir {
-            background: #000000;
-            border-bottom: 2px solid #000000;
-            border-top: 2px solid #000000;
-        }
-    </style>
 </head>
-
 <body>
-    <div class="wrap">
-        <br>
-        <table align="center" cellspacing="1" style="text-align: center">
-            <tr>
-                <td>
-                    <div class="noir">Batch Code</div>
-                </td>
-                <td>
-                    <div class="noir">Batch Code Obfu</div>
-                </td>
-            </tr>
-
-            <tr>
-                <td>
-                    <textarea id="Code" name="BatchCodeTextArea" oninput="printCode();"></textarea>
-                </td>
-                <td>
-                    <textarea id="ObfCode" name="BatchCodeObfTextArea"></textarea>
-                </td>
-            </tr>
-        </table>
+    <div class="container">
+        <div class="editor-pane">
+            <h2>Batch Code</h2>
+            <textarea 
+                id="Code" 
+                name="BatchCodeTextArea" 
+                oninput="printCode();" 
+                placeholder="Paste your batch code here..."
+                autofocus
+            ></textarea>
+        </div>
+        <div class="editor-pane">
+            <h2>Obfuscated Code</h2>
+            <textarea 
+                id="ObfCode" 
+                name="BatchCodeObfTextArea" 
+                readonly 
+                placeholder="Your obfuscated code will appear here..."
+            ></textarea>
+        </div>
     </div>
 </body>
-
 </html>
+
