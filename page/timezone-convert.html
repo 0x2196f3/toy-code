@@ -2,203 +2,267 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Timezone Converter</title>
   <style>
-    /* Light mode (default) */
     :root {
-      --bg: #ffffff;
-      --fg: #222222;
-      --panel: #f4f4f4;
-      --panel-border: #cccccc;
+      --bg-color: #f5f5f5;
+      --fg-color: #212121;
+      --card-bg-color: #ffffff;
+      --border-color: #e0e0e0;
+      --accent-color: #2196F3;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+      --input-bg-color: #fafafa;
     }
-    /* Dark mode if the user prefers it */
+
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #121212;
-        --fg: #eeeeee;
-        --panel: #1e1e1e;
-        --panel-border: #333333;
+        --bg-color: #121212;
+        --fg-color: #e0e0e0;
+        --card-bg-color: #1e1e1e;
+        --border-color: #424242;
+        --shadow-color: rgba(0, 0, 0, 0.4);
+        --input-bg-color: #212121;
       }
     }
 
-    * { box-sizing: border-box; }
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--fg-color);
+      transition: background-color 0.3s ease, color 0.3s ease;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
       padding: 1rem;
-      font-family: Arial, sans-serif;
-      background: var(--bg);
-      color: var(--fg);
-      transition: background .3s, color .3s;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
     }
+
     header {
-      margin-bottom: 1rem;
+      text-align: center;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent-color);
     }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--accent-color);
+    }
+
+    .card {
+      background-color: var(--card-bg-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 4px var(--shadow-color);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
     label {
-      display: block;
-      margin-top: 1rem;
+      font-weight: 500;
       font-size: 0.9rem;
     }
-    select, input {
+
+    select,
+    input[type="datetime-local"] {
       width: 100%;
-      padding: 0.5rem;
-      margin-top: 0.25rem;
+      padding: 0.75rem;
       font-size: 1rem;
-      border: 1px solid var(--panel-border);
+      font-family: inherit;
+      border: 1px solid var(--border-color);
       border-radius: 4px;
-      background: var(--panel);
-      color: var(--fg);
+      background-color: var(--input-bg-color);
+      color: var(--fg-color);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
     }
-    .output, .current-times {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      border-radius: 4px;
-      line-height: 1.4;
+    
+    select {
+       background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23333' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+       background-repeat: no-repeat;
+       background-position: right 0.75rem center;
+       background-size: 1em;
     }
+
+    select:focus,
+    input[type="datetime-local"]:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
+    }
+
+    .output #result {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--accent-color);
+      word-break: break-all;
+    }
+
     .current-times div {
-      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
     }
   </style>
 </head>
 <body>
-  <header><h1>Timezone Converter</h1></header>
+  <div class="container">
+    <header>
+      <h1>Timezone Converter</h1>
+    </header>
 
-  <div class="current-times">
-    <div>Now in <strong><span id="liveSrcTz"></span></strong>:
-      <span id="liveSrcTime">—</span>
-    </div>
-    <div>Now in <strong><span id="liveDstTz"></span></strong>:
-      <span id="liveDstTime">—</span>
-    </div>
-  </div>
+    <main>
+      <section class="card current-times">
+        <div>
+          <span>Now in <strong><span id="liveSrcTz"></span></strong>:</span>
+          <span id="liveSrcTime">—</span>
+        </div>
+        <div>
+          <span>Now in <strong><span id="liveDstTz"></span></strong>:</span>
+          <span id="liveDstTime">—</span>
+        </div>
+      </section>
 
-  <label>
-    Source Time Zone
-    <select id="srcTz"></select>
-  </label>
+      <section class="card">
+        <div class="form-group">
+          <label for="srcTz">Source Time Zone</label>
+          <select id="srcTz"></select>
+        </div>
+        <div class="form-group">
+          <label for="srcDateTime">Date & Time in Source</label>
+          <input type="datetime-local" id="srcDateTime" />
+        </div>
+        <div class="form-group">
+          <label for="dstTz">Target Time Zone</label>
+          <select id="dstTz"></select>
+        </div>
+      </section>
 
-  <label>
-    Target Time Zone
-    <select id="dstTz"></select>
-  </label>
-
-  <label>
-    Date & Time in Source
-    <input type="datetime-local" id="srcDateTime" />
-  </label>
-
-  <div class="output">
-    <strong>Converted:</strong>
-    <div id="result">—</div>
+      <section class="card output">
+        <strong>Converted Time:</strong>
+        <div id="result">—</div>
+      </section>
+    </main>
   </div>
 
   <script>
-  (function(){
-    // 1) build zone list
-    const iana = typeof Intl.supportedValuesOf === 'function'
-      ? Intl.supportedValuesOf('timeZone') : [];
-    const utcOff = [];
-    for(let i=-12; i<=14; i++){
-      const sign = i>=0?'+':''; utcOff.push(`UTC${sign}${i}`);
-    }
-    const zones = [...iana, ...utcOff];
-
-    // 2) populate selects
-    const srcSel = document.getElementById('srcTz');
-    const dstSel = document.getElementById('dstTz');
-    zones.forEach(tz=>{
-      srcSel.add(new Option(tz,tz));
-      dstSel.add(new Option(tz,tz));
-    });
-
-    // defaults
-    const userZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    srcSel.value = userZone||'UTC+0';
-    dstSel.value = 'UTC+0';
-
-    // fill "now" into the datetime-local
-    const now = new Date();
-    const pad = n=>String(n).padStart(2,'0');
-    document.getElementById('srcDateTime').value =
-      `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}` +
-      `T${pad(now.getHours())}:${pad(now.getMinutes())}`;
-
-    // get offset (minutes) of any tz at a given date
-    function getOffset(tz, date){
-      if(tz.startsWith('UTC')){
-        const m = tz.match(/^UTC([+-]\d+)$/);
-        const h = m?parseInt(m[1],10):0;
-        return -h*60;
+    (function(){
+      const iana = typeof Intl.supportedValuesOf === 'function'
+        ? Intl.supportedValuesOf('timeZone') : [];
+      const utcOff = [];
+      for(let i=-12; i<=14; i++){
+        const sign = i>=0?'+':''; utcOff.push(`UTC${sign}${i}`);
       }
-      const fmt = new Intl.DateTimeFormat('en-US',{
-        timeZone: tz, timeZoneName: 'short'
+      const zones = [...iana, ...utcOff];
+
+      const srcSel = document.getElementById('srcTz');
+      const dstSel = document.getElementById('dstTz');
+      zones.forEach(tz=>{
+        srcSel.add(new Option(tz,tz));
+        dstSel.add(new Option(tz,tz));
       });
-      const part = fmt.formatToParts(date)
-        .find(p=>p.type==='timeZoneName').value;
-      const m = part.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/);
-      if(!m) return 0;
-      const sign = m[1]==='+'?1:-1;
-      const hrs = +m[2], mins = m[3]?+m[3]:0;
-      return sign*(hrs*60+mins);
-    }
 
-    // convert on demand
-    function convert(){
-      const src = srcSel.value, dst = dstSel.value;
-      const inp = document.getElementById('srcDateTime').value;
-      if(!inp) return;
+      const userZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      srcSel.value = userZone||'UTC+0';
+      dstSel.value = 'UTC+0';
 
-      const ld = new Date(inp);
-      const bs = ld.getTime();
-      const offSrc = getOffset(src,ld)*60000;
-      const offDst = getOffset(dst,ld)*60000;
+      const now = new Date();
+      const pad = n=>String(n).padStart(2,'0');
+      document.getElementById('srcDateTime').value =
+        `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}` +
+        `T${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
-      // UTC of that src‐time = bs - offSrc
-      const realUtc = bs - offSrc;
-      // target local ms
-      const tgtMs = realUtc + offDst;
-      const td = new Date(tgtMs);
+      function getOffset(tz, date){
+        if(tz.startsWith('UTC')){
+          const m = tz.match(/^UTC([+-]\d+)$/);
+          const h = m?parseInt(m[1],10):0;
+          return -h*60;
+        }
+        const fmt = new Intl.DateTimeFormat('en-US',{
+          timeZone: tz, timeZoneName: 'short'
+        });
+        const part = fmt.formatToParts(date)
+          .find(p=>p.type==='timeZoneName').value;
+        const m = part.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/);
+        if(!m) return 0;
+        const sign = m[1]==='+'?1:-1;
+        const hrs = +m[2], mins = m[3]?+m[3]:0;
+        return sign*(hrs*60+mins);
+      }
 
-      const opt = {
-        hour12: false, year:'numeric',month:'2-digit',
-        day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'
-      };
-      if(!dst.startsWith('UTC')) opt.timeZone = dst;
-      const s = td.toLocaleString('en-GB',opt);
-      document.getElementById('result')
-        .textContent = `${s} (${dst})`;
-    }
+      function convert(){
+        const src = srcSel.value, dst = dstSel.value;
+        const inp = document.getElementById('srcDateTime').value;
+        if(!inp) return;
 
-    // live clock
-    function tick(){
-      const s = srcSel.value, d = dstSel.value;
-      const t = new Date();
-      const utc = t.getTime() - t.getTimezoneOffset()*60000;
-      const msS = getOffset(s,t)*60000;
-      const msD = getOffset(d,t)*60000;
-      const ts = new Date(utc + (-msS));
-      const td = new Date(utc + (-msD));
-      const fmt = d=>d.toLocaleTimeString('en-GB',{hour12:false});
-      document.getElementById('liveSrcTz').textContent = s;
-      document.getElementById('liveDstTz').textContent = d;
-      document.getElementById('liveSrcTime').textContent = fmt(ts);
-      document.getElementById('liveDstTime').textContent = fmt(td);
-    }
+        const ld = new Date(inp);
+        const bs = ld.getTime();
+        const offSrc = getOffset(src,ld)*60000;
+        const offDst = getOffset(dst,ld)*60000;
 
-    // wire up events
-    [srcSel,dstSel].forEach(el=>{
-      el.addEventListener('change',()=>{
-        convert(); tick();
+        const realUtc = bs - offSrc;
+        const tgtMs = realUtc + offDst;
+        const td = new Date(tgtMs);
+
+        const opt = {
+          hour12: false, year:'numeric',month:'2-digit',
+          day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'
+        };
+        if(!dst.startsWith('UTC')) opt.timeZone = dst;
+        const s = td.toLocaleString('en-GB',opt);
+        document.getElementById('result')
+          .textContent = `${s} (${dst})`;
+      }
+
+      function tick(){
+        const s = srcSel.value, d = dstSel.value;
+        const t = new Date();
+        const utc = t.getTime() - t.getTimezoneOffset()*60000;
+        const msS = getOffset(s,t)*60000;
+        const msD = getOffset(d,t)*60000;
+        const ts = new Date(utc + (-msS));
+        const td = new Date(utc + (-msD));
+        const fmt = d=>d.toLocaleTimeString('en-GB',{hour12:false});
+        document.getElementById('liveSrcTz').textContent = s;
+        document.getElementById('liveDstTz').textContent = d;
+        document.getElementById('liveSrcTime').textContent = fmt(ts);
+        document.getElementById('liveDstTime').textContent = fmt(td);
+      }
+
+      [srcSel,dstSel].forEach(el=>{
+        el.addEventListener('change',()=>{
+          convert(); tick();
+        });
       });
-    });
-    document.getElementById('srcDateTime')
-      .addEventListener('input', convert);
+      document.getElementById('srcDateTime')
+        .addEventListener('input', convert);
 
-    // kick off
-    convert(); tick();
-    setInterval(tick, 1000);
-  })();
+      convert(); tick();
+      setInterval(tick, 1000);
+    })();
   </script>
 </body>
 </html>
