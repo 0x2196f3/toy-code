@@ -196,6 +196,16 @@
         #clear:hover {
             background-color: var(--border-color);
         }
+        
+        #copy {
+            background-color: var(--card-bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        #copy:hover {
+            background-color: var(--border-color);
+        }
 
         #result {
             width: 100%;
@@ -238,6 +248,7 @@
         
         <div class="controls">
             <button id="validate">Validate</button>
+            <button id="copy">Copy</button>
             <button id="clear">Clear</button>
         </div>
         
@@ -246,6 +257,7 @@
 
     <script>
         const validateBtn = document.getElementById('validate');
+        const copyBtn = document.getElementById('copy');
         const clearBtn = document.getElementById('clear');
         const textarea = document.getElementById('jsonvalidator');
         const resultEl = document.getElementById('result');
@@ -255,18 +267,15 @@
         const updateEditor = (highlightedHtml = null) => {
             const text = textarea.value;
             
-            // Update highlighter
             if (highlightedHtml) {
                  highlighterEl.innerHTML = highlightedHtml;
             } else {
                  highlighterEl.textContent = text;
             }
 
-            // Update line numbers
             const lineCount = text.split('\n').length;
             lineNumbersEl.innerHTML = Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
             
-            // Sync scroll
             highlighterEl.scrollTop = textarea.scrollTop;
             lineNumbersEl.scrollTop = textarea.scrollTop;
         };
@@ -280,7 +289,7 @@
         validateBtn.addEventListener('click', () => {
             const jsonString = textarea.value.trim();
             resultEl.className = '';
-            updateEditor(); // Clear previous highlights
+            updateEditor(); 
 
             if (!jsonString) {
                 resultEl.textContent = 'Please enter some JSON to validate.';
@@ -289,16 +298,15 @@
 
             try {
                 const jsonObj = JSON.parse(jsonString);
-                const formattedJson = JSON.stringify(jsonObj, null, 4); // 4 spaces for indentation
+                const formattedJson = JSON.stringify(jsonObj, null, 4); 
                 textarea.value = formattedJson;
-                updateEditor(); // Update editor with formatted text
+                updateEditor(); 
                 resultEl.textContent = 'JSON is valid and has been formatted!';
                 resultEl.classList.add('valid');
             } catch (e) {
                 resultEl.textContent = 'Invalid JSON: \n' + e.message;
                 resultEl.classList.add('invalid');
                 
-                // Try to find line number from error message
                 const match = e.message.match(/(?:at position (\d+)|line (\d+) column (\d+))/);
                 if (match) {
                     try {
@@ -311,7 +319,6 @@
 
                         if(errorLine !== -1) {
                             const lines = textarea.value.split('\n');
-                             // Basic HTML escape
                             const escapeHtml = (unsafe) => unsafe.replace(/[&<"']/g, (m) => ({'&':'&amp;','<':'&lt;','"':'&quot;',"'":'&#039;'})[m]);
                             
                             lines[errorLine] = `<span class="error-line">${escapeHtml(lines[errorLine]) || ' '}</span>`;
@@ -324,6 +331,25 @@
             }
         });
 
+        copyBtn.addEventListener('click', () => {
+            if (textarea.value) {
+                textarea.select();
+                textarea.setSelectionRange(0, 99999); 
+
+                try {
+                    document.execCommand('copy');
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                    }, 1500);
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                }
+                window.getSelection().removeAllRanges();
+            }
+        });
+
         clearBtn.addEventListener('click', () => {
             textarea.value = '';
             resultEl.textContent = '';
@@ -332,11 +358,12 @@
             textarea.focus();
         });
 
-        updateEditor(); // Initial call
+        updateEditor(); 
     </script>
 
 </body>
 
 </html>
+
 
 
