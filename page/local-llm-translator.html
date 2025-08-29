@@ -451,7 +451,7 @@
                     const translation = await apiHandler.generate(finalPrompt, currentSettings);
                     dom.resultText.value = translation;
                 } catch (error) {
-                    dom.resultText.value = hint + `Error: ${error.message}`;
+                    dom.resultText.value = `Error: ${error.message}`;
                 } finally {
                     dom.loader.style.display = 'none';
                     updateCharCount(dom.resultText, dom.resultCharCount);
