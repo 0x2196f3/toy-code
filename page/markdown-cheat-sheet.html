@@ -1,259 +1,455 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Markdown Cheat Sheet</title>
-  <style>
-/* Light mode (default) */
-:root {
-  --bg-color: #ffffff;
-  --text-color: #000000;
-  --border-color: #cccccc;
-  --header-bg: #f5f5f5;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Markdown Cheatsheet</title>
+    <style>
+        /* Basic Setup & Font */
+        :root {
+            --bg-color-light: #ffffff;
+            --text-color-light: #212529;
+            --border-color-light: #dee2e6;
+            --header-bg-light: #f8f9fa;
+            --code-bg-light: #e9ecef;
+            --code-text-light: #343a40;
+            --accent-color-light: #007bff;
+            --table-stripe-light: #f2f2f2;
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-color: #1e1e1e;
-    --text-color: #e0e0e0;
-    --border-color: #444444;
-    --header-bg: #2a2a2a;
-  }
-}
-h2.title {
-  text-align: center;
-}
-/* Apply variables */
-body {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
+            --bg-color-dark: #121212;
+            --text-color-dark: #e0e0e0;
+            --border-color-dark: #444;
+            --header-bg-dark: #1e1e1e;
+            --code-bg-dark: #2a2a2a;
+            --code-text-dark: #d4d4d4;
+            --accent-color-dark: #00aaff;
+            --table-stripe-dark: #1c1c1c;
+        }
 
-table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 0 5% 2em;
-  background-color: var(--bg-color);
-  table-layout: fixed; 
-  width: 90%;
-}
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-color: var(--bg-color-light);
+                --text-color: var(--text-color-light);
+                --border-color: var(--border-color-light);
+                --header-bg: var(--header-bg-light);
+                --code-bg: var(--code-bg-light);
+                --code-text: var(--code-text-light);
+                --accent-color: var(--accent-color-light);
+                --table-stripe: var(--table-stripe-light);
+            }
+        }
 
-th, td {
-  border: 1px solid var(--border-color);
-  padding: 0.5em;
-  vertical-align: top;
-}
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: var(--bg-color-dark);
+                --text-color: var(--text-color-dark);
+                --border-color: var(--border-color-dark);
+                --header-bg: var(--header-bg-dark);
+                --code-bg: var(--code-bg-dark);
+                --code-text: var(--code-text-dark);
+                --accent-color: var(--accent-color-dark);
+                --table-stripe: var(--table-stripe-dark);
+            }
+        }
 
-table th,
-table td {
-  width: 50%;
-}
-th {
-  background-color: var(--header-bg);
-}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
 
-pre {
-  background-color: var(--header-bg);
-  padding: 0.5em;
-  overflow-x: auto;
-}
+        /* Layout and Typography */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
 
-code {
-  background-color: var(--header-bg);
-  padding: 0.2em 0.4em;
-  border-radius: 3px;
-}
+        h1, h2 {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
 
-  </style>
+        h1 { font-size: 2.5em; }
+        h2 { font-size: 2em; }
+
+        p {
+            margin-bottom: 1em;
+        }
+
+        a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        thead th {
+            background-color: var(--header-bg);
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        tbody tr:nth-of-type(even) {
+            background-color: var(--table-stripe);
+        }
+
+        /* Code Blocks */
+        code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 0.2em 0.4em;
+            border-radius: 6px;
+            font-size: 90%;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 1em;
+            border-radius: 8px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        pre code {
+            padding: 0;
+            background: none;
+            font-size: 100%;
+        }
+        
+        /* Specific Rendered Styles */
+        .rendered-output h1,
+        .rendered-output h2,
+        .rendered-output h3,
+        .rendered-output h4,
+        .rendered-output h5,
+        .rendered-output h6 {
+            margin: 0;
+            padding: 0;
+            border: none;
+        }
+
+        .rendered-output blockquote {
+            margin: 0;
+            padding-left: 1em;
+            border-left: 5px solid var(--border-color);
+            color: #888;
+        }
+
+        .rendered-output hr {
+            border: 0;
+            height: 1px;
+            background: var(--border-color);
+            margin: 1em 0;
+        }
+        
+        .rendered-output table {
+            box-shadow: none;
+            margin: 0;
+        }
+        
+        .rendered-output table th, .rendered-output table td {
+            border: 1px solid var(--border-color);
+        }
+
+    </style>
 </head>
 <body>
+    <div class="container">
+        <header>
+            <h1>Markdown Cheatsheet</h1>
+            <p>A comprehensive guide to Markdown syntax, from basic formatting to advanced features. This page automatically adjusts to your system's light or dark theme.</p>
+        </header>
 
-  <h2 class="title">Basic Syntax</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Original Markdown</th>
-        <th>Rendered Effect</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><pre><code># H1</code></pre></td>
-        <td><h1>H1</h1></td>
-      </tr>
-      <tr>
-        <td><pre><code>## H2</code></pre></td>
-        <td><h2>H2</h2></td>
-      </tr>
-      <tr>
-        <td><pre><code>### H3</code></pre></td>
-        <td><h3>H3</h3></td>
-      </tr>
-      <tr>
-        <td><pre><code>**bold text**</code></pre></td>
-        <td><strong>bold text</strong></td>
-      </tr>
-      <tr>
-        <td><pre><code>*italicized text*</code></pre></td>
-        <td><em>italicized text</em></td>
-      </tr>
-      <tr>
-        <td><pre><code>&gt; blockquote</code></pre></td>
-        <td><blockquote>blockquote</blockquote></td>
-      </tr>
-      <tr>
-        <td><pre><code>1. First item
+        <main>
+            <!-- Basic Syntax -->
+            <section id="basic">
+                <h2>Basic Syntax</h2>
+                <p>These elements are supported by virtually all Markdown parsers.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Element</th>
+                            <th>Markdown Syntax</th>
+                            <th>Rendered Effect</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Headers</strong></td>
+                            <td>
+<pre><code># H1 Header
+## H2 Header
+### H3 Header
+#### H4 Header
+##### H5 Header
+###### H6 Header</code></pre>
+                            </td>
+                            <td class="rendered-output">
+                                <h1>H1 Header</h1>
+                                <h2>H2 Header</h2>
+                                <h3>H3 Header</h3>
+                                <h4>H4 Header</h4>
+                                <h5>H5 Header</h5>
+                                <h6>H6 Header</h6>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Emphasis</strong></td>
+                            <td>
+<pre><code>*This text will be italic*
+_This will also be italic_
+
+**This text will be bold**
+__This will also be bold__
+
+~~This text is strikethrough~~
+
+***Bold and Italic***</code></pre>
+                            </td>
+                            <td class="rendered-output">
+                                <em>This text will be italic</em><br>
+                                <em>This will also be italic</em><br><br>
+                                <strong>This text will be bold</strong><br>
+                                <strong>This will also be bold</strong><br><br>
+                                <del>This text is strikethrough</del><br><br>
+                                <strong><em>Bold and Italic</em></strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Blockquote</strong></td>
+                            <td><pre><code>> "The only true wisdom is in knowing you know nothing."
+> - Socrates</code></pre></td>
+                            <td class="rendered-output">
+                                <blockquote>"The only true wisdom is in knowing you know nothing."<br>- Socrates</blockquote>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Unordered List</strong></td>
+                            <td>
+<pre><code>* Item 1
+* Item 2
+  * Nested Item 2a
+  * Nested Item 2b
+- Item 3
++ Item 4</code></pre>
+                            </td>
+                            <td class="rendered-output">
+                                <ul>
+                                    <li>Item 1</li>
+                                    <li>Item 2
+                                        <ul>
+                                            <li>Nested Item 2a</li>
+                                            <li>Nested Item 2b</li>
+                                        </ul>
+                                    </li>
+                                    <li>Item 3</li>
+                                    <li>Item 4</li>
+                                </ul>
+                            </td>
+                        </tr>
+                         <tr>
+                            <td><strong>Ordered List</strong></td>
+                            <td>
+<pre><code>1. First item
 2. Second item
-3. Third item</code></pre></td>
-        <td>
-          <ol>
-            <li>First item</li>
-            <li>Second item</li>
-            <li>Third item</li>
-          </ol>
-        </td>
-      </tr>
-      <tr>
-        <td><pre><code>- First item
-- Second item
-- Third item</code></pre></td>
-        <td>
-          <ul>
-            <li>First item</li>
-            <li>Second item</li>
-            <li>Third item</li>
-          </ul>
-        </td>
-      </tr>
-      <tr>
-        <td><pre><code>`code`</code></pre></td>
-        <td><code>code</code></td>
-      </tr>
-      <tr>
-        <td><pre><code>---</code></pre></td>
-        <td><hr></td>
-      </tr>
-      <tr>
-        <td><pre><code>[Markdown Guide](https://www.markdownguide.org)</code></pre></td>
-        <td><a href="https://www.markdownguide.org">Markdown Guide</a></td>
-      </tr>
-      <tr>
-        <td><pre><code>![alt text](https://www.markdownguide.org/assets/images/tux.png)</code></pre></td>
-        <td><img src="https://www.markdownguide.org/assets/images/tux.png" alt="alt text" width="50"></td>
-      </tr>
-    </tbody>
-  </table>
+3. Third item
+   1. Indented item
+   2. Indented item
+4. Fourth item</code></pre>
+                            </td>
+                            <td class="rendered-output">
+                                <ol>
+                                    <li>First item</li>
+                                    <li>Second item</li>
+                                    <li>Third item
+                                        <ol>
+                                            <li>Indented item</li>
+                                            <li>Indented item</li>
+                                        </ol>
+                                    </li>
+                                    <li>Fourth item</li>
+                                </ol>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Code</strong></td>
+                            <td>
+<pre><code>Inline `code` has back-ticks around it.
 
-  <h2 class="title">Extended Syntax</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Original Markdown</th>
-        <th>Rendered Effect</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>
-          <pre><code>| Syntax      | Description |
-| ----------- | ----------- |
-| Header      | Title       |
-| Paragraph   | Text        |</code></pre>
-        </td>
-        <td>
-          <table>
-            <thead>
-              <tr><th>Syntax</th><th>Description</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Header</td><td>Title</td></tr>
-              <tr><td>Paragraph</td><td>Text</td></tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <pre><code>```json
-{
-  "firstName": "John",
-  "lastName": "Smith",
-  "age": 25
+For a block of code:
+```javascript
+function greet() {
+  console.log("Hello, world!");
 }
 ```</code></pre>
-        </td>
-        <td>
-          <pre><code class="language-json">{
-  "firstName": "John",
-  "lastName": "Smith",
-  "age": 25
+                            </td>
+                            <td class="rendered-output">
+                                Inline <code>code</code> has back-ticks around it.
+                                <br><br>
+                                For a block of code:
+                                <pre><code>function greet() {
+  console.log("Hello, world!");
 }</code></pre>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <pre><code>Here's a sentence with a footnote. [^1]
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Horizontal Rule</strong></td>
+                            <td>
+<pre><code>---
 
-[^1]: This is the footnote.</code></pre>
-        </td>
-        <td>
-          <p>Here's a sentence with a footnote. <sup>[1]</sup></p>
-          <p><sup>[1]</sup> This is the footnote.</p>
-        </td>
-      </tr>
-      <tr>
-        <td><pre><code>### My Great Heading {#custom-id}</code></pre></td>
-        <td><h3 id="custom-id">My Great Heading</h3></td>
-      </tr>
-      <tr>
-        <td>
-          <pre><code>term
-: definition</code></pre>
-        </td>
-        <td>
-          <dl>
-            <dt>term</dt>
-            <dd>definition</dd>
-          </dl>
-        </td>
-      </tr>
-      <tr>
-        <td><pre><code>~~The world is flat.~~</code></pre></td>
-        <td><del>The world is flat.</del></td>
-      </tr>
-      <tr>
-        <td>
-          <pre><code>- [x] Write the press release
-- [ ] Update the website
-- [ ] Contact the media</code></pre>
-        </td>
-        <td>
-          <ul>
-            <li><input type="checkbox" checked disabled> Write the press release</li>
-            <li><input type="checkbox" disabled> Update the website</li>
-            <li><input type="checkbox" disabled> Contact the media</li>
-          </ul>
-        </td>
-      </tr>
-      <tr>
-        <td><pre><code>That is so funny! :joy:</code></pre></td>
-        <td>That is so funny! 😆</td>
-      </tr>
-      <tr>
-        <td><pre><code>I need to highlight these ==very important words==.</code></pre></td>
-        <td>I need to highlight these <mark>very important words</mark>.</td>
-      </tr>
-      <tr>
-        <td><pre><code>H~2~O</code></pre></td>
-        <td>H<sub>2</sub>O</td>
-      </tr>
-      <tr>
-        <td><pre><code>X^2^</code></pre></td>
-        <td>X<sup>2</sup></td>
-      </tr>
-    </tbody>
-  </table>
+***
 
+___</code></pre>
+                            </td>
+                            <td class="rendered-output"><hr><hr><hr></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Link</strong></td>
+                            <td><pre><code>[Visit Google](https://www.google.com)</code></pre></td>
+                            <td class="rendered-output"><a href="https://www.google.com">Visit Google</a></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Image</strong></td>
+                            <td><pre><code>![A placeholder image](https://placehold.co/100x50/007bff/ffffff?text=Image)</code></pre></td>
+                            <td class="rendered-output"><img src="https://placehold.co/100x50/007bff/ffffff?text=Image" alt="A placeholder image"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            
+            <!-- Advanced Syntax -->
+            <section id="advanced">
+                <h2>Advanced & Extended Syntax</h2>
+                <p>These features are part of extended specifications like GitHub Flavored Markdown (GFM) or CommonMark and are widely supported, but not universal.</p>
+                <table>
+                     <thead>
+                        <tr>
+                            <th>Element</th>
+                            <th>Markdown Syntax</th>
+                            <th>Rendered Effect</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Table</strong></td>
+                            <td>
+<pre><code>| Feature      | Support | Notes                      |
+|--------------|---------|----------------------------|
+| Headers      | 100%    | Core Markdown feature.     |
+| Tables       | High    | Part of GFM.               |
+| Strikethrough| High    | Common extension.          |</code></pre>
+                            </td>
+                            <td class="rendered-output">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Feature</th>
+                                            <th>Support</th>
+                                            <th>Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Headers</td>
+                                            <td>100%</td>
+                                            <td>Core Markdown feature.</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Tables</td>
+                                            <td>High</td>
+                                            <td>Part of GFM.</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Strikethrough</td>
+                                            <td>High</td>
+                                            <td>Common extension.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr>
+                           <td><strong>Task List</strong></td>
+                            <td>
+<pre><code>- [x] Complete project proposal
+- [ ] Review feedback from team
+- [ ] Submit final draft</code></pre>
+                            </td>
+                            <td class="rendered-output">
+                                <ul>
+                                    <li><input type="checkbox" checked disabled> Complete project proposal</li>
+                                    <li><input type="checkbox" disabled> Review feedback from team</li>
+                                    <li><input type="checkbox" disabled> Submit final draft</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Footnotes</strong></td>
+                            <td>
+<pre><code>Here's a statement with a footnote.[^1]
+
+And another one.[^longnote]
+
+[^1]: This is the first footnote.
+[^longnote]: This is a longer footnote with more text.</code></pre>
+                            </td>
+                            <td class="rendered-output">
+                                <p>Here's a statement with a footnote.<sup><a href="#fn1">1</a></sup></p>
+                                <p>And another one.<sup><a href="#fn2">2</a></sup></p>
+                                <hr>
+                                <ol>
+                                    <li id="fn1">This is the first footnote.</li>
+                                    <li id="fn2">This is a longer footnote with more text.</li>
+                                </ol>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Highlighting</strong></td>
+                            <td><pre><code>You can use ==highlighted text== for emphasis.</code></pre></td>
+                            <td class="rendered-output">You can use <mark>highlighted text</mark> for emphasis.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Subscript</strong></td>
+                            <td><pre><code>H~2~O</code></pre></td>
+                            <td class="rendered-output">H<sub>2</sub>O</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Superscript</strong></td>
+                            <td><pre><code>X^2^</code></pre></td>
+                            <td class="rendered-output">X<sup>2</sup></td>
+                        </tr>
+                         <tr>
+                            <td><strong>Automatic URL Linking</strong></td>
+                            <td><pre><code>https://www.github.com</code></pre></td>
+                            <td class="rendered-output"><a href="https://www.github.com">https://www.github.com</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
 </body>
 </html>
