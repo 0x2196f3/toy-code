@@ -4,181 +4,497 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scientific Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ------------------- */
+        /* --- THEME & RESET --- */
+        /* ------------------- */
+        :root {
+            --bg-light: #f5f5f5;
+            --surface-light: #ffffff;
+            --text-primary-light: #212121;
+            --text-secondary-light: #757575;
+            --accent-light: #2962ff;
+            --accent-light-hover: #0039cb;
+            --special-func-light: #e0e0e0;
+            --special-func-light-hover: #bdbdbd;
+            --shadow-light: rgba(0, 0, 0, 0.15);
+
+            --bg-dark: #121212;
+            --surface-dark: #1e1e1e;
+            --text-primary-dark: #e0e0e0;
+            --text-secondary-dark: #bdbdbd;
+            --accent-dark: #448aff;
+            --accent-dark-hover: #82b1ff;
+            --special-func-dark: #2a2a2a;
+            --special-func-dark-hover: #3c3c3c;
+            --shadow-dark: rgba(0, 0, 0, 0.5);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'Roboto', sans-serif;
+            -webkit-tap-highlight-color: transparent; /* Disable tap highlight on mobile */
+        }
+
+        body {
+            display: grid;
+            place-items: center;
+            background-color: var(--bg-light);
+            color: var(--text-primary-light);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* ----------------- */
+        /* --- DARK MODE --- */
+        /* ----------------- */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: var(--bg-dark);
+                --surface: var(--surface-dark);
+                --text-primary: var(--text-primary-dark);
+                --text-secondary: var(--text-secondary-dark);
+                --accent: var(--accent-dark);
+                --accent-hover: var(--accent-dark-hover);
+                --special-func: var(--special-func-dark);
+                --special-func-hover: var(--special-func-dark-hover);
+                --shadow: var(--shadow-dark);
+            }
+        }
+        
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: var(--bg-light);
+                --surface: var(--surface-light);
+                --text-primary: var(--text-primary-light);
+                --text-secondary: var(--text-secondary-light);
+                --accent: var(--accent-light);
+                --accent-hover: var(--accent-light-hover);
+                --special-func: var(--special-func-light);
+                --special-func-hover: var(--special-func-light-hover);
+                --shadow: var(--shadow-light);
+            }
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+        }
+
+        /* ------------------------- */
+        /* --- CALCULATOR LAYOUT --- */
+        /* ------------------------- */
+        .calculator {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            max-height: 850px; /* Increased max-height for new layout */
+            background-color: var(--surface);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Adjust for smaller screens */
+        @media (max-width: 420px), (max-height: 870px) {
+            .calculator {
+                max-width: 100%;
+                max-height: 100%;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+
+        /* ----------------------- */
+        /* --- DISPLAY SCREEN --- */
+        /* ----------------------- */
+        .calculator-display {
+            padding: 2rem 1.5rem 1rem;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            flex: 1;
+            min-height: 120px; /* Ensure display has enough height */
+            overflow: hidden;
+        }
+
+        #history {
+            min-height: 24px;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            white-space: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: none; /* Firefox */
+        }
+        #history::-webkit-scrollbar { 
+            display: none; /* Safari and Chrome */
+        }
+
+        #expression {
+            font-size: 3rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: none; /* Firefox */
+        }
+        #expression::-webkit-scrollbar {
+            display: none; /* Safari and Chrome */
+        }
+
+        /* ------------------- */
+        /* --- BUTTON GRID --- */
+        /* ------------------- */
+        .calculator-keys {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* Changed to 4 columns */
+            gap: 1px;
+            background-color: var(--special-func);
+            padding-top: 1px;
+            transition: background-color 0.3s ease;
+        }
+
+        .calculator-keys button {
+            position: relative;
+            border: none;
+            background-color: var(--surface);
+            font-size: 1.4rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            padding: 1.2rem 0;
+            cursor: pointer;
+            outline: none;
+            overflow: hidden;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            display: grid;
+            place-items: center;
+            min-height: 65px; /* Minimum height for buttons */
+        }
+        
+        .calculator-keys button:hover {
+            background-color: var(--special-func-hover);
+        }
+
+        .calculator-keys button.operator, 
+        .calculator-keys button.function {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .calculator-keys button.special-function {
+            background-color: var(--special-func);
+        }
+        .calculator-keys button.special-function:hover {
+            background-color: var(--special-func-hover);
+        }
+
+        .calculator-keys button.zero {
+            grid-column: span 2;
+        }
+        .calculator-keys button.clear,
+        .calculator-keys button.backspace {
+            grid-column: span 2;
+        }
+
+        .calculator-keys button.equals {
+            background-color: var(--accent);
+            color: white;
+            grid-column: span 4;
+        }
+        .calculator-keys button.equals:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* --------------------- */
+        /* --- RIPPLE EFFECT --- */
+        /* --------------------- */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.1);
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
 <body>
-	<style>
-		body {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			height: 100vh;
-			margin: 0;
-			background-color: #1e1e1e;
-			font-family: 'Courier New', Courier, monospace;
-		}
 
-		.calculator {
-			border: 1px solid #333;
-			border-radius: 10px;
-			box-shadow: 0 0 15px rgba(0,0,0,0.5);
-			overflow: hidden;
-			width: 360px;
-			background: #282c34;
-		}
-
-		.display {
-			background-color: #1e1e1e;
-			color: #61dafb;
-			padding: 10px;
-			text-align: right;
-		}
-
-		.display input {
-			width: 100%;
-			border: none;
-			background: none;
-			color: #61dafb;
-			font-size: 1.5em;
-			text-align: right;
-			padding: 0;
-			margin: 0;
-		}
-
-		.buttons {
-			display: grid;
-			grid-template-columns: repeat(4, 1fr);
-		}
-
-		button {
-			border: 1px solid #333;
-			border-top: none;
-			border-left: none;
-			background-color: #20232a;
-			color: #61dafb;
-			font-size: 1.1em;
-			padding: 15px;
-			cursor: pointer;
-			transition: background-color 0.3s ease;
-		}
-
-		button:hover {
-			background-color: #282c34;
-		}
-
-		.footer {
-			background-color: #20232a;
-			color: #61dafb;
-			padding: 10px;
-			text-align: center;
-			font-size: 0.9em;
-			border-top: 1px solid #333;
-		}
-
-	</style>
-	<script>
-		let isDegreeMode = true; // Default mode is degrees
-
-		function appendCharacter(character) {
-			const display = document.getElementById('display');
-			display.value += character;
-		}
-
-		function clearDisplay() {
-			const display = document.getElementById('display');
-			display.value = '';
-		}
-
-		function calculateResult() {
-			const display = document.getElementById('display');
-			try {
-				// Replace the math functions for security
-				let expression = display.value
-					.replace(/Math.sqrt/g, 'Math.sqrt')
-					.replace(/Math.sin/g, 'Math.sin')
-					.replace(/Math.asin/g, 'Math.asin')
-					.replace(/Math.cos/g, 'Math.cos')
-					.replace(/Math.acos/g, 'Math.acos')
-					.replace(/Math.tan/g, 'Math.tan')
-					.replace(/Math.atan/g, 'Math.atan')
-					.replace(/Math.log/g, 'Math.log10')
-					.replace(/Math.log10/g, 'Math.log10')
-					.replace(/Math.exp/g, 'Math.exp')
-					.replace(/Math.PI/g, 'Math.PI')
-					.replace(/Math.pow/g, 'Math.pow');
-				
-				if (isDegreeMode) {
-					expression = expression.replace(/Math.sin\(/g, 'Math.sin(')
-											.replace(/Math.cos\(/g, 'Math.cos(')
-											.replace(/Math.tan\(/g, 'Math.tan(');
-				} else {
-					expression = expression.replace(/Math.sin\(/g, 'Math.sin(Math.PI/180*')
-											.replace(/Math.cos\(/g, 'Math.cos(Math.PI/180*')
-											.replace(/Math.tan\(/g, 'Math.tan(Math.PI/180*');
-				}
-				
-				const result = eval(expression);
-				display.value = result;
-			} catch (e) {
-				display.value = 'Error';
-			}
-		}
-
-		function toggleMode() {
-			isDegreeMode = !isDegreeMode;
-			alert(`Mode switched to ${isDegreeMode ? 'Degrees' : 'Radians'}`);
-		}
-
-	</script>
     <div class="calculator">
-        <div class="display">
-            <input type="text" id="display" disabled>
+        <!-- Display Section -->
+        <div class="calculator-display">
+            <div id="history"></div>
+            <div id="expression">0</div>
         </div>
-        <div class="buttons">
-            <!-- Row 1 -->
-            <button onclick="clearDisplay()">C</button>
-            <button onclick="appendCharacter('/')">÷</button>
-            <button onclick="appendCharacter('*')">x</button>
-            <button onclick="appendCharacter('-')">-</button>
-            <!-- Row 2 -->
-            <button onclick="appendCharacter('7')">7</button>
-            <button onclick="appendCharacter('8')">8</button>
-            <button onclick="appendCharacter('9')">9</button>
-            <button onclick="appendCharacter('+')">+</button>
-            <!-- Row 3 -->
-            <button onclick="appendCharacter('4')">4</button>
-            <button onclick="appendCharacter('5')">5</button>
-            <button onclick="appendCharacter('6')">6</button>
-            <button onclick="appendCharacter('^')">^</button>
-            <!-- Row 4 -->
-            <button onclick="appendCharacter('1')">1</button>
-            <button onclick="appendCharacter('2')">2</button>
-            <button onclick="appendCharacter('3')">3</button>
-            <button onclick="calculateResult()">=</button>
-            <!-- Row 5 -->
-            <button onclick="appendCharacter('0')">0</button>
-            <button onclick="appendCharacter('(')">(</button>
-            <button onclick="appendCharacter(')')">)</button>
-            <button onclick="appendCharacter('Math.sqrt(')">√</button>
-            <!-- Row 6 -->
-            <button onclick="appendCharacter('Math.exp(')">e^x</button>
-            <button onclick="appendCharacter('Math.sin(')">sin</button>
-            <button onclick="appendCharacter('Math.asin(')">sin⁻¹</button>
-            <button onclick="appendCharacter('Math.cos(')">cos</button>
-            <button onclick="appendCharacter('Math.acos(')">cos⁻¹</button>
-            <!-- Row 7 -->
-            <button onclick="appendCharacter('Math.tan(')">tan</button>
-            <button onclick="appendCharacter('Math.atan(')">tan⁻¹</button>
-            <button onclick="appendCharacter('Math.log(')">log</button>
-            <button onclick="appendCharacter('Math.log10(')">ln</button>
-            <!-- Row 8 -->
-            <button onclick="appendCharacter('Math.PI')">π</button>
-            <button onclick="appendCharacter('Math.pow(')">yx</button>
-            <button onclick="toggleMode()">Mode</button>
-            <button onclick="appendCharacter('-')">(-)</button>
-        </div>
-        <div class="footer">
-            Made with Love -By Arghyadip
+
+        <!-- Keys/Buttons Section -->
+        <div class="calculator-keys">
+            <!-- Scientific & Special Functions -->
+            <button class="special-function function" data-key="sin">sin</button>
+            <button class="special-function function" data-key="cos">cos</button>
+            <button class="special-function function" data-key="tan">tan</button>
+            <button class="special-function function" data-key="log">log</button>
+
+            <button class="special-function function" data-key="ln">ln</button>
+            <button class="special-function function" data-key="(">(</button>
+            <button class="special-function function" data-key=")">)</button>
+            <button class="special-function function" data-key="^">x<sup>y</sup></button>
+
+            <button class="special-function function" data-key="sqrt">√</button>
+            <button class="special-function" data-key="pi">π</button>
+            <button class="special-function" data-key="e">e</button>
+            <button class="special-function operator" data-key="%">%</button>
+            
+            <button class="special-function clear" data-key="clear">C</button>
+            <button class="special-function operator backspace" data-key="backspace">⌫</button>
+
+            <!-- Numpad Layout -->
+            <button data-key="7">7</button>
+            <button data-key="8">8</button>
+            <button data-key="9">9</button>
+            <button class="operator" data-key="/">÷</button>
+            
+            <button data-key="4">4</button>
+            <button data-key="5">5</button>
+            <button data-key="6">6</button>
+            <button class="operator" data-key="*">×</button>
+
+            <button data-key="1">1</button>
+            <button data-key="2">2</button>
+            <button data-key="3">3</button>
+            <button class="operator" data-key="-">-</button>
+
+            <button data-key="0" class="zero">0</button>
+            <button data-key=".">.</button>
+            <button class="operator" data-key="+">+</button>
+            
+            <button class="equals" data-key="=">=</button>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const displayExpression = document.getElementById('expression');
+            const displayHistory = document.getElementById('history');
+            const keys = document.querySelector('.calculator-keys');
+
+            let currentExpression = '';
+            let isResultDisplayed = false;
+
+            // --- Main event listener for all calculator buttons ---
+            keys.addEventListener('click', event => {
+                if (!event.target.matches('button')) return;
+                
+                createRipple(event);
+
+                const key = event.target.dataset.key;
+                const displayedNum = displayExpression.textContent;
+
+                handleKeyPress(key, displayedNum);
+            });
+
+            // --- Keyboard support ---
+            document.addEventListener('keydown', event => {
+                const keyMap = {
+                    'Enter': '=',
+                    'Backspace': 'backspace',
+                    'c': 'clear', 'C': 'clear',
+                    '(': '(', ')': ')', '^': '^', '%': '%',
+                    's': 'sin', 't': 'tan', 'l': 'log', 'p': 'pi', 'e': 'e'
+                };
+                
+                const key = keyMap[event.key] || event.key;
+                const validKeys = '0123456789.+-*/=%()^sincostanloglnsqrtpiclearbackspace';
+
+                if (validKeys.includes(key)) {
+                    event.preventDefault();
+                    handleKeyPress(key, displayExpression.textContent);
+                }
+            });
+
+            /**
+             * Handles the logic for any key press.
+             */
+            function handleKeyPress(key, displayedNum) {
+                if (!isNaN(key) || key === '.') {
+                    handleNumber(key);
+                } else if (['+', '-', '*', '/', '^', '%'].includes(key)) {
+                    handleOperator(key);
+                } else if (['sin', 'cos', 'tan', 'log', 'ln', 'sqrt'].includes(key)) {
+                    handleFunction(key);
+                } else if (['pi', 'e'].includes(key)) {
+                    handleConstant(key);
+                } else {
+                    handleSpecialKey(key, displayedNum);
+                }
+                updateDisplay();
+            }
+
+            function handleNumber(key) {
+                if (isResultDisplayed) {
+                    currentExpression = (key === '.') ? '0.' : key;
+                    isResultDisplayed = false;
+                } else {
+                    currentExpression = (currentExpression === '0' && key !== '.') ? key : currentExpression + key;
+                }
+            }
+
+            function handleOperator(key) {
+                isResultDisplayed = false;
+                const lastChar = currentExpression.slice(-1);
+                if (['+', '-', '*', '/', '^', '%'].includes(lastChar)) {
+                    currentExpression = currentExpression.slice(0, -1) + key;
+                } else if (currentExpression !== '') {
+                    currentExpression += key;
+                }
+            }
+            
+            function handleFunction(key) {
+                 if (isResultDisplayed) {
+                    currentExpression = '';
+                    isResultDisplayed = false;
+                }
+                currentExpression += key + '(';
+            }
+
+            function handleConstant(key) {
+                if (isResultDisplayed) {
+                    currentExpression = '';
+                    isResultDisplayed = false;
+                }
+                const lastChar = currentExpression.slice(-1);
+                if (currentExpression === '' || ['+', '-', '*', '/', '(', '^', '%'].includes(lastChar)) {
+                     currentExpression += key;
+                }
+            }
+
+            function handleSpecialKey(key) {
+                 switch (key) {
+                    case '=':
+                        calculate();
+                        break;
+                    case 'clear':
+                        resetCalculator();
+                        break;
+                    case 'backspace':
+                        if (currentExpression.length > 0 && !isResultDisplayed) {
+                            currentExpression = currentExpression.slice(0, -1);
+                        }
+                        break;
+                    case '(': case ')':
+                        isResultDisplayed = false;
+                        currentExpression += key;
+                        break;
+                }
+            }
+
+            function updateDisplay() {
+                displayExpression.textContent = currentExpression === '' ? '0' : currentExpression;
+                displayExpression.scrollLeft = displayExpression.scrollWidth;
+            }
+
+            function resetCalculator() {
+                currentExpression = '';
+                displayHistory.textContent = '';
+                isResultDisplayed = false;
+            }
+
+            /**
+             * Evaluates the mathematical expression, attempting to fix parentheses on error.
+             */
+            function calculate() {
+                if (currentExpression === '' || isResultDisplayed) return;
+
+                let expressionToTry = currentExpression;
+                try {
+                    evaluateAndDisplay(expressionToTry);
+                } catch (error) {
+                    const openParenCount = (expressionToTry.match(/\(/g) || []).length;
+                    const closeParenCount = (expressionToTry.match(/\)/g) || []).length;
+
+                    if (openParenCount > closeParenCount) {
+                        const missingParens = openParenCount - closeParenCount;
+                        expressionToTry += ')'.repeat(missingParens);
+                        try {
+                            evaluateAndDisplay(expressionToTry);
+                        } catch (finalError) {
+                            displayHistory.textContent = currentExpression + ' =';
+                            currentExpression = 'Error';
+                            isResultDisplayed = true;
+                        }
+                    } else {
+                        displayHistory.textContent = currentExpression + ' =';
+                        currentExpression = 'Error';
+                        isResultDisplayed = true;
+                    }
+                }
+            }
+
+            /**
+             * Helper function to evaluate the expression and update UI and state.
+             */
+            function evaluateAndDisplay(expr) {
+                let evalExpression = expr
+                    .replace(/×/g, '*').replace(/÷/g, '/')
+                    .replace(/π/g, 'Math.PI').replace(/e/g, 'Math.E')
+                    .replace(/\^/g, '**').replace(/%/g, '%')
+                    .replace(/sqrt\(/g, 'Math.sqrt(')
+                    .replace(/log\(/g, 'Math.log10(').replace(/ln\(/g, 'Math.log(')
+                    .replace(/sin\(/g, 'Math.sin(Math.PI/180 * ')
+                    .replace(/cos\(/g, 'Math.cos(Math.PI/180 * ')
+                    .replace(/tan\(/g, 'Math.tan(Math.PI/180 * ');
+
+                const result = parseFloat(eval(evalExpression).toFixed(10));
+                
+                if (isNaN(result) || !isFinite(result)) {
+                    throw new Error("Invalid calculation");
+                }
+                
+                displayHistory.textContent = expr + ' =';
+                currentExpression = result.toString();
+                isResultDisplayed = true;
+            }
+            
+            function createRipple(event) {
+                const button = event.target;
+                const circle = document.createElement("span");
+                const diameter = Math.max(button.clientWidth, button.clientHeight);
+                const radius = diameter / 2;
+
+                circle.style.width = circle.style.height = `${diameter}px`;
+                const rect = button.getBoundingClientRect();
+                circle.style.left = `${event.clientX - rect.left - radius}px`;
+                circle.style.top = `${event.clientY - rect.top - radius}px`;
+                circle.classList.add("ripple");
+                
+                const ripple = button.getElementsByClassName("ripple")[0];
+                if (ripple) { ripple.remove(); }
+                
+                button.appendChild(circle);
+            }
+        });
+    </script>
 </body>
 </html>
+
