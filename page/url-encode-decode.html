@@ -2,114 +2,226 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>URL Encoder/Decoder</title>
   <style>
+    :root {
+      --bg-color: #f5f5f5;
+      --text-color: #1a1a1a;
+      --card-bg-color: #ffffff;
+      --border-color: #e0e0e0;
+      --accent-color: #2196F3;
+      --accent-color-dark: #1976D2;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #121212;
+        --text-color: #e0e0e0;
+        --card-bg-color: #1e1e1e;
+        --border-color: #424242;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     html, body {
       height: 100%;
       margin: 0;
+      padding: 0;
     }
+
     body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    main {
+      background-color: var(--card-bg-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 700px;
+      height: 100%;
+      max-height: 90vh;
       display: flex;
       flex-direction: column;
-      padding: 20px;           /* your original “margin:20px” */
-      font-family: Arial, sans-serif;
-      box-sizing: border-box;
+      gap: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s ease-in-out;
     }
 
-    h1, h2 {
-      margin: 0 0 10px;
+    h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--accent-color);
+      text-align: center;
     }
 
-    /* — TEXTAREAS — */
+    .io-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+      min-height: 0;
+    }
+
     textarea {
       width: 100%;
-      box-sizing: border-box;
-      padding: 8px;
+      height: 100%;
+      flex-grow: 1;
+      padding: 0.75rem;
       font-family: inherit;
       font-size: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
       resize: none;
-      border: 1px solid #ccc;
-      /* remove fixed height */
-      height: auto;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-    /* make the INPUT take 60% of the *remaining* space */
-    #input {
-      flex: 4;
-      margin-bottom: 10px;
-    }
-    /* make the OUTPUT take 40% of the *remaining* space */
-    #output {
-      flex: 6;
-      margin-top: 10px;
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 25%, transparent);
     }
 
-    /* — BUTTON BAR — */
-    div.buttons {
-      margin: 0 0 10px;
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.75rem;
     }
+
     button {
-      padding: 10px 15px;
-      margin-right: 5px;
+      flex: 1;
+      padding: 0.75rem 1rem;
       font-size: 1rem;
+      font-weight: 500;
       cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      background-color: var(--accent-color);
+      color: white;
+      transition: background-color 0.2s ease-in-out;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    
+    button svg {
+      flex-shrink: 0;
     }
 
-    /* — DARK MODE — */
-    @media (prefers-color-scheme: dark) {
+    button:hover {
+      background-color: var(--accent-color-dark);
+    }
+
+    @media (max-width: 768px) {
       body {
-        background-color: #343a40;
-        color: #f8f9fa;
+        padding: 0;
       }
-      textarea {
-        background-color: #495057;
-        color: #f8f9fa;
-        border: 1px solid #ced4da;
-      }
-      button {
-        background-color: #007bff;
-        color: #fff;
-        border: none;
-      }
-      button:hover {
-        background-color: #0056b3;
+      main {
+        height: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
       }
     }
   </style>
 </head>
 <body>
 
-  <h1>URL Encoder / Decoder</h1>
-
-  <textarea id="input" placeholder="Enter text or URL string here..."></textarea>
-  <div>
-    <button onclick="urlEncode()">Encode for URL</button>
-    <button onclick="urlDecode()">Decode from URL</button>
-  </div>
-
-  <h2>Output:</h2>
-  <textarea id="output" placeholder="Result will appear here..." readonly></textarea>
+  <main>
+    <h1>URL Encoder / Decoder</h1>
+    <div class="io-container">
+      <textarea id="input" placeholder="Enter text or URL string here..."></textarea>
+    </div>
+    <div class="buttons">
+      <button onclick="urlEncode()">Encode</button>
+      <button onclick="urlDecode()">Decode</button>
+      <button onclick="swapText()" title="Swap Input and Output">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path fill-rule="evenodd" d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5m14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5"/>
+        </svg>
+        <span>Swap</span>
+      </button>
+      <button id="copyBtn" onclick="copyOutput()" title="Copy Output">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+        </svg>
+        <span>Copy</span>
+      </button>
+    </div>
+    <div class="io-container">
+      <textarea id="output" placeholder="Result will appear here..." readonly></textarea>
+    </div>
+  </main>
 
   <script>
     function urlEncode() {
-      const text = document.getElementById('input').value;
-      // encodeURIComponent safely encodes all characters that are not valid in a URL component
-      const encoded = encodeURIComponent(text);
+      const input = document.getElementById('input').value;
+      const encoded = encodeURIComponent(input);
       document.getElementById('output').value = encoded;
     }
 
     function urlDecode() {
-      const text = document.getElementById('input').value;
+      const input = document.getElementById('input').value;
       try {
-        // decodeURIComponent will throw if the input is malformed
-        const decoded = decodeURIComponent(text);
+        const decoded = decodeURIComponent(input.replace(/\+/g, ' '));
         document.getElementById('output').value = decoded;
       } catch (e) {
         document.getElementById('output').value = 'Invalid URL-encoded string';
       }
     }
+
+    function swapText() {
+        const inputEl = document.getElementById('input');
+        const outputEl = document.getElementById('output');
+        const temp = inputEl.value;
+        inputEl.value = outputEl.value;
+        outputEl.value = temp;
+    }
+
+    function copyOutput() {
+        const outputEl = document.getElementById('output');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyBtnSpan = copyBtn.querySelector('span');
+
+        if (!outputEl.value || !copyBtnSpan || copyBtnSpan.innerText === 'Copied!') {
+            return;
+        }
+
+        const originalText = copyBtnSpan.innerText;
+        outputEl.select();
+        outputEl.setSelectionRange(0, 99999);
+
+        try {
+            document.execCommand('copy');
+            copyBtnSpan.innerText = 'Copied!';
+        } catch (err) {
+            copyBtnSpan.innerText = 'Failed!';
+            console.error('Fallback: Oops, unable to copy', err);
+        }
+        
+        window.getSelection().removeAllRanges();
+
+        setTimeout(() => {
+            copyBtnSpan.innerText = originalText;
+        }, 2000);
+    }
   </script>
 
 </body>
 </html>
+
