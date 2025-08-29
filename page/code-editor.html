@@ -130,6 +130,7 @@
         <h1>Code Editor</h1>
         <div class="controls">
             <select id="language-select" class="control-element"></select>
+			<button id="copy-btn" class="control-element">Copy</button>
             <button id="find-btn" class="control-element">Find / Replace</button>
         </div>
     </header>
@@ -434,6 +435,7 @@
         const editorElement = document.getElementById('editor');
         const languageSelect = document.getElementById('language-select');
         const findButton = document.getElementById('find-btn');
+        const copyButton = document.getElementById('copy-btn');
 
         const languages = [
             { name: "C / C++", mode: "c_cpp" }, { name: "C#", mode: "csharp" },
@@ -498,6 +500,18 @@
             const selectedMode = languageSelect.value;
             editor.session.setMode(`ace/mode/${selectedMode}`);
             setEditorContentByMode(selectedMode);
+        });
+		
+		copyButton.addEventListener('click', () => {
+            const code = editor.getValue();
+            navigator.clipboard.writeText(code).then(() => {
+                copyButton.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyButton.textContent = 'Copy';
+                }, 1500);
+            }).catch(err => {
+                console.error('Failed to copy code: ', err);
+            });
         });
 
         findButton.addEventListener('click', () => {
