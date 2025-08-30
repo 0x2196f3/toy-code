@@ -7,9 +7,8 @@
     <script>
         (function() {
             try {
-                const savedTheme = localStorage.getItem('theme');
-                const theme = savedTheme || 'dark';
-                document.documentElement.setAttribute('data-theme', theme);
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
             } catch (e) {
                 document.documentElement.setAttribute('data-theme', 'dark');
             }
@@ -226,7 +225,6 @@
         <header>
             <h1>Local LLM Translator</h1>
             <div class="controls">
-                <button id="theme-toggle-btn" class="icon-btn" title="Toggle Theme">🌓</button>
                 <button id="settings-btn" class="icon-btn" title="Settings">⚙️</button>
             </div>
         </header>
@@ -310,7 +308,6 @@
                 sourceCharCount: document.getElementById('source-char-count'),
                 resultCharCount: document.getElementById('result-char-count'),
                 settingsBtn: document.getElementById('settings-btn'),
-                themeToggleBtn: document.getElementById('theme-toggle-btn'),
                 translateBtn: document.getElementById('translate-btn'),
                 settingsModal: document.getElementById('settings-modal'),
                 saveSettingsBtn: document.getElementById('save-settings-btn'),
@@ -406,15 +403,6 @@
                 return null;
             };
 
-            const applyTheme = (theme) => {
-                document.documentElement.setAttribute('data-theme', theme);
-                localStorage.setItem('theme', theme);
-            };
-            const toggleTheme = () => {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
-            };
-            
             const updateUrlHint = (apiType) => {
                 const isOllama = apiType === 'ollama';
                 dom.ollamaUrlHint.style.display = isOllama ? 'block' : 'none';
@@ -502,7 +490,6 @@
 
             const addEventListeners = () => {
                 dom.settingsBtn.addEventListener('click', () => toggleSettingsModal(true));
-                dom.themeToggleBtn.addEventListener('click', toggleTheme);
                 dom.translateBtn.addEventListener('click', translate);
                 dom.cancelSettingsBtn.addEventListener('click', () => toggleSettingsModal(false));
                 dom.settingsModal.addEventListener('click', (e) => {
@@ -516,8 +503,16 @@
                 dom.sourceLang.addEventListener('change', () => setCookie('translator_src', dom.sourceLang.value, 365));
                 dom.destLang.addEventListener('change', () => setCookie('translator_dst', dom.destLang.value, 365));
             };
+            
+            const setupThemeListener = () => {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                    const newTheme = event.matches ? "dark" : "light";
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                });
+            };
 
             const init = () => {
+                setupThemeListener();
                 populateLanguages();
                 loadSettings();
                 addEventListeners();
