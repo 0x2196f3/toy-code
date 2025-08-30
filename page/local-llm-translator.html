@@ -160,6 +160,14 @@
         #save-settings-btn { background-color: var(--primary-color); color: var(--primary-text); }
         #cancel-settings-btn { background-color: var(--panel-bg); color: var(--text-color); border-color: var(--button-border-color); }
         #cancel-settings-btn:hover { background-color: var(--hover-bg); }
+        
+        /* Button visibility defaults */
+        #translate-btn .mobile-icon {
+            display: none;
+        }
+        #translate-btn .desktop-text {
+            display: inline;
+        }
 
         /* Mobile full-screen styles */
         @media (max-width: 600px) {
@@ -182,6 +190,36 @@
             textarea {
                 min-height: 150px; /* Adjust as needed for smaller screens */
             }
+
+            /* Hide the original button footer and create a Floating Action Button */
+            .panel-footer {
+                padding: 0;
+                height: 0;
+            }
+            #translate-btn {
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                padding: 0;
+                z-index: 10;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background-color 0.2s, box-shadow 0.2s;
+            }
+            #translate-btn .desktop-text {
+                display: none;
+            }
+            #translate-btn .mobile-icon {
+                display: block;
+                width: 24px;
+                height: 24px;
+                fill: var(--primary-text);
+            }
         }
     </style>
 </head>
@@ -203,7 +241,15 @@
                     <textarea id="source-text" placeholder="Enter text..."></textarea>
                     <div id="source-char-count" class="char-count">0</div>
                 </div>
-                 <div class="panel-footer"><button id="translate-btn">Translate</button></div>
+                 <div class="panel-footer">
+                    <button id="translate-btn">
+                        <span class="desktop-text">Translate</span>
+                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px">
+                            <path d="M0 0h24v24H0V0z" fill="none"/>
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="panel result-panel">
                 <div class="language-selector"><select id="dest-lang"></select></div>
