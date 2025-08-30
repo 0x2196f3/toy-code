@@ -107,7 +107,7 @@
         }
 
         textarea {
-            flex-grow: 1; padding: 15px; padding-bottom: 30px; /* space for char count */
+            flex-grow: 1; padding: 15px; padding-bottom: 30px; 
             border: none; resize: none; font-size: 18px;
             line-height: 1.6; min-height: 300px; background-color: transparent;
             color: var(--text-color); transition: color 0.3s;
@@ -161,7 +161,6 @@
         #cancel-settings-btn { background-color: var(--panel-bg); color: var(--text-color); border-color: var(--button-border-color); }
         #cancel-settings-btn:hover { background-color: var(--hover-bg); }
         
-        /* Button visibility defaults */
         #translate-btn .mobile-icon {
             display: none;
         }
@@ -169,7 +168,6 @@
             display: inline;
         }
 
-        /* Mobile full-screen styles */
         @media (max-width: 600px) {
             body {
                 padding: 0;
@@ -188,10 +186,9 @@
                 flex-grow: 1;
             }
             textarea {
-                min-height: 150px; /* Adjust as needed for smaller screens */
+                min-height: 150px; 
             }
 
-            /* Hide the original button footer and create a Floating Action Button */
             .panel-footer {
                 padding: 0;
                 height: 0;
@@ -262,7 +259,6 @@
         </main>
     </div>
 
-    <!-- Settings Modal -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <h2>Settings</h2>
