@@ -519,16 +519,26 @@
         const addTabButton = document.getElementById('add-tab-btn');
 
         const languages = [
-            { name: "C / C++", mode: "c_cpp", extension: "cpp" }, { name: "C#", mode: "csharp", extension: "cs" },
-            { name: "Dart", mode: "dart", extension: "dart" }, { name: "Dockerfile", mode: "dockerfile", extension: "Dockerfile" },
-            { name: "Go", mode: "golang", extension: "go" }, { name: "INI", mode: "ini", extension: "ini" },
-            { name: "Java", mode: "java", extension: "java" }, { name: "JavaScript", mode: "javascript", extension: "js" },
-            { name: "JSON", mode: "json", extension: "json" }, { name: "Lua", mode: "lua", extension: "lua" },
-            { name: "Markdown", mode: "markdown", extension: "md" }, { name: "MATLAB", mode: "matlab", extension: "m" },
-            { name: "PHP", mode: "php", extension: "php" }, { name: "Python", mode: "python", extension: "py" },
-            { name: "Ruby", mode: "ruby", extension: "rb" }, { name: "Rust", mode: "rust", extension: "rs" },
-            { name: "SQL", mode: "sql", extension: "sql" }, { name: "TOML", mode: "toml", extension: "toml" },
-            { name: "TypeScript", mode: "typescript", extension: "ts" }, { name: "XML", mode: "xml", extension: "xml" },
+            { name: "JSON", mode: "json", extension: "json" },
+			{ name: "C / C++", mode: "c_cpp", extension: "cpp" },
+			{ name: "C#", mode: "csharp", extension: "cs" },
+            { name: "Dart", mode: "dart", extension: "dart" }, 
+			{ name: "Dockerfile", mode: "dockerfile", extension: "Dockerfile" },
+            { name: "Go", mode: "golang", extension: "go" },
+			{ name: "INI", mode: "ini", extension: "ini" },
+            { name: "Java", mode: "java", extension: "java" },
+			{ name: "JavaScript", mode: "javascript", extension: "js" },
+            { name: "Lua", mode: "lua", extension: "lua" },
+            { name: "Markdown", mode: "markdown", extension: "md" },
+			{ name: "MATLAB", mode: "matlab", extension: "m" },
+            { name: "PHP", mode: "php", extension: "php" },
+			{ name: "Python", mode: "python", extension: "py" },
+            { name: "Ruby", mode: "ruby", extension: "rb" },
+			{ name: "Rust", mode: "rust", extension: "rs" },
+            { name: "SQL", mode: "sql", extension: "sql" },
+			{ name: "TOML", mode: "toml", extension: "toml" },
+            { name: "TypeScript", mode: "typescript", extension: "ts" },
+			{ name: "XML", mode: "xml", extension: "xml" },
             { name: "YAML", mode: "yaml", extension: "yml" }
         ];
 
@@ -544,7 +554,7 @@
         editor.setOptions({
             enableBasicAutocompletion: true,
             enableLiveAutocompletion: true,
-            enableSnippets: true,
+            enableSnippets: false,
             showPrintMargin: false,
             useWorker: false,
             fontSize: "16px",
