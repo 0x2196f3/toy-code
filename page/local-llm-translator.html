@@ -347,7 +347,7 @@
                     const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
-                        body: JSON.stringify({ model, prompt, stream: false }),
+                        body: JSON.stringify({ model, prompt, stream: false, think: false }),
                     });
                     if (!response.ok) {
                         const err = await response.json().catch(() => ({ error: response.statusText }));
@@ -368,6 +368,7 @@
                             model,
                             messages: [{ role: "user", content: prompt }],
                             stream: false,
+                            chat_template_kwargs: { enable_thinking: false }
                         }),
                     });
                      if (!response.ok) {
