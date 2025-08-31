@@ -83,6 +83,9 @@
             background: none; border: none; font-size: 24px; cursor: pointer;
             color: var(--secondary-text-color); padding: 8px; border-radius: 50%;
             line-height: 1; transition: background-color 0.2s, color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         .icon-btn:hover { background-color: var(--hover-bg); }
 
@@ -106,7 +109,7 @@
         }
 
         textarea {
-            flex-grow: 1; padding: 15px; padding-bottom: 30px; 
+            flex-grow: 1; padding: 15px; padding-bottom: 40px; 
             border: none; resize: none; font-size: 18px;
             line-height: 1.6; min-height: 300px; background-color: transparent;
             color: var(--text-color); transition: color 0.3s;
@@ -126,6 +129,14 @@
             right: 15px;
             font-size: 12px;
             color: var(--secondary-text-color);
+        }
+
+        .copy-container {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            align-items: center;
         }
 
         .loader {
@@ -165,6 +176,34 @@
         }
         #translate-btn .desktop-text {
             display: inline;
+        }
+        
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1001;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 30px;
+            font-size: 17px;
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
+
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        html[data-theme='dark'] .toast {
+            background-color: var(--hover-bg);
+            color: var(--text-color);
         }
 
         @media (max-width: 600px) {
@@ -225,7 +264,12 @@
         <header>
             <h1>Local LLM Translator</h1>
             <div class="controls">
-                <button id="settings-btn" class="icon-btn" title="Settings">⚙️</button>
+                <button id="settings-btn" class="icon-btn" title="Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor">
+                        <path d="M0 0h24v24H0V0z" fill="none"/>
+                        <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                    </svg>
+                </button>
             </div>
         </header>
 
@@ -251,6 +295,14 @@
                 <div class="textarea-wrapper">
                     <textarea id="result-text" placeholder="Translation" readonly></textarea>
                     <div class="loader" id="loader"></div>
+                    <div class="copy-container">
+                        <button id="copy-btn" class="icon-btn" title="Copy translation">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor">
+                                <path d="M0 0h24v24H0V0z" fill="none"/>
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-5zm0 16H8V7h11v14z"/>
+                            </svg>
+                        </button>
+                    </div>
                     <div id="result-char-count" class="char-count">0</div>
                 </div>
             </div>
@@ -297,6 +349,8 @@
             </div>
         </div>
     </div>
+    
+    <div id="toast" class="toast"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -318,6 +372,8 @@
                 modelName: document.getElementById('model-name'),
                 promptTemplate: document.getElementById('prompt-template'),
                 loader: document.getElementById('loader'),
+                copyBtn: document.getElementById('copy-btn'),
+                toast: document.getElementById('toast'),
                 ollamaUrlHint: document.getElementById('ollama-url-hint'),
                 ollamaCorsHint: document.getElementById('ollama-cors-hint'),
                 openaiUrlHint: document.getElementById('openai-url-hint'),
@@ -402,6 +458,38 @@
                     if (c.startsWith(name + "=")) return decodeURIComponent(c.substring(name.length + 1));
                 }
                 return null;
+            };
+            
+            const copyOutput = () => {
+                const textToCopy = dom.resultText.value;
+                if (!textToCopy) return;
+
+                try {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = textToCopy;
+                    textArea.style.position = "fixed";
+                    textArea.style.top = "-9999px";
+                    textArea.style.left = "-9999px";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+
+                    dom.toast.textContent = "Copied to clipboard!";
+                    dom.toast.className = "toast show";
+                    setTimeout(() => { 
+                        dom.toast.className = dom.toast.className.replace("show", ""); 
+                    }, 3000);
+
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                    dom.toast.textContent = "Failed to copy!";
+                    dom.toast.className = "toast show";
+                    setTimeout(() => { 
+                        dom.toast.className = dom.toast.className.replace("show", ""); 
+                    }, 3000);
+                }
             };
 
             const updateUrlHint = (apiType) => {
@@ -492,6 +580,7 @@
             const addEventListeners = () => {
                 dom.settingsBtn.addEventListener('click', () => toggleSettingsModal(true));
                 dom.translateBtn.addEventListener('click', translate);
+                dom.copyBtn.addEventListener('click', copyOutput);
                 dom.cancelSettingsBtn.addEventListener('click', () => toggleSettingsModal(false));
                 dom.settingsModal.addEventListener('click', (e) => {
                     if (e.target === dom.settingsModal) toggleSettingsModal(false);
@@ -526,3 +615,4 @@
     </script>
 </body>
 </html>
+
