@@ -338,8 +338,12 @@
                  <small>For Ollama: `gemma3:270m`. For OpenAI-compatible: model file path or identifier.</small>
             </div>
             <div class="form-group">
-                <label for="prompt-template">Prompt Template</label>
-                <textarea id="prompt-template"></textarea>
+                <label for="system-prompt-template">System Prompt</label>
+                <textarea id="system-prompt-template"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="user-prompt-template">User Prompt Template</label>
+                <textarea id="user-prompt-template"></textarea>
                 <small>Use `{{text}}`, `{{source_language}}`, and `{{destination_language}}` as placeholders.</small>
             </div>
             
@@ -370,7 +374,8 @@
                 serverUrl: document.getElementById('server-url'),
                 apiKey: document.getElementById('api-key'),
                 modelName: document.getElementById('model-name'),
-                promptTemplate: document.getElementById('prompt-template'),
+                systemPromptTemplate: document.getElementById('system-prompt-template'),
+                userPromptTemplate: document.getElementById('user-prompt-template'),
                 loader: document.getElementById('loader'),
                 copyBtn: document.getElementById('copy-btn'),
                 toast: document.getElementById('toast'),
@@ -385,25 +390,27 @@
                 'Japanese': 'ja', 'Korean': 'ko', 'Russian': 'ru', 'Arabic': 'ar', 
                 'Portuguese': 'pt', 'Italian': 'it', 'Hindi': 'hi' 
             };
-            const DEFAULT_PROMPT = `As an expert translator, translate the given text from {{source_language}} to {{destination_language}}. If the source is 'auto', identify it. Return ONLY translation, without explanations, notes, or conversation.\nText: "{{text}}"`;
+            const DEFAULT_SYSTEM_PROMPT = `As an expert translator, you will be given text to translate. Identify the source language if specified as 'auto'. Return ONLY the translation, without any explanations, notes, or conversational filler.`;
+            const DEFAULT_USER_PROMPT = `Translate from {{source_language}} to {{destination_language}}.\nText: "{{text}}"`;
 
             const DEFAULTS = {
                 apiType: 'ollama', serverUrl: 'http://localhost:11434', apiKey: '',
-                model: 'gemma3:270m', prompt: DEFAULT_PROMPT, sourceLang: 'auto', destLang: 'English'
+                model: 'gemma3:270m', systemPrompt: DEFAULT_SYSTEM_PROMPT, userPrompt: DEFAULT_USER_PROMPT, 
+                sourceLang: 'auto', destLang: 'English'
             };
             let currentSettings = {};
 
             class APIHandler {
-                async generate(prompt, settings) { throw new Error("generate() must be implemented by subclasses"); }
+                async generate(systemPrompt, userPrompt, settings) { throw new Error("generate() must be implemented by subclasses"); }
             }
 
             class OllamaAPI extends APIHandler {
-                async generate(prompt, { serverUrl, model, apiKey }) {
+                async generate(systemPrompt, userPrompt, { serverUrl, model, apiKey }) {
                     const endpoint = `${serverUrl.replace(/\/$/, '')}/api/generate`;
                     const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
-                        body: JSON.stringify({ model, prompt, stream: false, think: false }),
+                        body: JSON.stringify({ model, system: systemPrompt, prompt: userPrompt, stream: false, think: false }),
                     });
                     if (!response.ok) {
                         const err = await response.json().catch(() => ({ error: response.statusText }));
@@ -415,16 +422,18 @@
             }
 
             class OpenAICompatibleAPI extends APIHandler {
-                async generate(prompt, { serverUrl, model, apiKey }) {
+                async generate(systemPrompt, userPrompt, { serverUrl, model, apiKey }) {
                     const endpoint = `${serverUrl.replace(/\/$/, '')}/v1/chat/completions`;
                     const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
                         body: JSON.stringify({
                             model,
-                            messages: [{ role: "user", content: prompt }],
+                            messages: [
+                                { role: "system", content: systemPrompt },
+                                { role: "user", content: userPrompt }
+                            ],
                             stream: false,
-                            chat_template_kwargs: { enable_thinking: false }
                         }),
                     });
                      if (!response.ok) {
@@ -515,7 +524,8 @@
                     serverUrl: getCookie('server_url') || DEFAULTS.serverUrl,
                     apiKey: getCookie('api_key') || DEFAULTS.apiKey,
                     model: getCookie('model_name') || DEFAULTS.model,
-                    prompt: getCookie('prompt_template') || DEFAULTS.prompt,
+                    systemPrompt: getCookie('system_prompt_template') || DEFAULTS.systemPrompt,
+                    userPrompt: getCookie('user_prompt_template') || DEFAULTS.userPrompt,
                     sourceLang: getCookie('translator_src') || DEFAULTS.sourceLang,
                     destLang: getCookie('translator_dst') || DEFAULTS.destLang,
                 };
@@ -523,7 +533,8 @@
                 dom.serverUrl.value = currentSettings.serverUrl;
                 dom.apiKey.value = currentSettings.apiKey;
                 dom.modelName.value = currentSettings.model;
-                dom.promptTemplate.value = currentSettings.prompt;
+                dom.systemPromptTemplate.value = currentSettings.systemPrompt;
+                dom.userPromptTemplate.value = currentSettings.userPrompt;
                 dom.sourceLang.value = currentSettings.sourceLang;
                 dom.destLang.value = currentSettings.destLang;
                 updateUrlHint(currentSettings.apiType);
@@ -534,17 +545,29 @@
                 currentSettings.serverUrl = dom.serverUrl.value.trim();
                 currentSettings.apiKey = dom.apiKey.value.trim();
                 currentSettings.model = dom.modelName.value.trim();
-                currentSettings.prompt = dom.promptTemplate.value;
+                currentSettings.systemPrompt = dom.systemPromptTemplate.value;
+                currentSettings.userPrompt = dom.userPromptTemplate.value;
                 setCookie('api_type', currentSettings.apiType, 365);
                 setCookie('server_url', currentSettings.serverUrl, 365);
                 setCookie('api_key', currentSettings.apiKey, 365);
                 setCookie('model_name', currentSettings.model, 365);
-                setCookie('prompt_template', currentSettings.prompt, 365);
+                setCookie('system_prompt_template', currentSettings.systemPrompt, 365);
+                setCookie('user_prompt_template', currentSettings.userPrompt, 365);
                 toggleSettingsModal(false);
             };
 
             const toggleSettingsModal = (show) => {
-                dom.settingsModal.style.display = show ? 'flex' : 'none';
+                const modalIsVisible = dom.settingsModal.style.display === 'flex';
+                if (show) {
+                    if (!modalIsVisible) {
+                        dom.settingsModal.style.display = 'flex';
+                        history.pushState({ modal: 'settings' }, '', '#settings');
+                    }
+                } else {
+                    if (modalIsVisible) {
+                        history.back();
+                    }
+                }
             };
 
             const translate = async () => {
@@ -559,15 +582,14 @@
                 dom.resultText.value = '';
                 updateCharCount(dom.resultText, dom.resultCharCount);
 
-
-                const finalPrompt = currentSettings.prompt
+                const finalUserPrompt = currentSettings.userPrompt
                     .replace('{{text}}', text.replace(/"/g, '\\"'))
                     .replace('{{source_language}}', dom.sourceLang.value)
                     .replace('{{destination_language}}', dom.destLang.value);
                 
                 try {
                     const apiHandler = getApiHandler(currentSettings.apiType);
-                    const translation = await apiHandler.generate(finalPrompt, currentSettings);
+                    const translation = await apiHandler.generate(currentSettings.systemPrompt, finalUserPrompt, currentSettings);
                     dom.resultText.value = translation;
                 } catch (error) {
                     dom.resultText.value = `Error: ${error.message}`;
@@ -592,6 +614,10 @@
 
                 dom.sourceLang.addEventListener('change', () => setCookie('translator_src', dom.sourceLang.value, 365));
                 dom.destLang.addEventListener('change', () => setCookie('translator_dst', dom.destLang.value, 365));
+
+                window.addEventListener('popstate', () => {
+                    dom.settingsModal.style.display = 'none';
+                });
             };
             
             const setupThemeListener = () => {
