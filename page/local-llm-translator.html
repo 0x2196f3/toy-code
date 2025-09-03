@@ -51,6 +51,7 @@
             justify-content: center;
             align-items: flex-start;
             min-height: 100vh;
+            box-sizing: border-box;
             transition: background-color 0.3s, color 0.3s;
         }
 
@@ -77,8 +78,8 @@
         }
 
         header h1 { font-size: 22px; margin: 0; font-weight: 500; }
-        header .controls { display: flex; gap: 8px; }
-
+        header .controls { display: flex; gap: 8px; margin-right: -6px; }
+		
         .icon-btn {
             background: none; border: none; font-size: 24px; cursor: pointer;
             color: var(--secondary-text-color); padding: 8px; border-radius: 50%;
@@ -222,6 +223,7 @@
             .panel {
                 flex-basis: auto;
                 flex-grow: 1;
+                position: relative;
             }
             textarea {
                 min-height: 150px; 
@@ -232,7 +234,7 @@
                 height: 0;
             }
             #translate-btn {
-                position: fixed;
+                position: absolute;
                 bottom: 24px;
                 right: 24px;
                 width: 56px;
