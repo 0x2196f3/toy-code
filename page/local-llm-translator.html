@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Local LLM Translator</title>
     <script>
-        (function() {
+        (function () {
             try {
                 const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                 document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
@@ -67,6 +68,14 @@
             flex-direction: column;
         }
 
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            background-color: var(--border-color);
+            flex-grow: 1;
+        }
+
         header {
             display: flex;
             justify-content: space-between;
@@ -77,30 +86,31 @@
             flex-shrink: 0;
         }
 
-        header h1 { font-size: 22px; margin: 0; font-weight: 500; }
-        header .controls { display: flex; gap: 8px; margin-right: -6px; }
-		
-        .icon-btn {
-            background: none; border: none; font-size: 24px; cursor: pointer;
-            color: var(--secondary-text-color); padding: 8px; border-radius: 50%;
-            line-height: 1; transition: background-color 0.2s, color 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        header h1 {
+            font-size: 22px;
+            margin: 0;
+            font-weight: 500;
         }
-        .icon-btn:hover { background-color: var(--hover-bg); }
 
-        .main-content { display: flex; flex-wrap: wrap; gap: 2px; background-color: var(--border-color); flex-grow: 1; }
-        .panel { flex: 1 1 400px; display: flex; flex-direction: column; background-color: var(--panel-bg); transition: background-color 0.3s; }
-        .language-selector { padding: 10px 15px; border-bottom: 1px solid var(--border-color); transition: border-color 0.3s; }
-        
-        .language-selector select, .form-group select {
-            width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;
-            background-color: var(--panel-bg); color: var(--text-color); font-size: 14px;
-            font-weight: 500; cursor: pointer; transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        header .controls {
+            display: flex;
+            gap: 8px;
+            margin-right: -6px;
         }
-        .language-selector select { border-color: transparent; }
-        .language-selector select:hover { background-color: var(--hover-bg); }
+
+        .panel {
+            flex: 1 1 400px;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--panel-bg);
+            transition: background-color 0.3s;
+        }
+
+        .language-selector {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            transition: border-color 0.3s;
+        }
 
         .textarea-wrapper {
             position: relative;
@@ -110,19 +120,97 @@
         }
 
         textarea {
-            flex-grow: 1; padding: 15px; padding-bottom: 40px; 
-            border: none; resize: none; font-size: 18px;
-            line-height: 1.6; min-height: 300px; background-color: transparent;
-            color: var(--text-color); transition: color 0.3s;
+            flex-grow: 1;
+            padding: 15px;
+            padding-bottom: 40px;
+            border: none;
+            resize: none;
+            font-size: 18px;
+            line-height: 1.6;
+            min-height: 300px;
+            background-color: transparent;
+            color: var(--text-color);
+            transition: color 0.3s;
         }
-        textarea:focus { outline: none; }
-        
-        .panel-footer { padding: 15px; text-align: right; }
+
+        .panel-footer {
+            padding: 15px;
+            text-align: right;
+        }
+
+        :focus {
+            outline: none;
+        }
+
+        .language-selector select,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--panel-bg);
+            color: var(--text-color);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        .language-selector select {
+            border-color: transparent;
+        }
+
+        .language-selector select:hover {
+            background-color: var(--hover-bg);
+        }
+
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--secondary-text-color);
+            padding: 8px;
+            border-radius: 50%;
+            line-height: 1;
+            transition: background-color 0.2s, color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover {
+            background-color: var(--hover-bg);
+        }
+
         #translate-btn {
-            padding: 10px 24px; font-size: 14px; font-weight: 500; background-color: var(--primary-color);
-            color: var(--primary-text); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            background-color: var(--primary-color);
+            color: var(--primary-text);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: opacity 0.2s;
         }
-        #translate-btn:hover { opacity: 0.9; }
+
+        #translate-btn:hover {
+            opacity: 0.9;
+        }
+
+        #translate-btn .mobile-icon {
+            display: none;
+        }
+
+        #translate-btn .desktop-text {
+            display: inline;
+        }
 
         .char-count {
             position: absolute;
@@ -141,44 +229,28 @@
         }
 
         .loader {
-            position: absolute; top: 15px; left: 15px; border: 4px solid var(--hover-bg);
-            border-top: 4px solid var(--primary-color); border-radius: 50%; width: 20px;
-            height: 20px; animation: spin 1s linear infinite; display: none;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .modal {
-            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%;
-            height: 100%; overflow: auto; background-color: rgba(0, 0, 0, 0.5);
-            justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background-color: var(--panel-bg); color: var(--text-color); margin: auto; padding: 25px;
-            border: 1px solid var(--border-color); width: 90%; max-width: 500px; border-radius: 8px;
-            box-shadow: 0 4px 20px var(--shadow-color);
-        }
-        .modal-content h2 { margin-top: 0; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
-        .form-group input, .form-group textarea {
-            width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color);
-            border-radius: 4px; background-color: var(--panel-bg); color: var(--text-color);
-        }
-        .form-group textarea { min-height: 120px; font-family: monospace; font-size: 13px; }
-        .form-group small { display: block; margin-top: 5px; color: var(--secondary-text-color); }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .modal-actions button { padding: 10px 20px; border-radius: 4px; border: 1px solid transparent; cursor: pointer; font-weight: 500; }
-        #save-settings-btn { background-color: var(--primary-color); color: var(--primary-text); }
-        #cancel-settings-btn { background-color: var(--panel-bg); color: var(--text-color); border-color: var(--button-border-color); }
-        #cancel-settings-btn:hover { background-color: var(--hover-bg); }
-        
-        #translate-btn .mobile-icon {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            border: 4px solid var(--hover-bg);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
             display: none;
         }
-        #translate-btn .desktop-text {
-            display: inline;
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
-        
+
         .toast {
             visibility: hidden;
             min-width: 250px;
@@ -207,32 +279,137 @@
             color: var(--text-color);
         }
 
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--panel-bg);
+            color: var(--text-color);
+            margin: auto;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            width: 90%;
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px var(--shadow-color);
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--panel-bg);
+            color: var(--text-color);
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: var(--secondary-text-color);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        #save-settings-btn {
+            background-color: var(--primary-color);
+            color: var(--primary-text);
+        }
+
+        #cancel-settings-btn {
+            background-color: var(--panel-bg);
+            color: var(--text-color);
+            border-color: var(--button-border-color);
+        }
+
+        #cancel-settings-btn:hover {
+            background-color: var(--hover-bg);
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 0;
             }
+
             .translator-container {
                 height: 100vh;
                 border-radius: 0;
                 box-shadow: none;
             }
+
             .main-content {
                 flex-direction: column;
                 flex-grow: 1;
             }
+
             .panel {
                 flex-basis: auto;
                 flex-grow: 1;
                 position: relative;
             }
+
             textarea {
-                min-height: 150px; 
+                min-height: 150px;
             }
 
             .panel-footer {
                 padding: 0;
                 height: 0;
             }
+
             #translate-btn {
                 position: absolute;
                 bottom: 24px;
@@ -242,15 +419,17 @@
                 border-radius: 50%;
                 padding: 0;
                 z-index: 10;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 transition: background-color 0.2s, box-shadow 0.2s;
             }
+
             #translate-btn .desktop-text {
                 display: none;
             }
+
             #translate-btn .mobile-icon {
                 display: block;
                 width: 24px;
@@ -260,6 +439,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <div class="translator-container">
@@ -267,9 +447,11 @@
             <h1>Local LLM Translator</h1>
             <div class="controls">
                 <button id="settings-btn" class="icon-btn" title="Settings">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor">
-                        <path d="M0 0h24v24H0V0z" fill="none"/>
-                        <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px"
+                        fill="currentColor">
+                        <path d="M0 0h24v24H0V0z" fill="none" />
+                        <path
+                            d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
                     </svg>
                 </button>
             </div>
@@ -282,12 +464,13 @@
                     <textarea id="source-text" placeholder="Enter text..."></textarea>
                     <div id="source-char-count" class="char-count">0</div>
                 </div>
-                 <div class="panel-footer">
+                <div class="panel-footer">
                     <button id="translate-btn">
                         <span class="desktop-text">Translate</span>
-                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px">
-                            <path d="M0 0h24v24H0V0z" fill="none"/>
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z"/>
+                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24"
+                            width="24px">
+                            <path d="M0 0h24v24H0V0z" fill="none" />
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z" />
                         </svg>
                     </button>
                 </div>
@@ -299,9 +482,11 @@
                     <div class="loader" id="loader"></div>
                     <div class="copy-container">
                         <button id="copy-btn" class="icon-btn" title="Copy translation">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor">
-                                <path d="M0 0h24v24H0V0z" fill="none"/>
-                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-5zm0 16H8V7h11v14z"/>
+                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px"
+                                fill="currentColor">
+                                <path d="M0 0h24v24H0V0z" fill="none" />
+                                <path
+                                    d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-5zm0 16H8V7h11v14z" />
                             </svg>
                         </button>
                     </div>
@@ -315,7 +500,7 @@
         <div class="modal-content">
             <h2>Settings</h2>
             <p>Configure your LLM API connection. Settings are saved in your browser's cookies.</p>
-            
+
             <div class="form-group">
                 <label for="api-type">API Type</label>
                 <select id="api-type">
@@ -327,8 +512,10 @@
                 <label for="server-url">Server Base URL</label>
                 <input type="text" id="server-url">
                 <small id="ollama-url-hint">Enter the base URL. E.g., `http://localhost:11434`</small>
-                <small id="ollama-cors-hint" style="display: none;">⚠️ Your Ollama server must be configured to accept requests from this page (CORS). See documentation on setting `OLLAMA_ORIGINS` to `*`.</small>
-                <small id="openai-url-hint" style="display: none;">Enter the base URL. E.g., `http://localhost:8080`</small>
+                <small id="ollama-cors-hint" style="display: none;">⚠️ Your Ollama server must be configured to accept
+                    requests from this page (CORS). See documentation on setting `OLLAMA_ORIGINS` to `*`.</small>
+                <small id="openai-url-hint" style="display: none;">Enter the base URL. E.g.,
+                    `http://localhost:8080`</small>
             </div>
             <div class="form-group">
                 <label for="api-key">API Key (Optional)</label>
@@ -337,7 +524,7 @@
             <div class="form-group">
                 <label for="model-name">Model Name</label>
                 <input type="text" id="model-name">
-                 <small>For Ollama: `gemma3:270m`. For OpenAI-compatible: model file path or identifier.</small>
+                <small>For Ollama: `gemma3:270m`. For OpenAI-compatible: model file path or identifier.</small>
             </div>
             <div class="form-group">
                 <label for="system-prompt-template">System Prompt</label>
@@ -348,14 +535,14 @@
                 <textarea id="user-prompt-template"></textarea>
                 <small>Use `{{text}}`, `{{source_language}}`, and `{{destination_language}}` as placeholders.</small>
             </div>
-            
+
             <div class="modal-actions">
                 <button id="cancel-settings-btn">Cancel</button>
                 <button id="save-settings-btn">Save</button>
             </div>
         </div>
     </div>
-    
+
     <div id="toast" class="toast"></div>
 
     <script>
@@ -386,18 +573,18 @@
                 openaiUrlHint: document.getElementById('openai-url-hint'),
             };
 
-            const LANGUAGES = { 
-                'English': 'en', 'Spanish': 'es', 'French': 'fr', 'German': 'de', 
-                'Chinese (Simplified)': 'zh-CN', 'Chinese (Traditional)': 'zh-TW', 
-                'Japanese': 'ja', 'Korean': 'ko', 'Russian': 'ru', 'Arabic': 'ar', 
-                'Portuguese': 'pt', 'Italian': 'it', 'Hindi': 'hi' 
+            const LANGUAGES = {
+                'English': 'en', 'Spanish': 'es', 'French': 'fr', 'German': 'de',
+                'Chinese (Simplified)': 'zh-CN', 'Chinese (Traditional)': 'zh-TW',
+                'Japanese': 'ja', 'Korean': 'ko', 'Russian': 'ru', 'Arabic': 'ar',
+                'Portuguese': 'pt', 'Italian': 'it', 'Hindi': 'hi'
             };
             const DEFAULT_SYSTEM_PROMPT = `As an expert translator, you will be given text to translate. Identify the source language if specified as 'auto'. Return ONLY the translation, without any explanations, notes, or conversational filler.`;
             const DEFAULT_USER_PROMPT = `Translate from {{source_language}} to {{destination_language}}.\nText: "{{text}}"`;
 
             const DEFAULTS = {
                 apiType: 'ollama', serverUrl: 'http://localhost:11434', apiKey: '',
-                model: 'gemma3:270m', systemPrompt: DEFAULT_SYSTEM_PROMPT, userPrompt: DEFAULT_USER_PROMPT, 
+                model: 'gemma3:270m', systemPrompt: DEFAULT_SYSTEM_PROMPT, userPrompt: DEFAULT_USER_PROMPT,
                 sourceLang: 'auto', destLang: 'English'
             };
             let currentSettings = {};
@@ -438,7 +625,7 @@
                             stream: false,
                         }),
                     });
-                     if (!response.ok) {
+                    if (!response.ok) {
                         const err = await response.json().catch(() => ({ error: response.statusText }));
                         throw new Error(err.message || err.error?.message || err.error || "Unknown API error");
                     }
@@ -446,7 +633,7 @@
                     return data.choices[0].message.content.trim();
                 }
             }
-            
+
             const getApiHandler = (apiType) => {
                 if (apiType === 'openai_compatible') return new OpenAICompatibleAPI();
                 return new OllamaAPI();
@@ -470,7 +657,7 @@
                 }
                 return null;
             };
-            
+
             const copyOutput = () => {
                 const textToCopy = dom.resultText.value;
                 if (!textToCopy) return;
@@ -489,16 +676,16 @@
 
                     dom.toast.textContent = "Copied to clipboard!";
                     dom.toast.className = "toast show";
-                    setTimeout(() => { 
-                        dom.toast.className = dom.toast.className.replace("show", ""); 
+                    setTimeout(() => {
+                        dom.toast.className = dom.toast.className.replace("show", "");
                     }, 3000);
 
                 } catch (err) {
                     console.error('Failed to copy text: ', err);
                     dom.toast.textContent = "Failed to copy!";
                     dom.toast.className = "toast show";
-                    setTimeout(() => { 
-                        dom.toast.className = dom.toast.className.replace("show", ""); 
+                    setTimeout(() => {
+                        dom.toast.className = dom.toast.className.replace("show", "");
                     }, 3000);
                 }
             };
@@ -588,7 +775,7 @@
                     .replace('{{text}}', text.replace(/"/g, '\\"'))
                     .replace('{{source_language}}', dom.sourceLang.value)
                     .replace('{{destination_language}}', dom.destLang.value);
-                
+
                 try {
                     const apiHandler = getApiHandler(currentSettings.apiType);
                     const translation = await apiHandler.generate(currentSettings.systemPrompt, finalUserPrompt, currentSettings);
@@ -611,7 +798,7 @@
                 });
                 dom.saveSettingsBtn.addEventListener('click', saveSettings);
                 dom.apiType.addEventListener('change', () => updateUrlHint(dom.apiType.value));
-                
+
                 dom.sourceText.addEventListener('input', () => updateCharCount(dom.sourceText, dom.sourceCharCount));
 
                 dom.sourceLang.addEventListener('change', () => setCookie('translator_src', dom.sourceLang.value, 365));
@@ -621,7 +808,7 @@
                     dom.settingsModal.style.display = 'none';
                 });
             };
-            
+
             const setupThemeListener = () => {
                 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
                     const newTheme = event.matches ? "dark" : "light";
@@ -642,5 +829,5 @@
         });
     </script>
 </body>
-</html>
 
+</html>
