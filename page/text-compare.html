@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Compare</title>
+    <style>
+        :root {
+            --font-size: 16px;
+            --line-height: 24px;
+            --bg-color: #f0f2f5;
+            --text-color: #1c1e21;
+            --editor-bg: #ffffff;
+            --border-color: #ccd0d5;
+            --line-number-color: #8a8d91;
+            --highlight-color: rgba(255, 235, 59, 0.4);
+            --btn-bg: #1877f2;
+            --btn-text: #ffffff;
+            --btn-hover-bg: #166fe5;
+            --btn-secondary-bg: #6c757d;
+            --btn-secondary-hover-bg: #5a6268;
+            --success-color: #31a24c;
+            --warning-color: #f5a623;
+            --font-family-mono: monospace;
+            --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #18191a;
+                --text-color: #e4e6eb;
+                --editor-bg: #242526;
+                --border-color: #3a3b3c;
+                --line-number-color: #8a8d91;
+                --highlight-color: rgba(250, 179, 0, 0.25);
+                --btn-bg: #2d88ff;
+                --btn-hover-bg: #3a91ff;
+                --btn-secondary-bg: #4e4f50;
+                --btn-secondary-hover-bg: #5a6268;
+                --success-color: #45bd62;
+                --warning-color: #ffc400;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family-sans);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2em;
+            color: var(--text-color);
+        }
+
+        .editors-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            min-height: 60vh;
+        }
+
+        .editor-wrapper {
+            position: relative;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            background-color: var(--editor-bg);
+        }
+        
+        .line-numbers {
+            font-family: var(--font-family-mono);
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            text-align: right;
+            padding: 0px 8px 10px 10px;
+            color: var(--line-number-color);
+            user-select: none;
+            overflow: hidden;
+            background-color: var(--editor-bg);
+            border-right: 1px solid var(--border-color);
+        }
+
+        .line-numbers > div {
+            min-width: 20px;
+            height: var(--line-height);
+        }
+
+        .editor-content {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        .highlight-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 0px 10px 10px 10px;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .highlight-bar {
+            position: absolute;
+            width: 100%;
+            left: 0;
+            height: var(--line-height);
+            background-color: var(--highlight-color);
+            z-index: 1;
+        }
+        
+        textarea {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 0px 10px 10px 10px;
+            font-family: var(--font-family-mono);
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            color: var(--text-color);
+            background-color: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            white-space: pre;
+            overflow-wrap: normal;
+            z-index: 2;
+            scrollbar-width: none; /* Firefox */
+        }
+        textarea::-webkit-scrollbar {
+            display: none; /* Safari and Chrome */
+        }
+        
+        .top-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .options-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .options-container label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            font-family: var(--font-family-sans);
+            padding: 10px 20px;
+            font-size: 1em;
+            font-weight: 600;
+            color: var(--btn-text);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, opacity 0.3s, transform 0.3s;
+        }
+
+        #compare-btn {
+            background-color: var(--btn-bg);
+        }
+        #compare-btn:hover {
+            background-color: var(--btn-hover-bg);
+        }
+
+        .btn-clear {
+            background-color: var(--btn-secondary-bg);
+        }
+        .btn-clear:hover {
+            background-color: var(--btn-secondary-hover-bg);
+        }
+
+
+        #result {
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: 500;
+            min-height: 25px;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 3;
+            background: none;
+            border: none;
+            color: var(--line-number-color);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            opacity: 0.5;
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+        .copy-btn:hover {
+            opacity: 1;
+            background-color: var(--border-color);
+        }
+        .copy-btn svg {
+            width: 16px;
+            height: 16px;
+            display: block;
+        }
+
+        #floating-compare-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--btn-bg);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+
+        #floating-compare-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        @media (max-width: 768px) {
+            .editors-container {
+                grid-template-columns: 1fr;
+            }
+            body {
+                padding: 10px;
+            }
+            .options-container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Text Compare</h1>
+        <div class="top-controls">
+            <div class="options-container">
+                <label><input type="checkbox" id="ignore-case"> Ignore Case</label>
+                <label><input type="checkbox" id="ignore-whitespace"> Ignore Spaces & Tabs</label>
+                <label><input type="checkbox" id="ignore-line-endings"> Ignore Line Endings (CRLF vs LF)</label>
+                <label><input type="checkbox" id="ignore-empty-lines"> Ignore Empty Lines</label>
+                <label><input type="checkbox" id="auto-compare"> Auto Compare</label>
+            </div>
+            <div class="buttons-container">
+                <button id="compare-btn" class="btn">Compare Texts</button>
+                <button id="clear-left-btn" class="btn btn-clear">Clear Left</button>
+                <button id="clear-right-btn" class="btn btn-clear">Clear Right</button>
+            </div>
+        </div>
+        <div class="editors-container">
+            <div class="editor-wrapper">
+                <button class="copy-btn" id="copy-btn1" title="Copy text">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg>
+                </button>
+                <div class="line-numbers" id="line-numbers1"><div>1</div></div>
+                <div class="editor-content">
+                    <div class="highlight-background" id="highlight1"></div>
+                    <textarea id="text-input1" spellcheck="false" placeholder="Paste first text here..."></textarea>
+                </div>
+            </div>
+            <div class="editor-wrapper">
+                <button class="copy-btn" id="copy-btn2" title="Copy text">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg>
+                </button>
+                <div class="line-numbers" id="line-numbers2"><div>1</div></div>
+                <div class="editor-content">
+                    <div class="highlight-background" id="highlight2"></div>
+                    <textarea id="text-input2" spellcheck="false" placeholder="Paste second text here..."></textarea>
+                </div>
+            </div>
+        </div>
+        <div id="result"></div>
+    </div>
+    <button id="floating-compare-btn" class="btn" title="Compare Texts">Compare</button>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const textInput1 = document.getElementById('text-input1');
+            const textInput2 = document.getElementById('text-input2');
+            const lineNumbers1 = document.getElementById('line-numbers1');
+            const lineNumbers2 = document.getElementById('line-numbers2');
+            const highlight1 = document.getElementById('highlight1');
+            const highlight2 = document.getElementById('highlight2');
+            const compareBtn = document.getElementById('compare-btn');
+            const floatingCompareBtn = document.getElementById('floating-compare-btn');
+            const resultDiv = document.getElementById('result');
+            const ignoreCaseCheck = document.getElementById('ignore-case');
+            const ignoreWhitespaceCheck = document.getElementById('ignore-whitespace');
+            const ignoreLineEndingsCheck = document.getElementById('ignore-line-endings');
+            const ignoreEmptyLinesCheck = document.getElementById('ignore-empty-lines');
+            const autoCompareCheck = document.getElementById('auto-compare');
+            const clearLeftBtn = document.getElementById('clear-left-btn');
+            const clearRightBtn = document.getElementById('clear-right-btn');
+            const copyBtn1 = document.getElementById('copy-btn1');
+            const copyBtn2 = document.getElementById('copy-btn2');
+
+            const LINE_HEIGHT_PX = 24;
+
+            const updateLineNumbers = (textarea, lineNumbersDiv) => {
+                const lineCount = textarea.value.split('\n').length;
+                const numbersHTML = Array.from({ length: lineCount || 1 }, (_, i) => `<div>${i + 1}</div>`).join('');
+                lineNumbersDiv.innerHTML = numbersHTML;
+            };
+
+            const syncScroll = (source, target1, target2) => {
+                target1.scrollTop = source.scrollTop;
+                target2.scrollTop = source.scrollTop;
+            };
+
+            const handleAutoCompare = () => {
+                if (autoCompareCheck.checked) {
+                    runCompare();
+                }
+            };
+            
+            textInput1.addEventListener('input', () => {
+                updateLineNumbers(textInput1, lineNumbers1);
+                handleAutoCompare();
+            });
+            textInput2.addEventListener('input', () => {
+                updateLineNumbers(textInput2, lineNumbers2);
+                handleAutoCompare();
+            });
+
+            textInput1.addEventListener('scroll', () => syncScroll(textInput1, lineNumbers1, highlight1));
+            textInput2.addEventListener('scroll', () => syncScroll(textInput2, lineNumbers2, highlight2));
+            
+            clearLeftBtn.addEventListener('click', () => {
+                textInput1.value = '';
+                updateLineNumbers(textInput1, lineNumbers1);
+                handleAutoCompare();
+            });
+
+            clearRightBtn.addEventListener('click', () => {
+                textInput2.value = '';
+                updateLineNumbers(textInput2, lineNumbers2);
+                handleAutoCompare();
+            });
+            
+            const copyText = (textarea) => {
+                textarea.select();
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+            };
+
+            copyBtn1.addEventListener('click', () => copyText(textInput1));
+            copyBtn2.addEventListener('click', () => copyText(textInput2));
+
+            const addHighlightBar = (container, lineNumber) => {
+                const bar = document.createElement('div');
+                bar.className = 'highlight-bar';
+                bar.style.top = `${lineNumber * LINE_HEIGHT_PX}px`;
+                container.appendChild(bar);
+            };
+
+            const runCompare = () => {
+                const ignoreCase = ignoreCaseCheck.checked;
+                const ignoreWhitespace = ignoreWhitespaceCheck.checked;
+                const ignoreLineEndings = ignoreLineEndingsCheck.checked;
+                const ignoreEmptyLines = ignoreEmptyLinesCheck.checked;
+                
+                let text1 = textInput1.value;
+                let text2 = textInput2.value;
+
+                if (ignoreLineEndings) {
+                    text1 = text1.replace(/\r\n/g, '\n');
+                    text2 = text2.replace(/\r\n/g, '\n');
+                }
+
+                const lines1 = text1.split('\n');
+                const lines2 = text2.split('\n');
+                
+                let differences = 0;
+                let firstDifferenceHighlighted = false;
+
+                highlight1.innerHTML = '';
+                highlight2.innerHTML = '';
+
+                if (ignoreEmptyLines) {
+                    const lines1Data = [];
+                    lines1.forEach((line, index) => {
+                        if (line.trim() !== '') {
+                            lines1Data.push({ line: line, originalIndex: index });
+                        }
+                    });
+
+                    const lines2Data = [];
+                    lines2.forEach((line, index) => {
+                        if (line.trim() !== '') {
+                            lines2Data.push({ line: line, originalIndex: index });
+                        }
+                    });
+                    
+                    const maxLines = Math.max(lines1Data.length, lines2Data.length);
+
+                    for (let i = 0; i < maxLines; i++) {
+                        const item1 = lines1Data[i];
+                        const item2 = lines2Data[i];
+                        
+                        let comparableLine1 = item1 ? item1.line : undefined;
+                        let comparableLine2 = item2 ? item2.line : undefined;
+                        
+                        if (ignoreCase) {
+                            if (comparableLine1 !== undefined) comparableLine1 = comparableLine1.toLowerCase();
+                            if (comparableLine2 !== undefined) comparableLine2 = comparableLine2.toLowerCase();
+                        }
+                        if (ignoreWhitespace) {
+                            if (comparableLine1 !== undefined) comparableLine1 = comparableLine1.replace(/[\t ]/g, '');
+                            if (comparableLine2 !== undefined) comparableLine2 = comparableLine2.replace(/[\t ]/g, '');
+                        }
+
+                        if (comparableLine1 !== comparableLine2) {
+                            differences++;
+                            if (!firstDifferenceHighlighted) {
+                                if (item1) addHighlightBar(highlight1, item1.originalIndex);
+                                if (item2) addHighlightBar(highlight2, item2.originalIndex);
+                                firstDifferenceHighlighted = true;
+                            }
+                        }
+                    }
+
+                } else {
+                    const maxLines = Math.max(lines1.length, lines2.length);
+                    for (let i = 0; i < maxLines; i++) {
+                        let line1 = lines1[i] || '';
+                        let line2 = lines2[i] || '';
+
+                        let comparableLine1 = line1;
+                        let comparableLine2 = line2;
+
+                        if (ignoreCase) {
+                            comparableLine1 = comparableLine1.toLowerCase();
+                            comparableLine2 = comparableLine2.toLowerCase();
+                        }
+                        if (ignoreWhitespace) {
+                            comparableLine1 = comparableLine1.replace(/[\t ]/g, '');
+                            comparableLine2 = comparableLine2.replace(/[\t ]/g, '');
+                        }
+
+                        if (comparableLine1 !== comparableLine2) {
+                            differences++;
+                             if (!firstDifferenceHighlighted) {
+                                if (i < lines1.length) addHighlightBar(highlight1, i);
+                                if (i < lines2.length) addHighlightBar(highlight2, i);
+                                firstDifferenceHighlighted = true;
+                            }
+                        }
+                    }
+                }
+                
+                if (differences === 0) {
+                    resultDiv.textContent = 'The texts are identical (based on selected options).';
+                    resultDiv.style.color = 'var(--success-color)';
+                } else {
+                    resultDiv.textContent = `Found ${differences} different line(s).`;
+                    resultDiv.style.color = 'var(--warning-color)';
+                }
+            };
+            
+            compareBtn.addEventListener('click', runCompare);
+            floatingCompareBtn.addEventListener('click', runCompare);
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        floatingCompareBtn.classList.remove('visible');
+                    } else {
+                        floatingCompareBtn.classList.add('visible');
+                    }
+                });
+            });
+
+            observer.observe(compareBtn);
+            
+            updateLineNumbers(textInput1, lineNumbers1);
+            updateLineNumbers(textInput2, lineNumbers2);
+        });
+    </script>
+</body>
+</html>
+
