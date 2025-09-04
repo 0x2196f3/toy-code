@@ -131,6 +131,7 @@
             justify-content: center;
         }
         .icon-btn:hover { background-color: var(--hover-bg); }
+        .icon-btn:disabled { cursor: not-allowed; opacity: 0.5; }
         #translate-btn {
             padding: 10px 24px;
             font-size: 14px;
@@ -226,6 +227,41 @@
         #save-settings-btn { background-color: var(--primary-color); color: var(--primary-text); }
         #cancel-settings-btn { background-color: var(--panel-bg); color: var(--text-color); border-color: var(--button-border-color); }
         #cancel-settings-btn:hover { background-color: var(--hover-bg); }
+        
+        .stream-switch { display: flex; align-items: center; gap: 10px; }
+        .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .2s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 4px; bottom: 4px; background-color: white; transition: .2s; border-radius: 50%; }
+        input:checked+.slider { background-color: var(--primary-color); }
+        input:checked+.slider:before { transform: translateX(14px); }
+        .model-input-container { position: relative; display: flex; align-items: center; gap: 8px; }
+        .model-input-container input { flex-grow: 1; }
+        #fetch-models-btn { padding: 6px; font-size: 20px; flex-shrink: 0; }
+        .model-suggestions {
+            display: none;
+            position: absolute;
+            top: calc(100% + 2px);
+            left: 0;
+            right: 46px; /* width of button + gap */
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1001;
+            box-shadow: 0 4px 8px var(--shadow-color);
+        }
+        .model-suggestions.show { display: block; }
+        .suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+        .suggestion-item:hover { background-color: var(--hover-bg); }
+
+
         @media (max-width: 600px) {
             body { padding: 0; }
             .translator-container { height: 100vh; border-radius: 0; box-shadow: none; }
@@ -313,7 +349,7 @@
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <h2>Settings</h2>
-            <p>Configure your LLM API connection. Settings are saved in your browser's cookies.</p>
+            <p>Configure your LLM API connection. Settings are saved in your browser's local storage.</p>
 
             <div class="form-group">
                 <label for="api-type">API Type</label>
@@ -326,8 +362,7 @@
                 <label for="server-url">Server Base URL</label>
                 <input type="text" id="server-url">
                 <small id="ollama-url-hint">Enter the base URL. E.g., `http://localhost:11434`</small>
-                <small id="ollama-cors-hint" style="display: none;">⚠️ Your Ollama server must be configured to accept
-                    requests from this page (CORS). See documentation on setting `OLLAMA_ORIGINS` to `*`.</small>
+                <small id="ollama-cors-hint" style="display: none;">⚠️ Your Ollama server may need to be configured to accept requests from this page (CORS). See documentation on setting OLLAMA_ORIGINS.</small>
                 <small id="openai-url-hint" style="display: none;">Enter the base URL. E.g.,
                     `http://localhost:8080`</small>
             </div>
@@ -337,7 +372,13 @@
             </div>
             <div class="form-group">
                 <label for="model-name">Model Name</label>
-                <input type="text" id="model-name">
+                <div class="model-input-container">
+                    <input type="text" id="model-name" autocomplete="off">
+                     <button id="fetch-models-btn" class="icon-btn" title="Fetch available models">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                    </button>
+                    <div id="model-suggestions" class="model-suggestions"></div>
+                </div>
                 <small>For Ollama: `gemma3:270m`. For OpenAI-compatible: model file path or identifier.</small>
             </div>
             <div class="form-group">
@@ -348,6 +389,13 @@
                 <label for="user-prompt-template">User Prompt Template</label>
                 <textarea id="user-prompt-template"></textarea>
                 <small>Use `{{text}}`, `{{source_language}}`, and `{{destination_language}}` as placeholders.</small>
+            </div>
+            <div class="form-group stream-switch">
+                 <label for="stream-switch">Stream Response</label>
+                 <label class="switch">
+                    <input type="checkbox" id="stream-switch-checkbox">
+                    <span class="slider"></span>
+                </label>
             </div>
 
             <div class="modal-actions">
@@ -385,6 +433,10 @@
                 ollamaUrlHint: document.getElementById('ollama-url-hint'),
                 ollamaCorsHint: document.getElementById('ollama-cors-hint'),
                 openaiUrlHint: document.getElementById('openai-url-hint'),
+                streamSwitch: document.getElementById('stream-switch-checkbox'),
+                fetchModelsBtn: document.getElementById('fetch-models-btn'),
+                modelSuggestions: document.getElementById('model-suggestions'),
+                modelInputContainer: document.querySelector('.model-input-container'),
             };
 
             const LANGUAGES = {
@@ -399,21 +451,38 @@
             const DEFAULTS = {
                 apiType: 'ollama', serverUrl: 'http://localhost:11434', apiKey: '',
                 model: 'gemma3:270m', systemPrompt: DEFAULT_SYSTEM_PROMPT, userPrompt: DEFAULT_USER_PROMPT,
-                sourceLang: 'auto', destLang: 'English'
+                sourceLang: 'auto', destLang: 'English', stream: false,
             };
             let currentSettings = {};
+            let availableModels = [];
 
             class APIHandler {
+                async getModels(settings) { throw new Error("getModels() must be implemented by subclasses"); }
                 async generate(systemPrompt, userPrompt, settings) { throw new Error("generate() must be implemented by subclasses"); }
+                async* generateStream(systemPrompt, userPrompt, settings) { throw new Error("generateStream() must be implemented by subclasses"); }
             }
 
             class OllamaAPI extends APIHandler {
+                 async getModels({ serverUrl, apiKey }) {
+                    const endpoint = `${serverUrl.replace(/\/$/, '')}/api/tags`;
+                    const response = await fetch(endpoint, {
+                        method: 'GET',
+                        headers: { ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
+                    });
+                    if (!response.ok) {
+                        const err = await response.json().catch(() => ({ error: response.statusText }));
+                        throw new Error(err.error || 'Failed to fetch models');
+                    }
+                    const data = await response.json();
+                    return data.models.map(m => m.name).sort();
+                }
+
                 async generate(systemPrompt, userPrompt, { serverUrl, model, apiKey }) {
                     const endpoint = `${serverUrl.replace(/\/$/, '')}/api/generate`;
                     const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
-                        body: JSON.stringify({ model, system: systemPrompt, prompt: userPrompt, stream: false, think: false }),
+                        body: JSON.stringify({ model, system: systemPrompt, prompt: userPrompt, stream: false }),
                     });
                     if (!response.ok) {
                         const err = await response.json().catch(() => ({ error: response.statusText }));
@@ -422,9 +491,59 @@
                     const data = await response.json();
                     return data.response.trim();
                 }
+
+                async* generateStream(systemPrompt, userPrompt, { serverUrl, model, apiKey }) {
+                    const endpoint = `${serverUrl.replace(/\/$/, '')}/api/generate`;
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
+                        body: JSON.stringify({ model, system: systemPrompt, prompt: userPrompt, stream: true }),
+                    });
+
+                    if (!response.ok || !response.body) {
+                        const err = await response.json().catch(() => ({ error: response.statusText }));
+                        throw new Error(err.error || 'Failed to connect to stream');
+                    }
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+
+                        for (const line of lines) {
+                            if (line.trim()) {
+                                const data = JSON.parse(line);
+                                if (data.response) {
+                                    yield data.response;
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             class OpenAICompatibleAPI extends APIHandler {
+                 async getModels({ serverUrl, apiKey }) {
+                    const endpoint = `${serverUrl.replace(/\/$/, '')}/v1/models`;
+                     const response = await fetch(endpoint, {
+                        method: 'GET',
+                        headers: { ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
+                    });
+                     if (!response.ok) {
+                        const err = await response.json().catch(() => ({ error: response.statusText }));
+                        throw new Error(err.message || err.error?.message || err.error || "Failed to fetch models");
+                    }
+                    const data = await response.json();
+                    return data.data.map(m => m.id).sort();
+                }
+
                 async generate(systemPrompt, userPrompt, { serverUrl, model, apiKey }) {
                     const endpoint = `${serverUrl.replace(/\/$/, '')}/v1/chat/completions`;
                     const response = await fetch(endpoint, {
@@ -446,64 +565,91 @@
                     const data = await response.json();
                     return data.choices[0].message.content.trim();
                 }
+
+                 async* generateStream(systemPrompt, userPrompt, { serverUrl, model, apiKey }) {
+                    const endpoint = `${serverUrl.replace(/\/$/, '')}/v1/chat/completions`;
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
+                        body: JSON.stringify({
+                            model,
+                            messages: [
+                                { role: "system", content: systemPrompt },
+                                { role: "user", content: userPrompt }
+                            ],
+                            stream: true,
+                        }),
+                    });
+
+                    if (!response.ok || !response.body) {
+                        const err = await response.json().catch(() => ({ error: response.statusText }));
+                        throw new Error(err.message || err.error?.message || err.error || 'Failed to connect to stream');
+                    }
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const content = line.substring(6);
+                                if (content.trim() === '[DONE]') {
+                                    return;
+                                }
+                                try {
+                                    const data = JSON.parse(content);
+                                    const text = data.choices[0]?.delta?.content;
+                                    if (text) {
+                                        yield text;
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing stream JSON:', e);
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             const getApiHandler = (apiType) => {
                 if (apiType === 'openai_compatible') return new OpenAICompatibleAPI();
                 return new OllamaAPI();
             };
-
-            const setCookie = (name, value, days) => {
-                let expires = "";
-                if (days) {
-                    const date = new Date();
-                    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                    expires = "; expires=" + date.toUTCString();
-                }
-                document.cookie = `${name}=${encodeURIComponent(value) || ""}${expires}; path=/; SameSite=Lax`;
+            
+            const showToast = (message, isError = false) => {
+                dom.toast.textContent = message;
+                dom.toast.className = `toast show ${isError ? 'error' : ''}`;
+                setTimeout(() => {
+                    dom.toast.className = dom.toast.className.replace("show", "");
+                }, 3000);
             };
 
-            const getCookie = (name) => {
-                const ca = document.cookie.split(';');
-                for (let c of ca) {
-                    c = c.trim();
-                    if (c.startsWith(name + "=")) return decodeURIComponent(c.substring(name.length + 1));
-                }
-                return null;
-            };
-
-            const copyOutput = () => {
+            const copyOutput = async () => {
                 const textToCopy = dom.resultText.value;
                 if (!textToCopy) return;
 
+                if (!navigator.clipboard) {
+                    showToast('Clipboard API not available.', true);
+                    return;
+                }
+
                 try {
-                    const textArea = document.createElement("textarea");
-                    textArea.value = textToCopy;
-                    textArea.style.position = "fixed";
-                    textArea.style.top = "-9999px";
-                    textArea.style.left = "-9999px";
-                    document.body.appendChild(textArea);
-                    textArea.focus();
-                    textArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textArea);
-
-                    dom.toast.textContent = "Copied to clipboard!";
-                    dom.toast.className = "toast show";
-                    setTimeout(() => {
-                        dom.toast.className = dom.toast.className.replace("show", "");
-                    }, 3000);
-
+                    await navigator.clipboard.writeText(textToCopy);
+                    showToast('Copied to clipboard!');
                 } catch (err) {
                     console.error('Failed to copy text: ', err);
-                    dom.toast.textContent = "Failed to copy!";
-                    dom.toast.className = "toast show";
-                    setTimeout(() => {
-                        dom.toast.className = dom.toast.className.replace("show", "");
-                    }, 3000);
+                    showToast('Failed to copy!', true);
                 }
             };
-
+            
             const updateUrlHint = (apiType) => {
                 const isOllama = apiType === 'ollama';
                 dom.ollamaUrlHint.style.display = isOllama ? 'block' : 'none';
@@ -522,16 +668,19 @@
             };
 
             const loadSettings = () => {
-                currentSettings = {
-                    apiType: getCookie('api_type') || DEFAULTS.apiType,
-                    serverUrl: getCookie('server_url') || DEFAULTS.serverUrl,
-                    apiKey: getCookie('api_key') || DEFAULTS.apiKey,
-                    model: getCookie('model_name') || DEFAULTS.model,
-                    systemPrompt: getCookie('system_prompt_template') || DEFAULTS.systemPrompt,
-                    userPrompt: getCookie('user_prompt_template') || DEFAULTS.userPrompt,
-                    sourceLang: getCookie('translator_src') || DEFAULTS.sourceLang,
-                    destLang: getCookie('translator_dst') || DEFAULTS.destLang,
+                const settings = {
+                    apiType: localStorage.getItem('api_type') || DEFAULTS.apiType,
+                    serverUrl: localStorage.getItem('server_url') || DEFAULTS.serverUrl,
+                    apiKey: localStorage.getItem('api_key') || DEFAULTS.apiKey,
+                    model: localStorage.getItem('model_name') || DEFAULTS.model,
+                    systemPrompt: localStorage.getItem('system_prompt_template') || DEFAULTS.systemPrompt,
+                    userPrompt: localStorage.getItem('user_prompt_template') || DEFAULTS.userPrompt,
+                    sourceLang: localStorage.getItem('translator_src') || DEFAULTS.sourceLang,
+                    destLang: localStorage.getItem('translator_dst') || DEFAULTS.destLang,
+                    stream: localStorage.getItem('stream_response') === 'true' || DEFAULTS.stream,
                 };
+                currentSettings = settings;
+                
                 dom.apiType.value = currentSettings.apiType;
                 dom.serverUrl.value = currentSettings.serverUrl;
                 dom.apiKey.value = currentSettings.apiKey;
@@ -540,6 +689,7 @@
                 dom.userPromptTemplate.value = currentSettings.userPrompt;
                 dom.sourceLang.value = currentSettings.sourceLang;
                 dom.destLang.value = currentSettings.destLang;
+                dom.streamSwitch.checked = currentSettings.stream;
                 updateUrlHint(currentSettings.apiType);
             };
 
@@ -550,12 +700,16 @@
                 currentSettings.model = dom.modelName.value.trim();
                 currentSettings.systemPrompt = dom.systemPromptTemplate.value;
                 currentSettings.userPrompt = dom.userPromptTemplate.value;
-                setCookie('api_type', currentSettings.apiType, 365);
-                setCookie('server_url', currentSettings.serverUrl, 365);
-                setCookie('api_key', currentSettings.apiKey, 365);
-                setCookie('model_name', currentSettings.model, 365);
-                setCookie('system_prompt_template', currentSettings.systemPrompt, 365);
-                setCookie('user_prompt_template', currentSettings.userPrompt, 365);
+                currentSettings.stream = dom.streamSwitch.checked;
+
+                localStorage.setItem('api_type', currentSettings.apiType);
+                localStorage.setItem('server_url', currentSettings.serverUrl);
+                localStorage.setItem('api_key', currentSettings.apiKey);
+                localStorage.setItem('model_name', currentSettings.model);
+                localStorage.setItem('system_prompt_template', currentSettings.systemPrompt);
+                localStorage.setItem('user_prompt_template', currentSettings.userPrompt);
+                localStorage.setItem('stream_response', currentSettings.stream);
+                
                 toggleSettingsModal(false);
             };
 
@@ -570,6 +724,57 @@
                     if (modalIsVisible) {
                         history.back();
                     }
+                }
+            };
+
+            const renderSuggestions = (models) => {
+                dom.modelSuggestions.innerHTML = '';
+                if (models.length === 0) {
+                    dom.modelSuggestions.classList.remove('show');
+                    return;
+                }
+
+                models.forEach(modelName => {
+                    const item = document.createElement('div');
+                    item.className = 'suggestion-item';
+                    item.textContent = modelName;
+                    item.addEventListener('click', () => {
+                        dom.modelName.value = modelName;
+                        dom.modelSuggestions.classList.remove('show');
+                    });
+                    dom.modelSuggestions.appendChild(item);
+                });
+                dom.modelSuggestions.classList.add('show');
+            };
+            
+            const fetchAndPopulateModels = async () => {
+                const apiType = dom.apiType.value;
+                const serverUrl = dom.serverUrl.value.trim();
+                const apiKey = dom.apiKey.value.trim();
+
+                if (!serverUrl) {
+                    showToast('Please enter a Server Base URL first.', true);
+                    return;
+                }
+                
+                dom.fetchModelsBtn.disabled = true;
+                availableModels = [];
+                renderSuggestions([]);
+
+                try {
+                    const apiHandler = getApiHandler(apiType);
+                    const models = await apiHandler.getModels({ serverUrl, apiKey });
+                    availableModels = models;
+                    renderSuggestions(availableModels);
+                    if (models.length > 0) {
+                        showToast(`Found ${models.length} models.`);
+                    } else {
+                        showToast(`No models found.`);
+                    }
+                } catch (error) {
+                    showToast(`Error fetching models: ${error.message}`, true);
+                } finally {
+                    dom.fetchModelsBtn.disabled = false;
                 }
             };
 
@@ -592,8 +797,15 @@
 
                 try {
                     const apiHandler = getApiHandler(currentSettings.apiType);
-                    const translation = await apiHandler.generate(currentSettings.systemPrompt, finalUserPrompt, currentSettings);
-                    dom.resultText.value = translation;
+                    if (currentSettings.stream) {
+                         for await (const chunk of apiHandler.generateStream(currentSettings.systemPrompt, finalUserPrompt, currentSettings)) {
+                            dom.resultText.value += chunk;
+                            updateCharCount(dom.resultText, dom.resultCharCount);
+                        }
+                    } else {
+                        const translation = await apiHandler.generate(currentSettings.systemPrompt, finalUserPrompt, currentSettings);
+                        dom.resultText.value = translation;
+                    }
                 } catch (error) {
                     dom.resultText.value = `Error: ${error.message}`;
                 } finally {
@@ -611,12 +823,37 @@
                     if (e.target === dom.settingsModal) toggleSettingsModal(false);
                 });
                 dom.saveSettingsBtn.addEventListener('click', saveSettings);
-                dom.apiType.addEventListener('change', () => updateUrlHint(dom.apiType.value));
-
+                dom.apiType.addEventListener('change', () => {
+                    updateUrlHint(dom.apiType.value);
+                    availableModels = [];
+                    renderSuggestions([]);
+                });
                 dom.sourceText.addEventListener('input', () => updateCharCount(dom.sourceText, dom.sourceCharCount));
+                dom.sourceLang.addEventListener('change', () => localStorage.setItem('translator_src', dom.sourceLang.value));
+                dom.destLang.addEventListener('change', () => localStorage.setItem('translator_dst', dom.destLang.value));
+                dom.fetchModelsBtn.addEventListener('click', fetchAndPopulateModels);
 
-                dom.sourceLang.addEventListener('change', () => setCookie('translator_src', dom.sourceLang.value, 365));
-                dom.destLang.addEventListener('change', () => setCookie('translator_dst', dom.destLang.value, 365));
+                dom.modelName.addEventListener('input', () => {
+                    const inputText = dom.modelName.value.toLowerCase();
+                    if (!inputText) {
+                        renderSuggestions(availableModels);
+                        return;
+                    }
+                    const filteredModels = availableModels.filter(m => m.toLowerCase().includes(inputText));
+                    renderSuggestions(filteredModels);
+                });
+
+                dom.modelName.addEventListener('focus', () => {
+                    if (availableModels.length > 0) {
+                        renderSuggestions(availableModels);
+                    }
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!dom.modelInputContainer.contains(e.target)) {
+                        dom.modelSuggestions.classList.remove('show');
+                    }
+                });
 
                 window.addEventListener('popstate', () => {
                     dom.settingsModal.style.display = 'none';
@@ -645,3 +882,4 @@
 </body>
 
 </html>
+
