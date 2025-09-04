@@ -426,6 +426,35 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             margin-bottom: 5px;
             font-weight: bold;
         }
+        
+        .form-group .label-with-action {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #model-refresh-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px;
+            opacity: 0.7;
+        }
+        #model-refresh-button svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--icon-fill);
+        }
+        #model-refresh-button:hover {
+            opacity: 1;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        #model-refresh-button.loading svg {
+            animation: spin 1s linear infinite;
+        }
 
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
@@ -524,11 +553,44 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             background-color: var(--details-bg);
             border-color: var(--info-text-color);
        }
+       
+       /* Custom Suggestion Box Styles */
+       .model-input-container {
+           position: relative;
+       }
+
+       #model-suggestions {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: var(--modal-content-bg);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1001;
+       }
+
+       .suggestion-item {
+            padding: 8px 10px;
+            cursor: pointer;
+            font-size: 0.9em;
+       }
+        
+       .suggestion-item:hover {
+            background-color: var(--button-hover-bg);
+            color: var(--button-color);
+       }
+
 
     </style>
     <script>
+        // Set theme ASAP to prevent flash of wrong theme
         (() => {
-            const savedTheme = localStorage.getItem('llmChatTheme') || 'dark';
+            const savedTheme = localStorage.getItem('llmChatTheme') || 'auto';
             if (savedTheme === 'auto') {
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
@@ -598,8 +660,16 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             </div>
 
             <div class="form-group">
-                <label for="model-name">Model Name</label>
-                <input type="text" id="model-name" placeholder="llama3:latest">
+                <div class="label-with-action">
+                    <label for="model-name">Model Name</label>
+                    <button id="model-refresh-button" title="Refresh model list">
+                        <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                    </button>
+                </div>
+                <div class="model-input-container">
+                    <input type="text" id="model-name" placeholder="llama3:latest" autocomplete="off">
+                    <div id="model-suggestions"></div>
+                </div>
             </div>
 
             <div class="form-group inline">
@@ -649,6 +719,10 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             async streamChat(messages, onToken, signal) {
                 throw new Error("Method 'streamChat()' must be implemented.");
             }
+            
+            async getModels() {
+                throw new Error("Method 'getModels()' must be implemented.");
+            }
         }
 
         class OllamaApi extends LLMApi {
@@ -694,6 +768,16 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                         }
                     }
                 }
+            }
+
+            async getModels() {
+                const endpoint = this.settings.serverUrl.replace(/\/$/, '') + '/api/tags';
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data.models.map(model => model.name).sort();
             }
         }
 
@@ -750,6 +834,20 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                     }
                 }
             }
+
+            async getModels() {
+                const endpoint = this.settings.serverUrl.replace(/\/$/, '') + '/v1/models';
+                const headers = {};
+                 if (this.settings.apiKey) {
+                    headers['Authorization'] = `Bearer ${this.settings.apiKey}`;
+                }
+                const response = await fetch(endpoint, { headers });
+                 if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data.data.map(model => model.id).sort();
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -773,6 +871,8 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             const serverUrlInput = document.getElementById('server-url');
             const apiKeyInput = document.getElementById('api-key');
             const modelNameInput = document.getElementById('model-name');
+            const modelSuggestionsContainer = document.getElementById('model-suggestions');
+            const modelRefreshButton = document.getElementById('model-refresh-button');
             const temperatureInput = document.getElementById('temperature');
             const topPInput = document.getElementById('top-p');
             const systemPromptInput = document.getElementById('system-prompt');
@@ -785,6 +885,25 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             let conversationHistory = [];
             let abortController = null;
             let isInputExpanded = false;
+            let availableModels = [];
+
+            const hideSettingsModal = () => {
+                settingsModal.style.display = 'none';
+            };
+
+            window.addEventListener('popstate', () => {
+                if (settingsModal.style.display === 'flex') {
+                    hideSettingsModal();
+                }
+            });
+
+            const requestModalClose = () => {
+                if (history.state && history.state.modal === 'settings') {
+                    history.back();
+                } else {
+                    hideSettingsModal();
+                }
+            };
 
             const showToast = (message, duration = 3000) => {
                 const toast = document.createElement('div');
@@ -815,13 +934,14 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             };
             
             const loadTheme = () => {
-                const savedTheme = localStorage.getItem('llmChatTheme') || 'dark';
+                const savedTheme = localStorage.getItem('llmChatTheme') || 'auto';
                 applyTheme(savedTheme);
             };
 
             themeButton.addEventListener('click', () => {
-                const currentTheme = localStorage.getItem('llmChatTheme') || 'dark';
-                const newTheme = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'auto' : 'dark';
+                const currentTheme = document.documentElement.dataset.theme;
+                const savedPreference = localStorage.getItem('llmChatTheme') || 'auto';
+                const newTheme = savedPreference === 'dark' ? 'light' : savedPreference === 'light' ? 'auto' : 'dark';
                 localStorage.setItem('llmChatTheme', newTheme);
                 applyTheme(newTheme);
                 showToast(`Theme set to ${newTheme}`);
@@ -863,8 +983,52 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                     systemPrompt: systemPromptInput.value.trim(),
                 };
                 localStorage.setItem('llmChatSettings', JSON.stringify(settings));
-                settingsModal.style.display = 'none';
+                requestModalClose();
                 showToast('Settings saved!');
+            };
+            
+            const renderSuggestions = (models) => {
+                modelSuggestionsContainer.innerHTML = '';
+                if (models.length === 0) {
+                    modelSuggestionsContainer.style.display = 'none';
+                    return;
+                }
+                models.forEach(modelName => {
+                    const item = document.createElement('div');
+                    item.className = 'suggestion-item';
+                    item.textContent = modelName;
+                    modelSuggestionsContainer.appendChild(item);
+                });
+                modelSuggestionsContainer.style.display = 'block';
+            };
+
+            const fetchAndPopulateModels = async () => {
+                modelRefreshButton.classList.add('loading');
+                try {
+                    const tempSettings = {
+                        apiType: apiTypeSelect.value,
+                        serverUrl: serverUrlInput.value.trim(),
+                        apiKey: apiKeyInput.value.trim()
+                    };
+
+                    if (!tempSettings.serverUrl) {
+                        showToast('Please enter a server URL first.');
+                        return;
+                    }
+
+                    const apiClient = tempSettings.apiType === 'ollama' ? new OllamaApi(tempSettings) : new OpenAIApi(tempSettings);
+                    availableModels = await apiClient.getModels();
+                    
+                    renderSuggestions(availableModels);
+                    showToast(`Found ${availableModels.length} models.`);
+                } catch (error) {
+                    console.error('Failed to fetch models:', error);
+                    availableModels = [];
+                    renderSuggestions([]);
+                    showToast(`Error fetching models: ${error.message}`);
+                } finally {
+                    modelRefreshButton.classList.remove('loading');
+                }
             };
 
             const addMessage = (sender, text, className = '') => {
@@ -930,8 +1094,8 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 const contentNodes = [];
                 botMessageElement.childNodes.forEach(node => {
                     if (node.nodeName !== 'DETAILS' && node.nodeName !== 'DIV') {
-                         visibleText += node.textContent;
-                         contentNodes.push(node);
+                        visibleText += node.textContent;
+                        contentNodes.push(node);
                     }
                 });
 
@@ -952,7 +1116,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 });
 
                 const markdownButton = document.createElement('button');
-                markdownButton.textContent = 'Show Markdown';
+                markdownButton.textContent = 'Render Markdown';
                 markdownButton.dataset.state = 'raw';
                 
                 let markdownContainer = null;
@@ -962,19 +1126,18 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                         if (!markdownContainer) {
                             markdownContainer = document.createElement('div');
                             markdownContainer.className = 'markdown-content';
-                            // Switched to marked.js
-                            const rawHtml = marked.parse(visibleText);
+                            const rawHtml = marked.parse(visibleText, { breaks: true, gfm: true });
                             markdownContainer.innerHTML = sanitizeHTML(rawHtml);
                             botMessageElement.insertBefore(markdownContainer, actionsContainer);
                         }
                         contentNodes.forEach(node => node.style.display = 'none');
                         markdownContainer.style.display = 'block';
-                        markdownButton.textContent = 'Show Raw';
+                        markdownButton.textContent = 'Show Raw Text';
                         markdownButton.dataset.state = 'markdown';
                     } else {
                         contentNodes.forEach(node => node.style.display = '');
                         if (markdownContainer) markdownContainer.style.display = 'none';
-                        markdownButton.textContent = 'Show Markdown';
+                        markdownButton.textContent = 'Render Markdown';
                         markdownButton.dataset.state = 'raw';
                     }
                 });
@@ -986,7 +1149,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
 
             const streamResponse = async () => {
                 const botMessageElement = addMessage('bot', '');
-                botMessageElement.innerHTML = '<span class="typing-indicator"><span></span></span>';
+                botMessageElement.innerHTML = '<span class="typing-indicator"></span>';
                 abortController = new AbortController();
                 toggleSendButtonState(true);
 
@@ -1014,7 +1177,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                     const thinkingMarkers = [
                         { start: '<thinking>', end: '</thinking>' },
                         { start: '<think>', end: '</think>' },
-                        { start: '<thought>', end: '</thought>' },
+                        { start: '<\ctrl3347>', end: '<\ctrl3348>' },
                         { start: '<function_calls>', end: '</function_calls>' },
                     ];
 
@@ -1044,7 +1207,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
 
                                     const details = document.createElement('details');
                                     const summary = document.createElement('summary');
-                                    summary.textContent = 'thinking...';
+                                    summary.textContent = 'Thinking...';
                                     const thinkingContentDiv = document.createElement('div');
                                     thinkingContentDiv.className = 'thinking-content';
                                     details.appendChild(summary);
@@ -1076,11 +1239,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                         botMessageElement.appendChild(abortMessage);
                     } else {
                         console.error('Error streaming response:', error);
-                        botMessageElement.innerHTML = '';
-                        const strong = document.createElement('strong');
-                        strong.textContent = 'Error: ';
-                        botMessageElement.appendChild(strong);
-                        botMessageElement.appendChild(document.createTextNode(error.message));
+                        botMessageElement.innerHTML = `<strong>Error:</strong> ${error.message}`;
                         botMessageElement.classList.add('error');
                     }
                 } finally {
@@ -1106,7 +1265,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 };
                 
                 const outsideClickListener = (event) => {
-                     if (event.target == confirmModal) {
+                    if (event.target == confirmModal) {
                         closeConfirm();
                     }
                 };
@@ -1151,7 +1310,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             });
 
             clearButton.addEventListener('click', () => {
-                 showConfirm('Are you sure you want to clear the chat history?', () => {
+                showConfirm('Are you sure you want to clear the chat history?', () => {
                     chatContainer.innerHTML = '';
                     conversationHistory = [];
                     if (abortController) {
@@ -1161,12 +1320,46 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 });
             });
 
-            settingsButton.addEventListener('click', () => { settingsModal.style.display = 'flex'; });
-            closeSettingsButton.addEventListener('click', () => { settingsModal.style.display = 'none'; });
+            settingsButton.addEventListener('click', () => { 
+                settingsModal.style.display = 'flex'; 
+                history.pushState({ modal: 'settings' }, '');
+                // Do not auto-fetch, wait for button click
+            });
+            closeSettingsButton.addEventListener('click', () => { requestModalClose(); });
             saveSettingsButton.addEventListener('click', saveSettings);
+            modelRefreshButton.addEventListener('click', fetchAndPopulateModels);
+
+            // --- Model Suggestion Logic ---
+            modelNameInput.addEventListener('focus', () => {
+                const query = modelNameInput.value.toLowerCase();
+                const filteredModels = availableModels.filter(m => m.toLowerCase().includes(query));
+                renderSuggestions(filteredModels);
+            });
+
+            modelNameInput.addEventListener('input', () => {
+                const query = modelNameInput.value.toLowerCase();
+                const filteredModels = availableModels.filter(m => m.toLowerCase().includes(query));
+                renderSuggestions(filteredModels);
+            });
+            
+            modelSuggestionsContainer.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('suggestion-item')) {
+                    modelNameInput.value = e.target.textContent;
+                    modelSuggestionsContainer.style.display = 'none';
+                }
+            });
+
+            modelNameInput.addEventListener('blur', () => {
+                 // Delay hiding to allow the click on a suggestion to register
+                setTimeout(() => {
+                    modelSuggestionsContainer.style.display = 'none';
+                }, 150);
+            });
+
+
             window.addEventListener('click', (event) => {
                 if (event.target == settingsModal) {
-                    settingsModal.style.display = 'none';
+                    requestModalClose();
                 }
             });
 

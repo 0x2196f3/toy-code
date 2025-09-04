@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        /* CSS Variables for Theming (Light & Dark Mode) */
+        :root {
+            --bg-color: #f3f4f6;
+            --text-color: #1f2937;
+            --card-bg: #ffffff;
+            --input-bg: #f9fafb;
+            --border-color: #d1d5db;
+            --border-focus-color: #3b82f6;
+            --primary-btn-bg: #2563eb;
+            --primary-btn-hover-bg: #1d4ed8;
+            --secondary-btn-bg: #e5e7eb;
+            --secondary-btn-hover-bg: #d1d5db;
+            --tab-active-border: #3b82f6;
+            --tab-active-color: #3b82f6;
+            --tab-active-bg: #eff6ff;
+            --pre-bg: #111827;
+            --pre-text: #f3f4f6;
+            --success-color: #16a34a;
+            --error-color: #dc2626;
+            --warning-bg: #fefce8;
+            --warning-border: #facc15;
+            --warning-text: #854d0e;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #111827;
+                --text-color: #d1d5db;
+                --card-bg: #1f2937;
+                --input-bg: #374151;
+                --border-color: #4b5563;
+                --primary-btn-bg: #3b82f6;
+                --primary-btn-hover-bg: #2563eb;
+                --secondary-btn-bg: #374151;
+                --secondary-btn-hover-bg: #4b5563;
+                --tab-active-bg: #1e293b;
+                --pre-bg: #0f172a;
+                --pre-text: #e2e8f0;
+                --warning-bg: #3f3c19;
+                --warning-border: #eab308;
+                --warning-text: #fef08a;
+            }
+        }
+
+        /* General Styles */
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .container { padding: 1.5rem; }
+        }
+        @media (min-width: 1024px) {
+            .container { padding: 2rem; }
+        }
+        
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+        header p {
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+        @media (prefers-color-scheme: dark) {
+             header p { color: #9ca3af; }
+        }
+
+        /* Card Styles */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            margin-top: 0;
+        }
+
+        /* Form Elements */
+        .input, select, textarea {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            padding: 0.625rem;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+
+        .input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--border-focus-color);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+
+        textarea {
+            font-family: var(--font-family-mono);
+            min-height: 12rem;
+        }
+
+        .request-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        @media (min-width: 640px) {
+            .request-bar { flex-direction: row; }
+            .request-bar select { width: 10rem; }
+            .request-bar input { flex-grow: 1; }
+            .request-bar button { width: auto; }
+        }
+        
+        .btn {
+            font-weight: 700;
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-btn-bg);
+            color: white;
+        }
+        .btn-primary:hover { background-color: var(--primary-btn-hover-bg); }
+        .btn-primary:disabled { background-color: #9ca3af; cursor: not-allowed; }
+
+        .btn-secondary {
+            background-color: var(--secondary-btn-bg);
+            color: var(--text-color);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+        }
+        .btn-secondary:hover { background-color: var(--secondary-btn-hover-bg); }
+
+        .kv-pair {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .kv-pair .key-input { width: 33.333%; }
+        .kv-pair .value-input { flex-grow: 1; }
+        
+        .remove-btn {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            line-height: 0;
+        }
+        .remove-btn:hover { background-color: #fecaca; }
+        @media (prefers-color-scheme: dark) {
+            .remove-btn { background-color: #450a0a; color: #f87171; }
+            .remove-btn:hover { background-color: #7f1d1d; }
+        }
+
+        /* Tabs */
+        .tabs-container { border-top: 1px solid var(--border-color); padding-top: 1rem; }
+        .tab-nav { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
+        .tab-btn, .resp-tab-btn {
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            color: #6b7280;
+            border: none;
+            border-bottom: 2px solid transparent;
+            background: none;
+            cursor: pointer;
+            margin-bottom: -1px;
+        }
+        .tab-btn.active, .resp-tab-btn.active {
+            border-color: var(--tab-active-border);
+            color: var(--tab-active-color);
+            background-color: var(--tab-active-bg);
+        }
+
+        /* Response Section */
+        pre {
+            background-color: var(--pre-bg);
+            color: var(--pre-text);
+            font-family: var(--font-family-mono);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            max-height: 24rem;
+            font-size: 0.875rem;
+            white-space: pre-wrap; /* Wrap long lines */
+            word-break: break-all; /* Break long words */
+        }
+        
+        pre::-webkit-scrollbar { width: 8px; height: 8px; }
+        pre::-webkit-scrollbar-track { background: #4b5563; border-radius: 10px; }
+        pre::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 10px; }
+        pre::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
+
+        .status-container { text-align: right; font-size: 0.875rem; }
+        #status-code.ok { color: var(--success-color); }
+        #status-code.error { color: var(--error-color); }
+
+        /* Utility classes */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .justify-end { justify-content: flex-end; }
+        .justify-between { justify-content: space-between; }
+        .items-center { align-items: center; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mt-4 { margin-top: 1rem; }
+        .space-y-2 > *:not([hidden]) ~ *:not([hidden]) { margin-top: 0.5rem; }
+        .font-bold { font-weight: 700; }
+        
+        /* Loader */
+        .loader-container { justify-content: center; align-items: center; padding: 1.5rem; }
+        .loader {
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid var(--border-focus-color);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* CORS Warning */
+        #cors-warning {
+            background-color: var(--warning-bg);
+            border-left: 4px solid var(--warning-border);
+            color: var(--warning-text);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 0.25rem;
+        }
+        #cors-warning p { margin: 0; }
+        #cors-warning .font-bold { font-weight: 700; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>API Test</h1>
+        </header>
+
+        <!-- Request Section -->
+        <div class="card">
+            <h2>Request</h2>
+            
+            <div class="request-bar">
+                <select id="method">
+                    <option>GET</option>
+                    <option>POST</option>
+                    <option>PUT</option>
+                    <option>PATCH</option>
+                    <option>DELETE</option>
+                    <option>HEAD</option>
+                    <option>OPTIONS</option>
+                </select>
+                <input type="text" id="url" class="input" placeholder="https://api.example.com/data">
+                <button id="send-btn" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    <span>Send</span>
+                </button>
+            </div>
+
+            <div class="tabs-container">
+                <div class="tab-nav">
+                    <button class="tab-btn" data-tab="params">URL Params</button>
+                    <button class="tab-btn" data-tab="headers">Headers</button>
+                    <button class="tab-btn" data-tab="body">Body</button>
+                </div>
+
+                <div id="params-content" class="tab-content hidden">
+                    <div id="params-container" class="space-y-2"></div>
+                    <button id="add-param-btn" class="mt-4 btn btn-secondary">+ Add Param</button>
+                </div>
+                
+                <div id="headers-content" class="tab-content hidden">
+                     <div id="headers-container" class="space-y-2"></div>
+                    <button id="add-header-btn" class="mt-4 btn btn-secondary">+ Add Header</button>
+                </div>
+
+                <div id="body-content" class="tab-content hidden">
+                    <textarea id="body-input" placeholder='{ "key": "value" }'></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div id="cors-warning" class="hidden">
+            <p class="font-bold">CORS Error</p>
+            <p>The request was blocked by the browser's Cross-Origin Resource Sharing (CORS) policy. This is a security feature. The server at the requested URL does not allow requests from this origin.</p>
+        </div>
+
+
+        <!-- Response Section -->
+        <div id="response-section" class="hidden card">
+            <div class="flex justify-between items-center mb-4">
+                <h2>Response</h2>
+                <div class="status-container">
+                    <p>Status: <span id="status-code" class="font-bold"></span></p>
+                    <p>Time: <span id="response-time" class="font-bold"></span></p>
+                </div>
+            </div>
+
+            <div>
+                 <div class="tab-nav">
+                    <button class="resp-tab-btn" data-tab="resp-body">Body</button>
+                    <button class="resp-tab-btn" data-tab="resp-headers">Headers</button>
+                </div>
+
+                <div id="resp-body-content" class="resp-tab-content hidden">
+                    <div class="flex justify-end mb-2">
+                        <button id="format-json-btn" class="btn btn-secondary">Format JSON</button>
+                    </div>
+                    <pre id="response-body"></pre>
+                </div>
+                
+                <div id="resp-headers-content" class="resp-tab-content hidden">
+                    <pre id="response-headers"></pre>
+                </div>
+            </div>
+        </div>
+        
+        <div id="loader-container" class="hidden flex loader-container">
+             <div class="loader"></div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const methodSelect = document.getElementById('method');
+            const urlInput = document.getElementById('url');
+            const sendBtn = document.getElementById('send-btn');
+            
+            const paramsContainer = document.getElementById('params-container');
+            const addParamBtn = document.getElementById('add-param-btn');
+            
+            const headersContainer = document.getElementById('headers-container');
+            const addHeaderBtn = document.getElementById('add-header-btn');
+            
+            const bodyInput = document.getElementById('body-input');
+
+            const responseSection = document.getElementById('response-section');
+            const loaderContainer = document.getElementById('loader-container');
+            const corsWarning = document.getElementById('cors-warning');
+            
+            const statusCodeEl = document.getElementById('status-code');
+            const responseTimeEl = document.getElementById('response-time');
+            
+            const responseBodyEl = document.getElementById('response-body');
+            const responseHeadersEl = document.getElementById('response-headers');
+            const formatJsonBtn = document.getElementById('format-json-btn');
+            
+            const requestTabs = document.querySelectorAll('.tab-btn');
+            const requestTabContents = document.querySelectorAll('.tab-content');
+            
+            const responseTabs = document.querySelectorAll('.resp-tab-btn');
+            const responseTabContents = document.querySelectorAll('.resp-tab-content');
+
+            // --- Tabbing Logic ---
+            function setupTabs(tabs, contents, defaultTab) {
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        tabs.forEach(item => item.classList.remove('active'));
+                        tab.classList.add('active');
+                        
+                        contents.forEach(content => {
+                            content.classList.add('hidden');
+                            if (content.id === `${tab.dataset.tab}-content`) {
+                                content.classList.remove('hidden');
+                            }
+                        });
+                    });
+                });
+                const defaultTabEl = document.querySelector(`.tab-btn[data-tab='${defaultTab}']`) || document.querySelector(`.resp-tab-btn[data-tab='${defaultTab}']`);
+                if (defaultTabEl) defaultTabEl.click();
+            }
+
+            setupTabs(requestTabs, requestTabContents, 'params');
+            setupTabs(responseTabs, responseTabContents, 'resp-body');
+
+            // --- Key-Value Pair Management ---
+            function createKeyValuePair(container, type) {
+                const div = document.createElement('div');
+                div.className = 'kv-pair';
+                div.innerHTML = `
+                    <input type="text" class="input key-input" placeholder="Key">
+                    <input type="text" class="input value-input" placeholder="Value">
+                    <button class="remove-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                `;
+                container.appendChild(div);
+
+                div.querySelector('.remove-btn').addEventListener('click', () => {
+                    div.remove();
+                    if (type === 'param') updateUrlParams();
+                });
+
+                if (type === 'param') {
+                    div.querySelectorAll('input').forEach(input => {
+                        input.addEventListener('input', updateUrlParams);
+                    });
+                }
+            }
+
+            addParamBtn.addEventListener('click', () => createKeyValuePair(paramsContainer, 'param'));
+            addHeaderBtn.addEventListener('click', () => createKeyValuePair(headersContainer, 'header'));
+
+            createKeyValuePair(paramsContainer, 'param');
+            createKeyValuePair(headersContainer, 'header');
+
+
+            // --- URL Param Logic ---
+            function updateUrlParams() {
+                try {
+                    const baseUrl = urlInput.value.split('?')[0];
+                    const params = new URLSearchParams();
+                    const paramRows = paramsContainer.querySelectorAll('.kv-pair');
+                    paramRows.forEach(row => {
+                        const key = row.querySelector('.key-input').value.trim();
+                        const value = row.querySelector('.value-input').value.trim();
+                        if (key) {
+                            params.append(key, value);
+                        }
+                    });
+                    const queryString = params.toString();
+                    urlInput.value = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+                } catch (e) {
+                    // Handle invalid URL during typing, do nothing
+                }
+            }
+            
+            urlInput.addEventListener('input', () => {
+                try {
+                    const url = new URL(urlInput.value);
+                    const params = url.searchParams;
+                    paramsContainer.innerHTML = '';
+                    if (params.toString() === '') {
+                        createKeyValuePair(paramsContainer, 'param');
+                    } else {
+                         for (const [key, value] of params.entries()) {
+                            const div = document.createElement('div');
+                            div.className = 'kv-pair';
+                            div.innerHTML = `
+                                <input type="text" class="input key-input" value="${key}">
+                                <input type="text" class="input value-input" value="${value}">
+                                <button class="remove-btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            `;
+                            paramsContainer.appendChild(div);
+                             div.querySelector('.remove-btn').addEventListener('click', () => {
+                                div.remove();
+                                updateUrlParams();
+                            });
+                            div.querySelectorAll('input').forEach(input => {
+                                input.addEventListener('input', updateUrlParams);
+                            });
+                         }
+                    }
+                } catch(e) {
+                    paramsContainer.innerHTML = '';
+                    createKeyValuePair(paramsContainer, 'param');
+                }
+            });
+
+
+            // --- Send Request Logic ---
+            sendBtn.addEventListener('click', async () => {
+                const url = urlInput.value.trim();
+                if (!url) {
+                    urlInput.style.borderColor = 'var(--error-color)';
+                    setTimeout(() => { urlInput.style.borderColor = 'var(--border-color)'; }, 2000);
+                    return;
+                }
+
+                loaderContainer.classList.remove('hidden');
+                responseSection.classList.add('hidden');
+                corsWarning.classList.add('hidden');
+                sendBtn.disabled = true;
+
+                const startTime = Date.now();
+                const method = methodSelect.value;
+                
+                const headers = new Headers();
+                const headerRows = headersContainer.querySelectorAll('.kv-pair');
+                headerRows.forEach(row => {
+                    const key = row.querySelector('.key-input').value.trim();
+                    const value = row.querySelector('.value-input').value.trim();
+                    if (key) {
+                        headers.append(key, value);
+                    }
+                });
+
+                const requestOptions = {
+                    method: method,
+                    headers: headers,
+                    mode: 'cors',
+                };
+                
+                if (method !== 'GET' && method !== 'HEAD') {
+                   requestOptions.body = bodyInput.value;
+                }
+                
+                try {
+                    const response = await fetch(url, requestOptions);
+                    const endTime = Date.now();
+                    
+                    responseSection.classList.remove('hidden');
+                    
+                    const statusText = `${response.status} ${response.statusText}`;
+                    statusCodeEl.textContent = statusText;
+                    statusCodeEl.className = `font-bold ${response.ok ? 'ok' : 'error'}`;
+                    responseTimeEl.textContent = `${endTime - startTime} ms`;
+                    
+                    let headersText = '';
+                    for (const [key, value] of response.headers.entries()) {
+                        headersText += `${key}: ${value}\n`;
+                    }
+                    responseHeadersEl.textContent = headersText || 'No headers received.';
+
+                    const bodyText = await response.text();
+                    // Securely set the response body as plain text
+                    responseBodyEl.textContent = bodyText || 'No body content.';
+
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    if (error instanceof TypeError) {
+                        corsWarning.classList.remove('hidden');
+                    } else {
+                        responseSection.classList.remove('hidden');
+                        statusCodeEl.textContent = 'Error';
+                        statusCodeEl.className = 'font-bold error';
+                        responseBodyEl.textContent = error.message;
+                        responseHeadersEl.textContent = 'N/A';
+                    }
+                } finally {
+                    loaderContainer.classList.add('hidden');
+                    sendBtn.disabled = false;
+                }
+            });
+            
+            formatJsonBtn.addEventListener('click', () => {
+                try {
+                    const currentBody = responseBodyEl.textContent;
+                    const parsedJson = JSON.parse(currentBody);
+                    responseBodyEl.textContent = JSON.stringify(parsedJson, null, 2);
+                } catch (e) {
+                    // Not valid JSON.
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
+

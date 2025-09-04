@@ -5,16 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Local LLM Translator</title>
-    <script>
-        (function () {
-            try {
-                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-            } catch (e) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            }
-        })();
-    </script>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -28,20 +18,24 @@
             --shadow-color: rgba(0, 0, 0, 0.1);
             --button-border-color: #dadce0;
         }
-
-        html[data-theme='dark'] body {
-            --bg-color: #202124;
-            --panel-bg: #303134;
-            --text-color: #e8eaed;
-            --secondary-text-color: #9aa0a6;
-            --border-color: #5f6368;
-            --primary-color: #8ab4f8;
-            --primary-text: #202124;
-            --hover-bg: #3c4043;
-            --shadow-color: rgba(0, 0, 0, 0.3);
-            --button-border-color: #5f6368;
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #202124;
+                --panel-bg: #303134;
+                --text-color: #e8eaed;
+                --secondary-text-color: #9aa0a6;
+                --border-color: #5f6368;
+                --primary-color: #8ab4f8;
+                --primary-text: #202124;
+                --hover-bg: #3c4043;
+                --shadow-color: rgba(0, 0, 0, 0.3);
+                --button-border-color: #5f6368;
+            }
+            .toast {
+                background-color: var(--hover-bg);
+                color: var(--text-color);
+            }
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
@@ -55,7 +49,6 @@
             box-sizing: border-box;
             transition: background-color 0.3s, color 0.3s;
         }
-
         .translator-container {
             width: 100%;
             max-width: 900px;
@@ -67,7 +60,6 @@
             display: flex;
             flex-direction: column;
         }
-
         .main-content {
             display: flex;
             flex-wrap: wrap;
@@ -75,7 +67,6 @@
             background-color: var(--border-color);
             flex-grow: 1;
         }
-
         header {
             display: flex;
             justify-content: space-between;
@@ -85,19 +76,8 @@
             transition: border-color 0.3s;
             flex-shrink: 0;
         }
-
-        header h1 {
-            font-size: 22px;
-            margin: 0;
-            font-weight: 500;
-        }
-
-        header .controls {
-            display: flex;
-            gap: 8px;
-            margin-right: -6px;
-        }
-
+        header h1 { font-size: 22px; margin: 0; font-weight: 500; }
+        header .controls { display: flex; gap: 8px; margin-right: -6px; }
         .panel {
             flex: 1 1 400px;
             display: flex;
@@ -105,24 +85,11 @@
             background-color: var(--panel-bg);
             transition: background-color 0.3s;
         }
-
-        .language-selector {
-            padding: 10px 15px;
-            border-bottom: 1px solid var(--border-color);
-            transition: border-color 0.3s;
-        }
-
-        .textarea-wrapper {
-            position: relative;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
+        .language-selector { padding: 10px 15px; border-bottom: 1px solid var(--border-color); transition: border-color 0.3s; }
+        .textarea-wrapper { position: relative; flex-grow: 1; display: flex; flex-direction: column; }
         textarea {
             flex-grow: 1;
-            padding: 15px;
-            padding-bottom: 40px;
+            padding: 15px 15px 40px;
             border: none;
             resize: none;
             font-size: 18px;
@@ -132,18 +99,9 @@
             color: var(--text-color);
             transition: color 0.3s;
         }
-
-        .panel-footer {
-            padding: 15px;
-            text-align: right;
-        }
-
-        :focus {
-            outline: none;
-        }
-
-        .language-selector select,
-        .form-group select {
+        .panel-footer { padding: 15px; text-align: right; }
+        :focus { outline: none; }
+        .language-selector select, .form-group select {
             width: 100%;
             padding: 8px;
             border: 1px solid var(--border-color);
@@ -155,20 +113,9 @@
             cursor: pointer;
             transition: background-color 0.3s, color 0.3s, border-color 0.3s;
         }
-
-        .language-selector select {
-            border-color: transparent;
-        }
-
-        .language-selector select:hover {
-            background-color: var(--hover-bg);
-        }
-
-        select:focus {
-            outline: none;
-            box-shadow: 0 0 0 1px var(--primary-color);
-        }
-
+        .language-selector select { border-color: transparent; }
+        .language-selector select:hover { background-color: var(--hover-bg); }
+        select:focus { box-shadow: 0 0 0 1px var(--primary-color); }
         .icon-btn {
             background: none;
             border: none;
@@ -183,11 +130,7 @@
             align-items: center;
             justify-content: center;
         }
-
-        .icon-btn:hover {
-            background-color: var(--hover-bg);
-        }
-
+        .icon-btn:hover { background-color: var(--hover-bg); }
         #translate-btn {
             padding: 10px 24px;
             font-size: 14px;
@@ -199,35 +142,11 @@
             cursor: pointer;
             transition: opacity 0.2s;
         }
-
-        #translate-btn:hover {
-            opacity: 0.9;
-        }
-
-        #translate-btn .mobile-icon {
-            display: none;
-        }
-
-        #translate-btn .desktop-text {
-            display: inline;
-        }
-
-        .char-count {
-            position: absolute;
-            bottom: 8px;
-            right: 15px;
-            font-size: 12px;
-            color: var(--secondary-text-color);
-        }
-
-        .copy-container {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            display: flex;
-            align-items: center;
-        }
-
+        #translate-btn:hover { opacity: 0.9; }
+        #translate-btn .mobile-icon { display: none; }
+        #translate-btn .desktop-text { display: inline; }
+        .char-count { position: absolute; bottom: 8px; right: 15px; font-size: 12px; color: var(--secondary-text-color); }
+        .copy-container { position: absolute; top: 15px; right: 15px; display: flex; align-items: center; }
         .loader {
             position: absolute;
             top: 15px;
@@ -240,17 +159,10 @@
             animation: spin 1s linear infinite;
             display: none;
         }
-
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-
         .toast {
             visibility: hidden;
             min-width: 250px;
@@ -268,17 +180,7 @@
             opacity: 0;
             transition: opacity 0.3s, bottom 0.3s;
         }
-
-        .toast.show {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        html[data-theme='dark'] .toast {
-            background-color: var(--hover-bg);
-            color: var(--text-color);
-        }
-
+        .toast.show { visibility: visible; opacity: 1; }
         .modal {
             display: none;
             position: fixed;
@@ -292,7 +194,6 @@
             justify-content: center;
             align-items: center;
         }
-
         .modal-content {
             background-color: var(--panel-bg);
             color: var(--text-color);
@@ -304,23 +205,10 @@
             border-radius: 8px;
             box-shadow: 0 4px 20px var(--shadow-color);
         }
-
-        .modal-content h2 {
-            margin-top: 0;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        .form-group input,
-        .form-group textarea {
+        .modal-content h2 { margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group textarea {
             width: 100%;
             padding: 8px;
             box-sizing: border-box;
@@ -330,86 +218,21 @@
             color: var(--text-color);
             transition: border-color 0.2s;
         }
-
-        .form-group input:focus,
-        .form-group textarea:focus {
-            border-color: var(--primary-color);
-            outline: none;
-        }
-
-        .form-group textarea {
-            min-height: 120px;
-            font-family: monospace;
-            font-size: 13px;
-        }
-
-        .form-group small {
-            display: block;
-            margin-top: 5px;
-            color: var(--secondary-text-color);
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .modal-actions button {
-            padding: 10px 20px;
-            border-radius: 4px;
-            border: 1px solid transparent;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        #save-settings-btn {
-            background-color: var(--primary-color);
-            color: var(--primary-text);
-        }
-
-        #cancel-settings-btn {
-            background-color: var(--panel-bg);
-            color: var(--text-color);
-            border-color: var(--button-border-color);
-        }
-
-        #cancel-settings-btn:hover {
-            background-color: var(--hover-bg);
-        }
-
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary-color); outline: none; }
+        .form-group textarea { min-height: 120px; font-family: monospace; font-size: 13px; }
+        .form-group small { display: block; margin-top: 5px; color: var(--secondary-text-color); }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .modal-actions button { padding: 10px 20px; border-radius: 4px; border: 1px solid transparent; cursor: pointer; font-weight: 500; }
+        #save-settings-btn { background-color: var(--primary-color); color: var(--primary-text); }
+        #cancel-settings-btn { background-color: var(--panel-bg); color: var(--text-color); border-color: var(--button-border-color); }
+        #cancel-settings-btn:hover { background-color: var(--hover-bg); }
         @media (max-width: 600px) {
-            body {
-                padding: 0;
-            }
-
-            .translator-container {
-                height: 100vh;
-                border-radius: 0;
-                box-shadow: none;
-            }
-
-            .main-content {
-                flex-direction: column;
-                flex-grow: 1;
-            }
-
-            .panel {
-                flex-basis: auto;
-                flex-grow: 1;
-                position: relative;
-            }
-
-            textarea {
-                min-height: 150px;
-            }
-
-            .panel-footer {
-                padding: 0;
-                height: 0;
-            }
-
+            body { padding: 0; }
+            .translator-container { height: 100vh; border-radius: 0; box-shadow: none; }
+            .main-content { flex-direction: column; flex-grow: 1; }
+            .panel { flex-basis: auto; flex-grow: 1; position: relative; }
+            textarea { min-height: 150px; }
+            .panel-footer { padding: 0; height: 0; }
             #translate-btn {
                 position: absolute;
                 bottom: 24px;
@@ -425,17 +248,8 @@
                 justify-content: center;
                 transition: background-color 0.2s, box-shadow 0.2s;
             }
-
-            #translate-btn .desktop-text {
-                display: none;
-            }
-
-            #translate-btn .mobile-icon {
-                display: block;
-                width: 24px;
-                height: 24px;
-                fill: var(--primary-text);
-            }
+            #translate-btn .desktop-text { display: none; }
+            #translate-btn .mobile-icon { display: block; width: 24px; height: 24px; fill: var(--primary-text); }
         }
     </style>
 </head>
