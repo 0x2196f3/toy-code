@@ -668,8 +668,25 @@
             if (!textToCopy) return;
 
             if (!navigator.clipboard) {
-                showToast('Clipboard API not available.', true);
-                return;
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = textToCopy;
+    
+                    textArea.style.position = 'fixed';
+                    textArea.style.top = '-9999px';
+                    textArea.style.left = '-9999px';
+                    
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    showToast('Copied to clipboard!');
+                    return;
+                } catch (err) {
+                    console.error('Failed to copy text with legacy method: ', err);
+                    showToast('Failed to copy!', true);
+                }
             }
 
             try {
@@ -932,3 +949,4 @@
 
 
 </html>
+
