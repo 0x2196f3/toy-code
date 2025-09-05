@@ -66,64 +66,65 @@ if(__exports != exports)module.exports = exports;return module.exports}));
     </script>
     <style>
         :root {
-            --body-bg: #f4f4f9;
-            --chat-bg: #ffffff;
-            --header-bg: #ffffff;
-            --user-msg-bg: #007bff;
-            --user-msg-color: #ffffff;
-            --bot-msg-bg: #e9e9eb;
-            --bot-msg-color: #000000;
-            --input-bg: #ffffff;
-            --input-color: #000000;
-            --border-color: #dddddd;
-            --button-bg: #007bff;
-            --button-color: #ffffff;
-            --button-hover-bg: #0056b3;
-            --stop-button-bg: #dc3545;
-            --stop-button-hover-bg: #c82333;
-            --shadow-color: rgba(0, 0, 0, 0.1);
-            --modal-bg: rgba(0, 0, 0, 0.5);
-            --modal-content-bg: #fefefe;
-            --error-color: #dc3545;
-            --icon-fill: #555;
-            --icon-fill-hover: #000;
+            --color-accent: #007bff;
+            --color-accent-hover: #0056b3;
+            --color-danger: #dc3545;
+            --color-danger-hover: #c82333;
+
+            --text-primary: #000000;
+            --text-secondary: #555;
+            --text-tertiary: #6c757d;
+            --text-on-accent: #ffffff;
+
+            --bg-body: #f4f4f9;
+            --bg-surface: #ffffff;
+            --bg-surface-modal: #fefefe;
+            --bg-subtle: #e9e9eb;
+            --bg-subtle-alt: #f0f0f0;
+
+            --border-subtle: #dddddd;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --scrim: rgba(0, 0, 0, 0.5);
+
             --toast-bg: #333;
-            --toast-color: #fff;
-            --details-bg: #f0f0f0;
-            --info-text-color: #6c757d;
+            --toast-text: #fff;
+
             --theme-icon-auto: #6c757d;
             --theme-icon-light: #f39c12;
             --theme-icon-dark: #377dff;
         }
 
         [data-theme="dark"] {
-            --body-bg: #121212;
-            --chat-bg: #1e1e1e;
-            --header-bg: #1e1e1e;
-            --user-msg-bg: #377dff;
-            --bot-msg-bg: #333333;
-            --bot-msg-color: #e0e0e0;
-            --input-bg: #2c2c2c;
-            --input-color: #e0e0e0;
-            --border-color: #444444;
-            --shadow-color: rgba(255, 255, 255, 0.05);
-            --modal-content-bg: #2c2c2c;
-            --error-color: #ff5c5c;
-            --icon-fill: #aaa;
-            --icon-fill-hover: #fff;
+            --color-accent: #377dff;
+            --color-accent-hover: #5090ff;
+            --color-danger: #ff5c5c;
+            --color-danger-hover: #ff7b7b;
+
+            --text-primary: #e0e0e0;
+            --text-secondary: #aaa;
+            --text-tertiary: #888;
+
+            --bg-body: #121212;
+            --bg-surface: #1e1e1e;
+            --bg-surface-modal: #2c2c2c;
+            --bg-subtle: #333333;
+            --bg-subtle-alt: #2a2a2a;
+
+            --border-subtle: #444444;
+            --shadow: rgba(255, 255, 255, 0.05);
+
             --toast-bg: #e0e0e0;
-            --toast-color: #121212;
-            --details-bg: #2a2a2a;
-            --info-text-color: #888;
+            --toast-text: #121212;
         }
-        
-        html, body {
+
+        html,
+        body {
             margin: 0;
             padding: 0;
             height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--body-bg);
-            color: var(--bot-msg-color);
+            background-color: var(--bg-body);
+            color: var(--text-primary);
             transition: background-color 0.3s, color 0.3s;
         }
 
@@ -133,8 +134,8 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             height: 100vh;
             max-width: 800px;
             margin: 0 auto;
-            background-color: var(--chat-bg);
-            box-shadow: 0 0 20px var(--shadow-color);
+            background-color: var(--bg-surface);
+            box-shadow: 0 0 20px var(--shadow);
         }
 
         .header {
@@ -142,8 +143,8 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             justify-content: space-between;
             align-items: center;
             padding: 10px 20px;
-            border-bottom: 1px solid var(--border-color);
-            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--border-subtle);
+            background-color: var(--bg-surface);
             flex-shrink: 0;
         }
 
@@ -159,21 +160,29 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             padding: 5px;
             margin-left: 10px;
         }
-        
+
         .header .controls button svg {
             width: 24px;
             height: 24px;
-            fill: var(--icon-fill);
+            fill: var(--text-secondary);
             transition: fill 0.2s ease-in-out;
         }
-        
+
         .header .controls button:hover svg {
-            fill: var(--icon-fill-hover);
+            fill: var(--text-primary);
         }
 
-        #theme-button.theme-auto svg { fill: var(--theme-icon-auto); }
-        #theme-button.theme-light svg { fill: var(--theme-icon-light); }
-        #theme-button.theme-dark svg { fill: var(--theme-icon-dark); }
+        #theme-button.theme-auto svg {
+            fill: var(--theme-icon-auto);
+        }
+
+        #theme-button.theme-light svg {
+            fill: var(--theme-icon-light);
+        }
+
+        #theme-button.theme-dark svg {
+            fill: var(--theme-icon-dark);
+        }
 
         #chat-container {
             flex-grow: 1;
@@ -194,40 +203,36 @@ if(__exports != exports)module.exports = exports;return module.exports}));
         }
 
         .user-message {
-            background-color: var(--user-msg-bg);
-            color: var(--user-msg-color);
+            background-color: var(--color-accent);
+            color: var(--text-on-accent);
             align-self: flex-end;
             border-bottom-right-radius: 4px;
         }
 
         .bot-message {
-            background-color: var(--bot-msg-bg);
-            color: var(--bot-msg-color);
+            background-color: var(--bg-subtle);
+            color: var(--text-primary);
             align-self: flex-start;
             border-bottom-left-radius: 4px;
+        }
+
+        .bot-message.error {
+            background-color: var(--color-danger);
+            color: var(--text-on-accent);
         }
 
         .bot-message .markdown-content {
             white-space: normal;
         }
-        
-        .bot-message .markdown-content pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            background-color: var(--details-bg);
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 0.5em;
+
+        .bot-message .markdown-content>*:first-child {
+            margin-top: 0;
         }
 
-        .bot-message .markdown-content > *:first-child {
-             margin-top: 0;
+        .bot-message .markdown-content>*:last-child {
+            margin-bottom: 0;
         }
-        .bot-message .markdown-content > *:last-child {
-             margin-bottom: 0;
-        }
-        
+
         .bot-message .markdown-content p,
         .bot-message .markdown-content ul,
         .bot-message .markdown-content ol,
@@ -241,33 +246,40 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             margin-top: 0;
             margin-bottom: 0.5em;
         }
-        
+
         .bot-message .markdown-content ul,
         .bot-message .markdown-content ol {
             padding-left: 20px;
         }
-        
+
         .bot-message .markdown-content li {
             margin-bottom: 0.2em;
         }
 
-        .bot-message.error {
-            background-color: var(--error-color);
-            color: white;
+        .bot-message .markdown-content pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: var(--bg-subtle-alt);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            margin-bottom: 0.5em;
         }
-        
+
         .bot-message details {
-            background-color: var(--details-bg);
+            background-color: var(--bg-subtle-alt);
             border-radius: 8px;
             margin-top: 10px;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-subtle);
         }
+
         .bot-message summary {
             padding: 8px 12px;
             cursor: pointer;
             outline: none;
             font-weight: bold;
         }
+
         .bot-message .thinking-content {
             padding: 0 12px 12px;
             white-space: pre-wrap;
@@ -278,19 +290,21 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             display: inline-block;
             width: 2px;
             height: 1em;
-            background-color: var(--bot-msg-color);
+            background-color: var(--text-primary);
             animation: blink 1s infinite;
             margin-left: 2px;
         }
 
         @keyframes blink {
-            50% { opacity: 0; }
+            50% {
+                opacity: 0;
+            }
         }
 
         .input-area {
             display: flex;
             padding: 15px 20px;
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-subtle);
             align-items: flex-end;
             flex-shrink: 0;
         }
@@ -298,10 +312,10 @@ if(__exports != exports)module.exports = exports;return module.exports}));
         #message-input {
             flex-grow: 1;
             padding: 10px 15px;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-subtle);
             border-radius: 20px;
-            background-color: var(--input-bg);
-            color: var(--input-color);
+            background-color: var(--bg-surface);
+            color: var(--text-primary);
             resize: none;
             font-size: 1em;
             line-height: 1.4;
@@ -316,7 +330,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
 
         #message-input:focus {
             outline: none;
-            border-color: var(--user-msg-bg);
+            border-color: var(--color-accent);
         }
 
         .input-controls {
@@ -326,8 +340,8 @@ if(__exports != exports)module.exports = exports;return module.exports}));
         }
 
         .input-controls button {
-            background-color: var(--button-bg);
-            color: var(--button-color);
+            background-color: var(--color-accent);
+            color: var(--text-on-accent);
             border: none;
             border-radius: 50%;
             width: 42px;
@@ -338,40 +352,40 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             justify-content: center;
             transition: background-color 0.2s ease-in-out;
         }
-        
+
         #expand-button {
             background-color: transparent;
             margin-right: 5px;
         }
-        
+
         #expand-button svg {
-            fill: var(--icon-fill);
+            fill: var(--text-secondary);
         }
-        
+
         #expand-button:hover svg {
-            fill: var(--icon-fill-hover);
+            fill: var(--text-primary);
         }
 
         #send-button:hover {
-            background-color: var(--button-hover-bg);
+            background-color: var(--color-accent-hover);
         }
-        
+
         #send-button.stop-mode {
-            background-color: var(--stop-button-bg);
+            background-color: var(--color-danger);
         }
 
         #send-button.stop-mode:hover {
-            background-color: var(--stop-button-hover-bg);
+            background-color: var(--color-danger-hover);
         }
-        
+
         .input-controls button svg {
             width: 20px;
             height: 20px;
-            fill: white;
+            fill: var(--text-on-accent);
         }
-        
+
         #expand-button svg {
-             fill: var(--icon-fill);
+            fill: var(--text-secondary);
         }
 
         .modal {
@@ -382,19 +396,19 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: var(--modal-bg);
+            background-color: var(--scrim);
             justify-content: center;
             align-items: center;
         }
 
         .modal-content {
-            background-color: var(--modal-content-bg);
+            background-color: var(--bg-surface-modal);
             padding: 25px;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-subtle);
             width: 90%;
             max-width: 500px;
             border-radius: 8px;
-            box-shadow: 0 5px 15px var(--shadow-color);
+            box-shadow: 0 5px 15px var(--shadow);
             max-height: 85vh;
             overflow-y: auto;
         }
@@ -402,7 +416,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
         .modal-content h2 {
             margin-top: 0;
         }
-        
+
         .modal-content p {
             margin-top: 0;
             margin-bottom: 20px;
@@ -411,13 +425,13 @@ if(__exports != exports)module.exports = exports;return module.exports}));
         .form-group {
             margin-bottom: 15px;
         }
-        
+
         .form-group.inline {
             display: flex;
             gap: 15px;
         }
-        
-        .form-group.inline > div {
+
+        .form-group.inline>div {
             flex: 1;
         }
 
@@ -426,7 +440,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             margin-bottom: 5px;
             font-weight: bold;
         }
-        
+
         .form-group .label-with-action {
             display: flex;
             justify-content: space-between;
@@ -440,40 +454,51 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             padding: 2px;
             opacity: 0.7;
         }
+
         #model-refresh-button svg {
             width: 16px;
             height: 16px;
-            fill: var(--icon-fill);
+            fill: var(--text-secondary);
         }
+
         #model-refresh-button:hover {
             opacity: 1;
         }
+
         @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
+
         #model-refresh-button.loading svg {
             animation: spin 1s linear infinite;
         }
 
-        .form-group input, .form-group select, .form-group textarea {
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 8px;
             box-sizing: border-box;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-subtle);
             border-radius: 4px;
-            background-color: var(--input-bg);
-            color: var(--input-color);
+            background-color: var(--bg-surface);
+            color: var(--text-primary);
         }
-        
+
         .form-group textarea {
             min-height: 100px;
             resize: vertical;
         }
-        
+
         .form-group .info-text {
             font-size: 0.8em;
-            color: var(--info-text-color);
+            color: var(--text-tertiary);
             margin-top: 5px;
         }
 
@@ -488,21 +513,20 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             border: none;
             cursor: pointer;
             margin-left: 10px;
+            color: var(--text-on-accent);
         }
-        
+
         #save-settings-button {
-            background-color: var(--button-bg);
-            color: white;
+            background-color: var(--color-accent);
         }
-        
-        #close-settings-button, #confirm-cancel-button {
+
+        #close-settings-button,
+        #confirm-cancel-button {
             background-color: #6c757d;
-            color: white;
         }
-        
+
         #confirm-ok-button {
-            background-color: var(--stop-button-bg);
-            color: white;
+            background-color: var(--color-danger);
         }
 
         #toast-container {
@@ -519,7 +543,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
 
         .toast {
             background-color: var(--toast-bg);
-            color: var(--toast-color);
+            color: var(--toast-text);
             padding: 12px 20px;
             border-radius: 25px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -534,61 +558,120 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             transform: translateY(0);
         }
 
-       .message-actions {
+        .message-actions {
             margin-top: 10px;
             display: flex;
             gap: 10px;
-       }
-       .message-actions button {
+        }
+
+        .message-actions button {
             background-color: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--info-text-color);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-tertiary);
             padding: 2px 8px;
             font-size: 0.75em;
             border-radius: 12px;
             cursor: pointer;
             transition: background-color 0.2s, border-color 0.2s;
-       }
-       .message-actions button:hover {
-            background-color: var(--details-bg);
-            border-color: var(--info-text-color);
-       }
-       
-       /* Custom Suggestion Box Styles */
-       .model-input-container {
-           position: relative;
-       }
+        }
 
-       #model-suggestions {
+        .message-actions button:hover {
+            background-color: var(--bg-subtle-alt);
+            border-color: var(--text-tertiary);
+        }
+
+        .model-input-container {
+            position: relative;
+        }
+
+        #model-suggestions {
             display: none;
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
-            background-color: var(--modal-content-bg);
-            border: 1px solid var(--border-color);
+            background-color: var(--bg-surface-modal);
+            border: 1px solid var(--border-subtle);
             border-top: none;
             border-radius: 0 0 4px 4px;
             max-height: 150px;
             overflow-y: auto;
             z-index: 1001;
-       }
+        }
 
-       .suggestion-item {
+        .suggestion-item {
             padding: 8px 10px;
             cursor: pointer;
             font-size: 0.9em;
-       }
-        
-       .suggestion-item:hover {
-            background-color: var(--button-hover-bg);
-            color: var(--button-color);
-       }
+        }
 
+        .suggestion-item:hover {
+            background-color: var(--color-accent-hover);
+            color: var(--text-on-accent);
+        }
 
+        .form-group.form-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border-subtle);
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        input:checked+.slider {
+            background-color: var(--color-accent);
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px var(--color-accent);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(22px);
+        }
+
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
     </style>
     <script>
-        // Set theme ASAP to prevent flash of wrong theme
         (() => {
             const savedTheme = localStorage.getItem('llmChatTheme') || 'auto';
             if (savedTheme === 'auto') {
@@ -600,24 +683,32 @@ if(__exports != exports)module.exports = exports;return module.exports}));
         })();
     </script>
 </head>
-<body>
 
+<body>
     <div class="app-container">
         <header class="header">
             <h1>Local LLM Chat</h1>
             <div class="controls">
                 <button id="theme-button" title="Toggle Theme">
-                     <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-5.4-5.4c0-1.81 1.87-3.21 3.21-3.21S13.8 5.4 13.8 7.21c0 .46.04.92.1 1.36a9.01 9.01 0 0 0-1.9-10.57z"/></svg>
-                 </button>
-                 <button id="clear-button" title="Clear Chat">
-                     <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                 </button>
-                 <button id="settings-button" title="Settings">
-                      <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61-.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l-.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-                 </button>
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-5.4-5.4c0-1.81 1.87-3.21 3.21-3.21S13.8 5.4 13.8 7.21c0 .46.04.92.1 1.36a9.01 9.01 0 0 0-1.9-10.57z" />
+                    </svg>
+                </button>
+                <button id="clear-button" title="Clear Chat">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                    </svg>
+                </button>
+                <button id="settings-button" title="Settings">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61-.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l-.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
+                    </svg>
+                </button>
             </div>
         </header>
-        
+
         <div id="chat-container">
         </div>
 
@@ -625,13 +716,22 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
             <div class="input-controls">
                 <button id="expand-button" title="Expand Input">
-                     <svg id="expand-icon" viewBox="0 0 24 24" style="width: 24px; height: 24px;"><path d="M20.5 11H13V3.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V11H4.5c-.28 0-.5.22-.5.5s.22.5.5.5H12v7.5c0 .28.22.5.5.5s.5-.22.5-.5V12h7.5c.28 0 .5-.22.5-.5s-.22-.5-.5-.5z"/></svg>
-                     <svg id="collapse-icon" viewBox="0 0 24 24" style="display: none; width: 24px; height: 24px;"><path d="M20.5 11.5c.28 0 .5-.22.5-.5s-.22-.5-.5-.5H3.5c-.28 0-.5.22-.5.5s.22.5.5.5h17z"/></svg>
-                 </button>
-                 <button id="send-button" title="Send Message">
-                     <svg id="send-icon" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                     <svg id="stop-icon" viewBox="0 0 24 24" style="display: none;"><path d="M6 6h12v12H6z"/></svg>
-                 </button>
+                    <svg id="expand-icon" viewBox="0 0 24 24" style="width: 24px; height: 24px;">
+                        <path
+                            d="M20.5 11H13V3.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V11H4.5c-.28 0-.5.22-.5.5s.22.5.5.5H12v7.5c0 .28.22.5.5.5s.5-.22.5-.5V12h7.5c.28 0 .5-.22.5-.5s-.22-.5-.5-.5z" />
+                    </svg>
+                    <svg id="collapse-icon" viewBox="0 0 24 24" style="display: none; width: 24px; height: 24px;">
+                        <path d="M20.5 11.5c.28 0 .5-.22.5-.5s-.22-.5-.5-.5H3.5c-.28 0-.5.22-.5.5s.22.5.5.5h17z" />
+                    </svg>
+                </button>
+                <button id="send-button" title="Send Message">
+                    <svg id="send-icon" viewBox="0 0 24 24">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                    <svg id="stop-icon" viewBox="0 0 24 24" style="display: none;">
+                        <path d="M6 6h12v12H6z" />
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
@@ -639,7 +739,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <h2>Settings</h2>
-            
+
             <div class="form-group">
                 <label for="api-type">API Type</label>
                 <select id="api-type">
@@ -663,7 +763,10 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 <div class="label-with-action">
                     <label for="model-name">Model Name</label>
                     <button id="model-refresh-button" title="Refresh model list">
-                        <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+                        </svg>
                     </button>
                 </div>
                 <div class="model-input-container">
@@ -681,8 +784,31 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                     <label for="top-p">Top P</label>
                     <input type="number" id="top-p" min="0" max="1" step="0.05" placeholder="1.0">
                 </div>
+                <div id="top-k-group">
+                    <label for="top-k">Top K</label>
+                    <input type="number" id="top-k" min="0" step="1" placeholder="40">
+                </div>
             </div>
-            
+
+            <div class="form-group inline">
+                <div>
+                    <label for="seed">Seed</label>
+                    <input type="number" id="seed" min="0" step="1" placeholder="Optional">
+                </div>
+                <div>
+                    <label for="max-tokens">Max Tokens</label>
+                    <input type="number" id="max-tokens" min="0" step="1" placeholder="Optional">
+                </div>
+            </div>
+
+            <div class="form-group form-switch">
+                <label for="stream-switch">Stream Response</label>
+                <label class="switch">
+                    <input type="checkbox" id="stream-switch" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
             <div class="form-group">
                 <label for="system-prompt">System Prompt (optional)</label>
                 <textarea id="system-prompt" placeholder="Define the AI's role and behavior."></textarea>
@@ -719,7 +845,11 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             async streamChat(messages, onToken, signal) {
                 throw new Error("Method 'streamChat()' must be implemented.");
             }
-            
+
+            async chat(messages, signal) {
+                throw new Error("Method 'chat()' must be implemented.");
+            }
+
             async getModels() {
                 throw new Error("Method 'getModels()' must be implemented.");
             }
@@ -736,8 +866,16 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 };
                 const temp = parseFloat(this.settings.temperature);
                 const topP = parseFloat(this.settings.topP);
+                const topK = parseInt(this.settings.topK, 10);
+                const seed = parseInt(this.settings.seed, 10);
+                const maxTokens = parseInt(this.settings.maxTokens, 10);
+
                 if (!isNaN(temp)) body.options.temperature = temp;
                 if (!isNaN(topP)) body.options.top_p = topP;
+                if (!isNaN(topK)) body.options.top_k = topK;
+                if (!isNaN(seed)) body.options.seed = seed;
+                if (!isNaN(maxTokens)) body.options.num_predict = maxTokens;
+
 
                 const response = await fetch(endpoint, {
                     method: 'POST',
@@ -770,6 +908,41 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 }
             }
 
+            async chat(messages, signal) {
+                const endpoint = this.settings.serverUrl.replace(/\/$/, '') + '/api/chat';
+                const body = {
+                    model: this.settings.modelName,
+                    messages: messages,
+                    stream: false,
+                    options: {}
+                };
+                const temp = parseFloat(this.settings.temperature);
+                const topP = parseFloat(this.settings.topP);
+                const topK = parseInt(this.settings.topK, 10);
+                const seed = parseInt(this.settings.seed, 10);
+                const maxTokens = parseInt(this.settings.maxTokens, 10);
+
+                if (!isNaN(temp)) body.options.temperature = temp;
+                if (!isNaN(topP)) body.options.top_p = topP;
+                if (!isNaN(topK)) body.options.top_k = topK;
+                if (!isNaN(seed)) body.options.seed = seed;
+                if (!isNaN(maxTokens)) body.options.num_predict = maxTokens;
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                    signal: signal,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data.message?.content || '';
+            }
+
             async getModels() {
                 const endpoint = this.settings.serverUrl.replace(/\/$/, '') + '/api/tags';
                 const response = await fetch(endpoint);
@@ -796,8 +969,13 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 };
                 const temp = parseFloat(this.settings.temperature);
                 const topP = parseFloat(this.settings.topP);
+                const seed = parseInt(this.settings.seed, 10);
+                const maxTokens = parseInt(this.settings.maxTokens, 10);
+
                 if (!isNaN(temp)) body.temperature = temp;
                 if (!isNaN(topP)) body.top_p = topP;
+                if (!isNaN(seed)) body.seed = seed;
+                if (!isNaN(maxTokens)) body.max_tokens = maxTokens;
 
                 const response = await fetch(endpoint, {
                     method: 'POST',
@@ -822,7 +1000,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                     for (const line of lines) {
                         if (line.startsWith('data: ')) {
                             const data = line.substring(6);
-                            if(data.trim() === '[DONE]') continue;
+                            if (data.trim() === '[DONE]') continue;
                             try {
                                 const parsed = JSON.parse(data);
                                 const token = parsed.choices[0]?.delta?.content || '';
@@ -835,14 +1013,52 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 }
             }
 
+            async chat(messages, signal) {
+                const endpoint = this.settings.serverUrl.replace(/\/$/, '') + '/v1/chat/completions';
+                const headers = { 'Content-Type': 'application/json' };
+                if (this.settings.apiKey) {
+                    headers['Authorization'] = `Bearer ${this.settings.apiKey}`;
+                }
+
+                const body = {
+                    model: this.settings.modelName,
+                    messages: messages,
+                    stream: false,
+                };
+                const temp = parseFloat(this.settings.temperature);
+                const topP = parseFloat(this.settings.topP);
+                const seed = parseInt(this.settings.seed, 10);
+                const maxTokens = parseInt(this.settings.maxTokens, 10);
+
+                if (!isNaN(temp)) body.temperature = temp;
+                if (!isNaN(topP)) body.top_p = topP;
+                if (!isNaN(seed)) body.seed = seed;
+                if (!isNaN(maxTokens)) body.max_tokens = maxTokens;
+
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(body),
+                    signal: signal,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data.choices[0]?.message?.content || '';
+            }
+
             async getModels() {
                 const endpoint = this.settings.serverUrl.replace(/\/$/, '') + '/v1/models';
                 const headers = {};
-                 if (this.settings.apiKey) {
+                if (this.settings.apiKey) {
                     headers['Authorization'] = `Bearer ${this.settings.apiKey}`;
                 }
                 const response = await fetch(endpoint, { headers });
-                 if (!response.ok) {
+                if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
@@ -866,7 +1082,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             const expandButton = document.getElementById('expand-button');
             const expandIcon = document.getElementById('expand-icon');
             const collapseIcon = document.getElementById('collapse-icon');
-            
+
             const apiTypeSelect = document.getElementById('api-type');
             const serverUrlInput = document.getElementById('server-url');
             const apiKeyInput = document.getElementById('api-key');
@@ -875,13 +1091,18 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             const modelRefreshButton = document.getElementById('model-refresh-button');
             const temperatureInput = document.getElementById('temperature');
             const topPInput = document.getElementById('top-p');
+            const topKInput = document.getElementById('top-k');
+            const topKGroup = document.getElementById('top-k-group');
+            const seedInput = document.getElementById('seed');
+            const maxTokensInput = document.getElementById('max-tokens');
+            const streamSwitch = document.getElementById('stream-switch');
             const systemPromptInput = document.getElementById('system-prompt');
-            
+
             const confirmModal = document.getElementById('confirm-modal');
             const confirmMessage = document.getElementById('confirm-message');
             const confirmOkButton = document.getElementById('confirm-ok-button');
             const confirmCancelButton = document.getElementById('confirm-cancel-button');
-            
+
             let conversationHistory = [];
             let abortController = null;
             let isInputExpanded = false;
@@ -932,7 +1153,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                     themeButton.classList.add(`theme-${theme}`);
                 }
             };
-            
+
             const loadTheme = () => {
                 const savedTheme = localStorage.getItem('llmChatTheme') || 'auto';
                 applyTheme(savedTheme);
@@ -946,12 +1167,22 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 applyTheme(newTheme);
                 showToast(`Theme set to ${newTheme}`);
             });
-            
+
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
                 if (localStorage.getItem('llmChatTheme') === 'auto') {
                     applyTheme('auto');
                 }
             });
+
+            const updateSettingsVisibility = () => {
+                const selectedApi = apiTypeSelect.value;
+                if (selectedApi === 'ollama') {
+                    topKGroup.style.display = 'block';
+                } else {
+                    topKGroup.style.display = 'none';
+                }
+            };
+            apiTypeSelect.addEventListener('change', updateSettingsVisibility);
 
             const loadSettings = () => {
                 const settings = JSON.parse(localStorage.getItem('llmChatSettings'));
@@ -962,6 +1193,10 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                     modelNameInput.value = settings.modelName || 'llama3:latest';
                     temperatureInput.value = settings.temperature || '0.8';
                     topPInput.value = settings.topP || '1';
+                    topKInput.value = settings.topK || '40';
+                    seedInput.value = settings.seed || '';
+                    maxTokensInput.value = settings.maxTokens || '';
+                    streamSwitch.checked = settings.streamResponse ?? true;
                     systemPromptInput.value = settings.systemPrompt || '';
                 } else {
                     apiTypeSelect.value = 'ollama';
@@ -969,7 +1204,10 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                     modelNameInput.value = 'llama3:latest';
                     temperatureInput.value = '0.8';
                     topPInput.value = '1';
+                    topKInput.value = '40';
+                    streamSwitch.checked = true;
                 }
+                updateSettingsVisibility();
             };
 
             const saveSettings = () => {
@@ -980,13 +1218,17 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                     modelName: modelNameInput.value.trim(),
                     temperature: temperatureInput.value,
                     topP: topPInput.value,
+                    topK: topKInput.value,
+                    seed: seedInput.value,
+                    maxTokens: maxTokensInput.value,
+                    streamResponse: streamSwitch.checked,
                     systemPrompt: systemPromptInput.value.trim(),
                 };
                 localStorage.setItem('llmChatSettings', JSON.stringify(settings));
                 requestModalClose();
                 showToast('Settings saved!');
             };
-            
+
             const renderSuggestions = (models) => {
                 modelSuggestionsContainer.innerHTML = '';
                 if (models.length === 0) {
@@ -1018,7 +1260,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
 
                     const apiClient = tempSettings.apiType === 'ollama' ? new OllamaApi(tempSettings) : new OpenAIApi(tempSettings);
                     availableModels = await apiClient.getModels();
-                    
+
                     renderSuggestions(availableModels);
                     showToast(`Found ${availableModels.length} models.`);
                 } catch (error) {
@@ -1034,7 +1276,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             const addMessage = (sender, text, className = '') => {
                 const messageElement = document.createElement('div');
                 messageElement.classList.add('message', `${sender}-message`);
-                if(className) messageElement.classList.add(className);
+                if (className) messageElement.classList.add(className);
                 messageElement.textContent = text;
                 chatContainer.appendChild(messageElement);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -1054,7 +1296,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                     stopIcon.style.display = 'none';
                 }
             };
-            
+
             const handleSendMessage = () => {
                 const messageText = messageInput.value.trim();
                 if (!messageText) return;
@@ -1062,7 +1304,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 conversationHistory.push({ role: 'user', content: messageText });
                 messageInput.value = '';
                 messageInput.style.height = 'auto';
-                streamResponse();
+                getBotResponse();
             };
 
             const sanitizeHTML = (htmlString) => {
@@ -1088,7 +1330,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
 
                 return doc.body.innerHTML;
             };
-            
+
             const addBotMessageActions = (botMessageElement) => {
                 let visibleText = '';
                 const contentNodes = [];
@@ -1100,7 +1342,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 });
 
                 if (visibleText.trim() === '') return;
-                
+
                 const actionsContainer = document.createElement('div');
                 actionsContainer.className = 'message-actions';
 
@@ -1118,9 +1360,9 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 const markdownButton = document.createElement('button');
                 markdownButton.textContent = 'Render Markdown';
                 markdownButton.dataset.state = 'raw';
-                
+
                 let markdownContainer = null;
-                
+
                 markdownButton.addEventListener('click', () => {
                     if (markdownButton.dataset.state === 'raw') {
                         if (!markdownContainer) {
@@ -1141,113 +1383,134 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                         markdownButton.dataset.state = 'raw';
                     }
                 });
-                
+
                 actionsContainer.appendChild(markdownButton);
                 actionsContainer.appendChild(copyButton);
                 botMessageElement.appendChild(actionsContainer);
             };
 
-            const streamResponse = async () => {
-                const botMessageElement = addMessage('bot', '');
-                botMessageElement.innerHTML = '<span class="typing-indicator"></span>';
+            const getBotResponse = async () => {
                 abortController = new AbortController();
                 toggleSendButtonState(true);
+
+                const botMessageElement = addMessage('bot', '');
+                botMessageElement.innerHTML = '<span class="typing-indicator"><span></span></span>';
 
                 try {
                     const settings = JSON.parse(localStorage.getItem('llmChatSettings'));
                     if (!settings || !settings.serverUrl || !settings.modelName) {
                         throw new Error("API settings are not configured. Please open and save your settings.");
                     }
+                    const useStream = settings.streamResponse ?? true;
 
                     const apiClient = settings.apiType === 'ollama' ? new OllamaApi(settings) : new OpenAIApi(settings);
-                    
+
                     const messages = [];
                     if (settings.systemPrompt) messages.push({ role: 'system', content: settings.systemPrompt });
                     messages.push(...conversationHistory);
-                    
-                    let fullResponse = '';
-                    botMessageElement.innerHTML = '';
-                    
-                    let isThinking = false;
-                    let activeMarker = null;
-                    let contentBuffer = '';
-                    let currentTextContainer = document.createElement('span');
-                    botMessageElement.appendChild(currentTextContainer);
 
-                    const thinkingMarkers = [
-                        { start: '<thinking>', end: '</thinking>' },
-                        { start: '<think>', end: '</think>' },
-                        { start: '<\ctrl3347>', end: '<\ctrl3348>' },
-                        { start: '<function_calls>', end: '</function_calls>' },
-                    ];
-
-                    await apiClient.streamChat(messages, (token) => {
-                        fullResponse += token;
-                        contentBuffer += token;
-
-                        if (isThinking) {
-                            const endMarkerIndex = contentBuffer.indexOf(activeMarker.end);
-                            if (endMarkerIndex !== -1) {
-                                const thinkingContent = contentBuffer.substring(0, endMarkerIndex);
-                                currentTextContainer.textContent += thinkingContent;
-                                contentBuffer = contentBuffer.substring(endMarkerIndex + activeMarker.end.length);
-                                
-                                currentTextContainer = document.createElement('span');
-                                botMessageElement.appendChild(currentTextContainer);
-                                isThinking = false;
-                                activeMarker = null;
-                            }
-                        } else {
-                            for (const marker of thinkingMarkers) {
-                                const startMarkerIndex = contentBuffer.indexOf(marker.start);
-                                if (startMarkerIndex !== -1) {
-                                    const textBefore = contentBuffer.substring(0, startMarkerIndex);
-                                    currentTextContainer.textContent += textBefore;
-                                    contentBuffer = contentBuffer.substring(startMarkerIndex + marker.start.length);
-
-                                    const details = document.createElement('details');
-                                    const summary = document.createElement('summary');
-                                    summary.textContent = 'Thinking...';
-                                    const thinkingContentDiv = document.createElement('div');
-                                    thinkingContentDiv.className = 'thinking-content';
-                                    details.appendChild(summary);
-                                    details.appendChild(thinkingContentDiv);
-                                    botMessageElement.appendChild(details);
-
-                                    isThinking = true;
-                                    activeMarker = marker;
-                                    currentTextContainer = thinkingContentDiv;
-                                    break;
-                                }
-                            }
-                        }
-                        currentTextContainer.textContent += contentBuffer;
-                        contentBuffer = '';
-
-                        chatContainer.scrollTop = chatContainer.scrollHeight;
-                    }, abortController.signal);
-                    
-                    conversationHistory.push({ role: 'assistant', content: fullResponse });
-                    addBotMessageActions(botMessageElement);
-
-                } catch (error) {
-                    if (error.name === 'AbortError') {
-                        const abortMessage = document.createElement('strong');
-                        abortMessage.textContent = 'Request aborted.';
-                        const br = document.createElement('br');
-                        botMessageElement.appendChild(br);
-                        botMessageElement.appendChild(abortMessage);
+                    if (useStream) {
+                        await handleStreamedResponse(apiClient, messages, botMessageElement);
                     } else {
-                        console.error('Error streaming response:', error);
-                        botMessageElement.innerHTML = `<strong>Error:</strong> ${error.message}`;
-                        botMessageElement.classList.add('error');
+                        await handleNonStreamedResponse(apiClient, messages, botMessageElement);
                     }
+                } catch (error) {
+                    handleResponseError(error, botMessageElement);
                 } finally {
                     abortController = null;
                     toggleSendButtonState(false);
                 }
             };
-            
+
+            const handleStreamedResponse = async (apiClient, messages, botMessageElement) => {
+                let fullResponse = '';
+                botMessageElement.innerHTML = '';
+
+                let isThinking = false;
+                let activeMarker = null;
+                let contentBuffer = '';
+                let currentTextContainer = document.createElement('span');
+                botMessageElement.appendChild(currentTextContainer);
+
+                const thinkingMarkers = [
+                    { start: '<thinking>', end: '</thinking>' },
+                    { start: '<think>', end: '</think>' },
+                    { start: '<\ctrl3347>', end: '<\ctrl3348>' },
+                    { start: '<function_calls>', end: '</function_calls>' },
+                ];
+
+                await apiClient.streamChat(messages, (token) => {
+                    fullResponse += token;
+                    contentBuffer += token;
+
+                    if (isThinking) {
+                        const endMarkerIndex = contentBuffer.indexOf(activeMarker.end);
+                        if (endMarkerIndex !== -1) {
+                            const thinkingContent = contentBuffer.substring(0, endMarkerIndex);
+                            currentTextContainer.textContent += thinkingContent;
+                            contentBuffer = contentBuffer.substring(endMarkerIndex + activeMarker.end.length);
+
+                            currentTextContainer = document.createElement('span');
+                            botMessageElement.appendChild(currentTextContainer);
+                            isThinking = false;
+                            activeMarker = null;
+                        }
+                    } else {
+                        for (const marker of thinkingMarkers) {
+                            const startMarkerIndex = contentBuffer.indexOf(marker.start);
+                            if (startMarkerIndex !== -1) {
+                                const textBefore = contentBuffer.substring(0, startMarkerIndex);
+                                currentTextContainer.textContent += textBefore;
+                                contentBuffer = contentBuffer.substring(startMarkerIndex + marker.start.length);
+
+                                const details = document.createElement('details');
+                                const summary = document.createElement('summary');
+                                summary.textContent = 'Thinking...';
+                                const thinkingContentDiv = document.createElement('div');
+                                thinkingContentDiv.className = 'thinking-content';
+                                details.appendChild(summary);
+                                details.appendChild(thinkingContentDiv);
+                                botMessageElement.appendChild(details);
+
+                                isThinking = true;
+                                activeMarker = marker;
+                                currentTextContainer = thinkingContentDiv;
+                                break;
+                            }
+                        }
+                    }
+                    currentTextContainer.textContent += contentBuffer;
+                    contentBuffer = '';
+
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }, abortController.signal);
+
+                conversationHistory.push({ role: 'assistant', content: fullResponse });
+                addBotMessageActions(botMessageElement);
+            };
+
+            const handleNonStreamedResponse = async (apiClient, messages, botMessageElement) => {
+                const fullResponse = await apiClient.chat(messages, abortController.signal);
+                botMessageElement.innerHTML = '';
+                botMessageElement.textContent = fullResponse;
+                conversationHistory.push({ role: 'assistant', content: fullResponse });
+                addBotMessageActions(botMessageElement);
+            };
+
+            const handleResponseError = (error, botMessageElement) => {
+                if (error.name === 'AbortError') {
+                    const abortMessage = document.createElement('strong');
+                    abortMessage.textContent = 'Request aborted.';
+                    const br = document.createElement('br');
+                    if (botMessageElement.hasChildNodes()) botMessageElement.appendChild(br);
+                    botMessageElement.appendChild(abortMessage);
+                } else {
+                    console.error('Error in response:', error);
+                    botMessageElement.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                    botMessageElement.classList.add('error');
+                }
+            };
+
             const showConfirm = (message, onConfirm) => {
                 confirmMessage.textContent = message;
                 confirmModal.style.display = 'flex';
@@ -1263,7 +1526,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                     confirmCancelButton.removeEventListener('click', closeConfirm);
                     window.removeEventListener('click', outsideClickListener);
                 };
-                
+
                 const outsideClickListener = (event) => {
                     if (event.target == confirmModal) {
                         closeConfirm();
@@ -1282,7 +1545,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                     handleSendMessage();
                 }
             });
-            
+
             messageInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey && !isInputExpanded) {
                     e.preventDefault();
@@ -1320,16 +1583,14 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 });
             });
 
-            settingsButton.addEventListener('click', () => { 
-                settingsModal.style.display = 'flex'; 
+            settingsButton.addEventListener('click', () => {
+                settingsModal.style.display = 'flex';
                 history.pushState({ modal: 'settings' }, '');
-                // Do not auto-fetch, wait for button click
             });
             closeSettingsButton.addEventListener('click', () => { requestModalClose(); });
             saveSettingsButton.addEventListener('click', saveSettings);
             modelRefreshButton.addEventListener('click', fetchAndPopulateModels);
 
-            // --- Model Suggestion Logic ---
             modelNameInput.addEventListener('focus', () => {
                 const query = modelNameInput.value.toLowerCase();
                 const filteredModels = availableModels.filter(m => m.toLowerCase().includes(query));
@@ -1341,7 +1602,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
                 const filteredModels = availableModels.filter(m => m.toLowerCase().includes(query));
                 renderSuggestions(filteredModels);
             });
-            
+
             modelSuggestionsContainer.addEventListener('mousedown', (e) => {
                 if (e.target.classList.contains('suggestion-item')) {
                     modelNameInput.value = e.target.textContent;
@@ -1350,12 +1611,10 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             });
 
             modelNameInput.addEventListener('blur', () => {
-                 // Delay hiding to allow the click on a suggestion to register
                 setTimeout(() => {
                     modelSuggestionsContainer.style.display = 'none';
                 }, 150);
             });
-
 
             window.addEventListener('click', (event) => {
                 if (event.target == settingsModal) {
@@ -1369,4 +1628,3 @@ if(__exports != exports)module.exports = exports;return module.exports}));
     </script>
 </body>
 </html>
-
