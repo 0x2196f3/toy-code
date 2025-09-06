@@ -1547,10 +1547,11 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             });
 
             messageInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !isInputExpanded) {
-                    e.preventDefault();
-                    handleSendMessage();
-                }
+              if (e.key !== 'Enter') return;
+              if ((!isInputExpanded && !e.shiftKey) || (isInputExpanded && (e.ctrlKey || e.metaKey))) {
+                e.preventDefault();
+                handleSendMessage();
+              }
             });
 
             messageInput.addEventListener('input', () => {
@@ -1628,3 +1629,4 @@ if(__exports != exports)module.exports = exports;return module.exports}));
     </script>
 </body>
 </html>
+
