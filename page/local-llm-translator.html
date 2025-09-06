@@ -924,6 +924,13 @@
             window.addEventListener('popstate', () => {
                 dom.settingsModal.style.display = 'none';
             });
+
+            window.addEventListener('keydown', (e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                translate().catch(console.error);
+              }
+            });
         };
 
         const setupThemeListener = () => {
@@ -949,4 +956,5 @@
 
 
 </html>
+
 
