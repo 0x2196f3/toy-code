@@ -727,6 +727,19 @@
                 destLang: localStorage.getItem('translator_dst') || DEFAULTS.destLang,
                 stream: localStorage.getItem('stream_response') === 'true' || DEFAULTS.stream,
             };
+
+            const params = new URLSearchParams(window.location.search);
+            const src = params.get('src');
+            const dst = params.get('dst');
+            
+            if (typeof src === 'string' && src.trim() !== '') {
+              settings.sourceLang = src;
+            }
+
+            if (typeof dst === 'string' && dst.trim() !== '') {
+              settings.destLang = dst;
+            }
+                        
             currentSettings = settings;
 
             dom.apiType.value = currentSettings.apiType;
@@ -956,5 +969,6 @@
 
 
 </html>
+
 
 
