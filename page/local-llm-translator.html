@@ -130,6 +130,15 @@
         }
         .icon-btn:hover { background-color: var(--hover-bg); }
         .icon-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+		
+		#switch-lang-btn {
+			align-items: center;
+			justify-content: center;
+			vertical-align: middle;
+			width: 40px;
+			height: 40px;
+			padding: 0;
+		}
         #translate-btn {
             padding: 10px 24px;
             font-size: 14px;
@@ -153,7 +162,7 @@
         #translate-btn.abort-btn { background-color: var(--error-color); }
         .char-count { position: absolute; bottom: 8px; right: 15px; font-size: 12px; color: var(--secondary-text-color); }
         .copy-container { position: absolute; top: 15px; right: 15px; display: flex; align-items: center; }
-
+		
         #translate-btn .loader {
             display: none;
             width: 12px;
@@ -336,9 +345,20 @@
             <div class="language-selector"><select id="source-lang"></select></div>
             <div class="textarea-wrapper">
                 <textarea id="source-text" placeholder="Enter text..."></textarea>
+				<div class="copy-container">
+                     <button id="clear-btn" class="icon-btn" title="Clear text">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor">
+                            <path d="M0 0h24v24H0V0z" fill="none"/>
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                        </svg>
+                    </button>
+                </div>
                 <div id="source-char-count" class="char-count">0</div>
             </div>
             <div class="panel-footer">
+				<button id="switch-lang-btn" class="icon-btn" title="Switch languages">
+					<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+				</button>
                 <button id="translate-btn">
                     <div class="loader" id="loader"></div>
                     <span class="desktop-text">Translate</span>
@@ -351,6 +371,7 @@
                         <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
                     </svg>
                 </button>
+
             </div>
         </div>
         <div class="panel result-panel">
@@ -443,6 +464,7 @@
             resultCharCount: document.getElementById('result-char-count'),
             settingsBtn: document.getElementById('settings-btn'),
             translateBtn: document.getElementById('translate-btn'),
+            switchLangBtn: document.getElementById('switch-lang-btn'),
             settingsModal: document.getElementById('settings-modal'),
             saveSettingsBtn: document.getElementById('save-settings-btn'),
             cancelSettingsBtn: document.getElementById('cancel-settings-btn'),
@@ -454,6 +476,7 @@
             userPromptTemplate: document.getElementById('user-prompt-template'),
             loader: document.getElementById('loader'),
             copyBtn: document.getElementById('copy-btn'),
+            clearBtn: document.getElementById('clear-btn'),
             toast: document.getElementById('toast'),
             ollamaUrlHint: document.getElementById('ollama-url-hint'),
             ollamaCorsHint: document.getElementById('ollama-cors-hint'),
@@ -697,6 +720,11 @@
                 showToast('Failed to copy!', true);
             }
         };
+		
+		const clearInput = () => {
+            dom.sourceText.value = '';
+            updateCharCount(dom.sourceText, dom.sourceCharCount);
+        };
 
         const updateUrlHint = (apiType) => {
             const isOllama = apiType === 'ollama';
@@ -713,6 +741,31 @@
 
         const updateCharCount = (textarea, countElement) => {
             countElement.textContent = textarea.value.length;
+        };
+		
+		const switchLanguages = () => {
+            const source = dom.sourceLang.value;
+            const dest = dom.destLang.value;
+
+            if (source === 'auto') {
+                return;
+            }
+
+            dom.sourceLang.value = dest;
+            dom.destLang.value = source;
+
+            localStorage.setItem('translator_src', dom.sourceLang.value);
+            localStorage.setItem('translator_dst', dom.destLang.value);
+
+            const sourceTextContent = dom.sourceText.value;
+            const resultTextContent = dom.resultText.value;
+
+            if (resultTextContent && !resultTextContent.startsWith('Error:') && !resultTextContent.startsWith('Translation aborted.')) {
+                dom.sourceText.value = resultTextContent;
+                dom.resultText.value = sourceTextContent;
+                updateCharCount(dom.sourceText, dom.sourceCharCount);
+                updateCharCount(dom.resultText, dom.resultCharCount);
+            }
         };
 
         const loadSettings = () => {
@@ -897,6 +950,8 @@
             dom.settingsBtn.addEventListener('click', () => toggleSettingsModal(true));
             dom.translateBtn.addEventListener('click', translate);
             dom.copyBtn.addEventListener('click', copyOutput);
+			dom.clearBtn.addEventListener('click', clearInput);
+            dom.switchLangBtn.addEventListener('click', switchLanguages);
             dom.cancelSettingsBtn.addEventListener('click', () => toggleSettingsModal(false));
             dom.settingsModal.addEventListener('click', (e) => {
                 if (e.target === dom.settingsModal) toggleSettingsModal(false);
@@ -966,9 +1021,4 @@
     });
 </script>
 </body>
-
-
 </html>
-
-
-
