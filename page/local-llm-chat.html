@@ -1593,9 +1593,9 @@ if(__exports != exports)module.exports = exports;return module.exports}));
             modelRefreshButton.addEventListener('click', fetchAndPopulateModels);
 
             modelNameInput.addEventListener('focus', () => {
-                const query = modelNameInput.value.toLowerCase();
-                const filteredModels = availableModels.filter(m => m.toLowerCase().includes(query));
-                renderSuggestions(filteredModels);
+                //const query = modelNameInput.value.toLowerCase();
+                //const filteredModels = availableModels.filter(m => m.toLowerCase().includes(query));
+                renderSuggestions(availableModels);
             });
 
             modelNameInput.addEventListener('input', () => {
@@ -1629,4 +1629,5 @@ if(__exports != exports)module.exports = exports;return module.exports}));
     </script>
 </body>
 </html>
+
 
