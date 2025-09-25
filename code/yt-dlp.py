@@ -335,9 +335,10 @@ def main(argv):
     p.add_argument("--archive", help='Path to archive.txt (download archive)')
     group = p.add_mutually_exclusive_group(required=True)
     group.add_argument("--url", help='URL to download')
-    group.add_argument("--id", help='Channel ID (will be expanded to three URLs)')
+    group.add_argument("--id", help='Channel ID without \'@\' (will be expanded to three URLs)')
     group.add_argument("--single", help='Single URL download; if set, other args are ignored')
     p.add_argument("--append", "-a", action="store_true", help='If set, add --break-on-existing to yt-dlp')
+    p.add_argument("--no-stream", action="store_true", help='(Only for --id) Do not include the /streams URL when expanding a channel ID')
 
     args = p.parse_args(argv)
     resolution = args.resolution if args.resolution is not None else "720P"
@@ -345,7 +346,7 @@ def main(argv):
     if args.single:
         return download_single(args.single, resolution)
         
-    archive_path = os.path.abspath(args.archive)
+    archive_path = os.path.abspath(args.archive) if args.archive else None
     append_mode = args.append
     
     if args.url:
@@ -355,14 +356,16 @@ def main(argv):
         urls = [
             f"https://youtube.com/@{cid}/videos",
             f"https://youtube.com/@{cid}/shorts",
-            f"https://youtube.com/@{cid}/streams",
         ]
+        if not args.no_stream:
+            urls.append(f"https://youtube.com/@{cid}/streams")
+
         final_ret = 0
         for u in urls:
             ret = download_batch(archive_path=archive_path, url=u, resolution=resolution, append_mode=append_mode)
             if ret != 0:
                 final_ret = ret
-        return final_ret 
+        return final_ret
 
 if __name__ == "__main__":
     exit_code = main(sys.argv[1:])
