@@ -16,11 +16,6 @@ WORKERS = max(1, cpu_count() - 1)  # leave one core free
 
 MAX_FILES_PER_JOB = 200  # chunk size for mogrify calls
 
-# Logging setup
-LOG_DIR = Path.cwd() / "sync_logs"
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-logfile = LOG_DIR / f"sync_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -188,7 +183,6 @@ def main():
         f"Directories deleted in destination: {summary['dirs_deleted']}",
         f"Conversion errors: {summary['convert_errors']}",
         f"Deletion errors: {summary['delete_errors']}",
-        f"Log file: {logfile}",
     ]
     logging.info("Summary:\n" + "\n".join(summary_lines))
     print("\n".join(summary_lines))
