@@ -94,6 +94,10 @@ def main():
         shutil.move(src_path, dest_path)
         return dest_path
 
+    success_count = 0
+    error_count = 0
+    error_details = []  # list of tuples (rel_img_path, error_type, error_message)
+
     if not os.path.exists(PYTHON_EXE_PATH):
         print(f"Error: Specified Python path does not exist: {PYTHON_EXE_PATH}")
         return
@@ -117,7 +121,12 @@ def main():
     for rel_img_path in image_paths:
         try:
             customize_workflow(rel_img_path)
+            success_count += 1
         except BaseException as e:
+            error_count += 1
+            err_type = type(e).__name__
+            err_msg = str(e)
+            error_details.append((rel_img_path, err_type, err_msg))
             print(f"Error processing '{rel_img_path}': {e}")
             try:
                 abs_src = os.path.abspath(rel_img_path)
@@ -127,9 +136,22 @@ def main():
                 else:
                     print(f"Source file not found (cannot move): {abs_src}")
             except Exception as mv_e:
+                mv_type = type(mv_e).__name__
+                mv_msg = str(mv_e)
+                error_details.append((rel_img_path, mv_type, mv_msg))
                 print(f"Failed to move error file '{rel_img_path}': {mv_e}")
 
+    # Summary
+    print("Processing summary:")
+    print(f"  Total files: {len(image_paths)}")
+    print(f"  Successes: {success_count}")
+    print(f"  Errors: {error_count}")
+    if error_count:
+        print("  Error details:")
+        for idx, (path, etype, emsg) in enumerate(error_details, 1):
+            print(f"    {idx}. File: {path} | Error: {etype} | Message: {emsg}")
 
         
 if __name__ == "__main__":
+
     main()
