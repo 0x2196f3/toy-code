@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Minesweeper</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+  }
+  #game {
+    text-align: center;
+  }
+  h1 {
+    margin: 10px 0;
+  }
+  #status {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  #mine-counter {
+    font-weight: bold;
+  }
+  #grid {
+    display: grid;
+    margin: 0 auto;
+    border: 2px solid #777;
+  }
+  .cell {
+    border: 1px solid #777;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .cell.revealed {
+    background: #ddd;
+    pointer-events: none;
+  }
+  .cell.flagged {
+    color: red;
+    background: #aaa;
+  }
+  .cell.mine {
+    background: #f00;
+    color: #fff;
+  }
+  #message {
+    margin-top: 10px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <h1>Minesweeper</h1>
+  <div id="status">
+    <span>Mines: <span id="mine-counter"></span></span>
+    <button id="reset">Reset</button>
+  </div>
+  <div id="message"></div>
+  <div id="grid"></div>
+</div>
+
+<script>
+  (function() {
+    const WIDTH = 9;   // columns
+    const HEIGHT = 9;  // rows
+    const MINES = 10;  // number of mines
+
+    let grid = [];          // 2D array of cell objects
+    let flaggedCount = 0;
+    let revealCount = 0;
+    let gameOver = false;
+
+    const gridContainer = document.getElementById('grid');
+    const mineCounterEl = document.getElementById('mine-counter');
+    const messageEl = document.getElementById('message');
+    const resetBtn = document.getElementById('reset');
+
+    function initGame() {
+      grid = [];
+      flaggedCount = 0;
+      revealCount = 0;
+      gameOver = false;
+      messageEl.textContent = '';
+      gridContainer.innerHTML = '';
+      gridContainer.style.gridTemplateColumns = `repeat(${WIDTH}, 30px)`;
+      gridContainer.style.gridAutoRows = '30px';
+      // create grid cells
+      for (let r = 0; r < HEIGHT; r++) {
+        const row = [];
+        for (let c = 0; c < WIDTH; c++) {
+          const cellObj = {
+            row: r,
+            col: c,
+            hasMine: false,
+            revealed: false,
+            flagged: false,
+            adjacentMines: 0,
+            element: null
+          };
+          const cellEl = document.createElement('div');
+          cellEl.classList.add('cell');
+          cellEl.dataset.row = r;
+          cellEl.dataset.col = c;
+          cellEl.addEventListener('click', handleCellClick);
+          cellEl.addEventListener('contextmenu', handleCellRightClick);
+          gridContainer.appendChild(cellEl);
+          cellObj.element = cellEl;
+          row.push(cellObj);
+        }
+        grid.push(row);
+      }
+      placeMines();
+      calculateAdjacents();
+      updateMineCounter();
+    }
+
+    function placeMines() {
+      const positions = new Set();
+      while (positions.size < MINES) {
+        const idx = Math.floor(Math.random() * WIDTH * HEIGHT);
+        positions.add(idx);
+      }
+      positions.forEach(idx => {
+        const r = Math.floor(idx / WIDTH);
+        const c = idx % WIDTH;
+        grid[r][c].hasMine = true;
+      });
+    }
+
+    function calculateAdjacents() {
+      for (let r = 0; r < HEIGHT; r++) {
+        for (let c = 0; c < WIDTH; c++) {
+          const cell = grid[r][c];
+          if (cell.hasMine) continue;
+          let count = 0;
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              if (dr === 0 && dc === 0) continue;
+              const nr = r + dr;
+              const nc = c + dc;
+              if (nr >= 0 && nr < HEIGHT && nc >= 0 && nc < WIDTH) {
+                if (grid[nr][nc].hasMine) count++;
+              }
+            }
+          }
+          cell.adjacentMines = count;
+        }
+      }
+    }
+
+    function handleCellClick(e) {
+      if (gameOver) return;
+      const cellEl = e.currentTarget;
+      const r = +cellEl.dataset.row;
+      const c = +cellEl.dataset.col;
+      const cell = grid[r][c];
+      if (cell.flagged || cell.revealed) return;
+      revealCell(r, c);
+    }
+
+    function handleCellRightClick(e) {
+      e.preventDefault();
+      if (gameOver) return;
+      const cellEl = e.currentTarget;
+      const r = +cellEl.dataset.row;
+      const c = +cellEl.dataset.col;
+      const cell = grid[r][c];
+      if (cell.revealed) return;
+      toggleFlag(r, c);
+    }
+
+    function revealCell(r, c) {
+      const cell = grid[r][c];
+      if (cell.revealed || cell.flagged) return;
+      cell.revealed = true;
+      revealCount++;
+      const cellEl = cell.element;
+      cellEl.classList.add('revealed');
+      if (cell.hasMine) {
+        cellEl.textContent = '💣';
+        cellEl.classList.add('mine');
+        endGame(false);
+        return;
+      }
+      if (cell.adjacentMines > 0) {
+        cellEl.textContent = cell.adjacentMines;
+      } else {
+        cellEl.textContent = '';
+        revealNeighbors(r, c);
+      }
+      if (checkWin()) {
+        endGame(true);
+      }
+    }
+
+    function revealNeighbors(r, c) {
+      const queue = [[r, c]];
+      const visited = Array.from({length: HEIGHT}, () => Array(WIDTH).fill(false));
+      visited[r][c] = true;
+      while (queue.length) {
+        const [x, y] = queue.shift();
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const nx = x + dr;
+            const ny = y + dc;
+            if (nx < 0 || nx >= HEIGHT || ny < 0 || ny >= WIDTH) continue;
+            if (visited[nx][ny]) continue;
+            visited[nx][ny] = true;
+            const neighbor = grid[nx][ny];
+            if (neighbor.revealed || neighbor.flagged) continue;
+            if (neighbor.hasMine) continue; // skip revealing mines
+            neighbor.revealed = true;
+            const nEl = neighbor.element;
+            nEl.classList.add('revealed');
+            revealCount++;
+            if (neighbor.adjacentMines > 0) {
+              nEl.textContent = neighbor.adjacentMines;
+            } else {
+              nEl.textContent = '';
+              queue.push([nx, ny]);
+            }
+          }
+        }
+      }
+    }
+
+    function toggleFlag(r, c) {
+      const cell = grid[r][c];
+      cell.flagged = !cell.flagged;
+      const cellEl = cell.element;
+      if (cell.flagged) {
+        cellEl.textContent = '🚩';
+        cellEl.classList.add('flagged');
+        flaggedCount++;
+      } else {
+        cellEl.textContent = '';
+        cellEl.classList.remove('flagged');
+        flaggedCount--;
+      }
+      updateMineCounter();
+    }
+
+    function updateMineCounter() {
+      mineCounterEl.textContent = MINES - flaggedCount;
+    }
+
+    function checkWin() {
+      return revealCount === (WIDTH * HEIGHT - MINES);
+    }
+
+    function endGame(win) {
+      gameOver = true;
+      if (!win) {
+        // reveal all mines
+        for (let r = 0; r < HEIGHT; r++) {
+          for (let c = 0; c < WIDTH; c++) {
+            const cell = grid[r][c];
+            if (cell.hasMine && !cell.revealed) {
+              const el = cell.element;
+              el.textContent = '💣';
+              el.classList.add('mine');
+            }
+          }
+        }
+      }
+      messageEl.textContent = win ? 'You Win!' : 'Game Over';
+    }
+
+    resetBtn.addEventListener('click', initGame);
+
+    // start the first game
+    initGame();
+  })();
+</script>
+</body>
+</html>

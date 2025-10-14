@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Compare</title>
+    <style>
+        :root {
+            --font-size: 16px;
+            --line-height: 24px;
+            --bg-color: #f0f2f5;
+            --text-color: #1c1e21;
+            --editor-bg: #ffffff;
+            --border-color: #ccd0d5;
+            --line-number-color: #8a8d91;
+            --highlight-color: rgba(255, 235, 59, 0.4);
+            --btn-bg: #1877f2;
+            --btn-text: #ffffff;
+            --btn-hover-bg: #166fe5;
+            --btn-secondary-bg: #6c757d;
+            --btn-secondary-hover-bg: #5a6268;
+            --success-color: #31a24c;
+            --warning-color: #f5a623;
+            --font-family-mono: monospace;
+            --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #18191a;
+                --text-color: #e4e6eb;
+                --editor-bg: #242526;
+                --border-color: #3a3b3c;
+                --line-number-color: #8a8d91;
+                --highlight-color: rgba(250, 179, 0, 0.25);
+                --btn-bg: #2d88ff;
+                --btn-hover-bg: #3a91ff;
+                --btn-secondary-bg: #4e4f50;
+                --btn-secondary-hover-bg: #5a6268;
+                --success-color: #45bd62;
+                --warning-color: #ffc400;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family-sans);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2em;
+            color: var(--text-color);
+        }
+
+        .editors-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            min-height: 60vh;
+            padding: 10px;
+        }
+
+        .editor-wrapper {
+            position: relative;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            background-color: var(--editor-bg);
+        }
+
+        .line-numbers {
+            font-family: var(--font-family-mono);
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            text-align: right;
+            padding: 0px 8px 10px 10px;
+            color: var(--line-number-color);
+            user-select: none;
+            overflow: hidden;
+            background-color: var(--editor-bg);
+            border-right: 1px solid var(--border-color);
+        }
+
+        .line-numbers>div {
+            min-width: 20px;
+            height: var(--line-height);
+        }
+
+        .editor-content {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        .highlight-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 0px 10px 10px 10px;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .highlight-bar {
+            position: absolute;
+            width: 100%;
+            left: 0;
+            height: var(--line-height);
+            background-color: var(--highlight-color);
+            z-index: 1;
+        }
+
+        textarea {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 0px 10px 10px 10px;
+            font-family: var(--font-family-mono);
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            color: var(--text-color);
+            background-color: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            white-space: pre;
+            overflow-wrap: normal;
+            z-index: 2;
+            scrollbar-width: none;
+        }
+
+        textarea::-webkit-scrollbar {
+            display: none;
+        }
+
+        .top-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .options-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .options-container label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            font-family: var(--font-family-sans);
+            padding: 10px 20px;
+            font-size: 1em;
+            font-weight: 600;
+            color: var(--btn-text);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, opacity 0.3s, transform 0.3s;
+        }
+
+        #sort-btn {
+            background-color: var(--btn-bg);
+        }
+
+        #sort-btn:hover {
+            background-color: var(--btn-hover-bg);
+        }
+
+        .btn-clear {
+            background-color: var(--btn-secondary-bg);
+        }
+
+        .btn-clear:hover {
+            background-color: var(--btn-secondary-hover-bg);
+        }
+
+        #result {
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: 500;
+            min-height: 25px;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 3;
+            background: none;
+            border: none;
+            color: var(--line-number-color);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            opacity: 0.5;
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+
+        .copy-btn:hover {
+            opacity: 1;
+            background-color: var(--border-color);
+        }
+
+        .copy-btn svg {
+            width: 16px;
+            height: 16px;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .editors-container {
+                grid-template-columns: 1fr;
+            }
+
+            body {
+                padding: 10px;
+            }
+
+            .options-container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-controls">
+        <h1>Text Sort</h1>
+        <div class="options-container">
+            <label><input type="checkbox" id="case-sensitive" checked> Case Sensitive</label>
+            <label><input type="checkbox" id="descending"> Descending</label>
+            <label><input type="checkbox" id="remove-duplicates"> Remove Duplicate Lines</label>
+            <label><input type="checkbox" id="remove-empty-lines"> Remove Empty Lines</label>
+            <label><input type="checkbox" id="auto-sort"> Auto Sort</label>
+        </div>
+        <div class="buttons-container">
+            <button id="sort-btn" class="btn">Sort Text</button>
+            <button id="clear-btn" class="btn btn-clear">Clear</button>
+            <button id="copy-result-btn" class="btn btn-clear">Copy Result</button>
+        </div>
+    </div>
+	
+	<div id="result"></div>
+
+    <div class="editors-container">
+        <div class="editor-wrapper single">
+            <div class="line-numbers" id="line-numbers">
+                <div>1</div>
+            </div>
+            <div class="editor-content">
+                <textarea id="text-input" spellcheck="false" placeholder="Paste text here..."></textarea>
+            </div>
+        </div>
+
+        <div class="editor-wrapper single">
+            <div class="line-numbers" id="line-numbers-result">
+                <div>1</div>
+            </div>
+            <div class="editor-content">
+                <textarea id="result-output" spellcheck="false" placeholder="Sorted result..." readonly></textarea>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const textInput = document.getElementById('text-input');
+            const resultOutput = document.getElementById('result-output');
+            const lineNumbers = document.getElementById('line-numbers');
+            const lineNumbersResult = document.getElementById('line-numbers-result');
+
+            const caseSensitiveCheck = document.getElementById('case-sensitive');
+            const descendingCheck = document.getElementById('descending');
+            const removeDuplicatesCheck = document.getElementById('remove-duplicates');
+            const removeEmptyLinesCheck = document.getElementById('remove-empty-lines');
+            const autoSortCheck = document.getElementById('auto-sort');
+
+            const sortBtn = document.getElementById('sort-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const copyResultBtn = document.getElementById('copy-result-btn');
+            const resultDiv = document.getElementById('result');
+
+            const LINE_HEIGHT_PX = 24;
+
+            function updateLineNumbers(textarea, numbersDiv) {
+                const lineCount = Math.max(1, textarea.value.split('\n').length);
+                const numbersHTML = Array.from({ length: lineCount }, (_, i) => `<div>${i + 1}</div>`).join('');
+                numbersDiv.innerHTML = numbersHTML;
+            }
+
+            function normalizeLine(line, caseSensitive) {
+                return caseSensitive ? line : line.toLowerCase();
+            }
+
+            function sortText() {
+                let lines = textInput.value.split('\n');
+
+                if (removeEmptyLinesCheck.checked) {
+                    lines = lines.filter(l => l.trim() !== '');
+                }
+
+                if (removeDuplicatesCheck.checked) {
+                    const seen = new Set();
+                    const deduped = [];
+                    for (const line of lines) {
+                        const key = normalizeLine(line, caseSensitiveCheck.checked);
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            deduped.push(line);
+                        }
+                    }
+                    lines = deduped;
+                }
+
+                const caseSensitive = caseSensitiveCheck.checked;
+                lines.sort((a, b) => {
+                    const A = caseSensitive ? a : a.toLowerCase();
+                    const B = caseSensitive ? b : b.toLowerCase();
+                    return A.localeCompare(B, undefined, { numeric: true, sensitivity: caseSensitive ? 'variant' : 'base' });
+                });
+
+                if (descendingCheck.checked) {
+                    lines.reverse();
+                }
+
+                resultOutput.value = lines.join('\n');
+                updateLineNumbers(resultOutput, lineNumbersResult);
+
+                const diff = calculateDifferences(textInput.value.split('\n'), resultOutput.value.split('\n'));
+                resultDiv.textContent = `Sorted ${lines.length} line(s). ${diff} changed line(s).`;
+            }
+
+            function calculateDifferences(originalLines, newLines) {
+                const maxLen = Math.max(originalLines.length, newLines.length);
+                let changes = 0;
+                for (let i = 0; i < maxLen; i++) {
+                    const o = originalLines[i] ?? '';
+                    const n = newLines[i] ?? '';
+                    if (o !== n) changes++;
+                }
+                return changes;
+            }
+
+            function handleAutoSort() {
+                if (autoSortCheck.checked) sortText();
+            }
+
+            textInput.addEventListener('input', () => {
+                updateLineNumbers(textInput, lineNumbers);
+                handleAutoSort();
+            });
+
+            caseSensitiveCheck.addEventListener('change', handleAutoSort);
+            descendingCheck.addEventListener('change', handleAutoSort);
+            removeDuplicatesCheck.addEventListener('change', handleAutoSort);
+            removeEmptyLinesCheck.addEventListener('change', handleAutoSort);
+
+            sortBtn.addEventListener('click', sortText);
+
+            clearBtn.addEventListener('click', () => {
+                textInput.value = '';
+                resultOutput.value = '';
+                updateLineNumbers(textInput, lineNumbers);
+                updateLineNumbers(resultOutput, lineNumbersResult);
+                resultDiv.textContent = 'Clear.';
+            });
+
+            copyResultBtn.addEventListener('click', () => {
+                resultOutput.select();
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                resultDiv.textContent = 'Copied.';
+
+            });
+
+            updateLineNumbers(textInput, lineNumbers);
+            updateLineNumbers(resultOutput, lineNumbersResult);
+        });
+    </script>
+
+</body>
+
+</html>

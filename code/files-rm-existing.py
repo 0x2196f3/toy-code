@@ -109,6 +109,6 @@ def delete_matching_files(dir_a, dir_b):
     logging.info("Completed file comparison and deletion process.")
 
 if __name__ == "__main__":
-    dir_a = "./"  # Replace with the path to dir_a
-    dir_b = "./"  # Replace with the path to dir_b
+    dir_a = "./a"  # Replace with the path to dir_a
+    dir_b = "./b"  # Replace with the path to dir_b
     delete_matching_files(dir_a, dir_b)
