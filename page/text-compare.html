@@ -16,11 +16,10 @@
             --highlight-color: rgba(255, 235, 59, 0.4);
             --btn-bg: #1877f2;
             --btn-text: #ffffff;
-            --btn-hover-bg: #166fe5;
             --btn-secondary-bg: #6c757d;
-            --btn-secondary-hover-bg: #5a6268;
             --success-color: #31a24c;
             --warning-color: #f5a623;
+            --hover-bg: #f1f3f4;
             --font-family-mono: monospace;
             --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
@@ -34,9 +33,8 @@
                 --line-number-color: #8a8d91;
                 --highlight-color: rgba(250, 179, 0, 0.25);
                 --btn-bg: #2d88ff;
-                --btn-hover-bg: #3a91ff;
                 --btn-secondary-bg: #4e4f50;
-                --btn-secondary-hover-bg: #5a6268;
+                --hover-bg: #2c2c2c;
                 --success-color: #45bd62;
                 --warning-color: #ffc400;
             }
@@ -68,6 +66,10 @@
             text-align: center;
             font-size: 2em;
             color: var(--text-color);
+        }
+
+        button:hover {
+            filter: brightness(0.8);
         }
 
         .editors-container {
@@ -129,6 +131,25 @@
             background-color: var(--highlight-color);
             z-index: 1;
         }
+
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: var(--hover-bg);
+            color: var(--text-color);
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1001;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 30px;
+            font-size: 17px;
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
+        .toast.show { visibility: visible; opacity: 1; }
         
         textarea {
             position: absolute;
@@ -148,10 +169,10 @@
             white-space: pre;
             overflow-wrap: normal;
             z-index: 2;
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none;
         }
         textarea::-webkit-scrollbar {
-            display: none; /* Safari and Chrome */
+            display: none;
         }
         
         .top-controls {
@@ -200,17 +221,10 @@
         #compare-btn {
             background-color: var(--btn-bg);
         }
-        #compare-btn:hover {
-            background-color: var(--btn-hover-bg);
-        }
 
         .btn-clear {
             background-color: var(--btn-secondary-bg);
         }
-        .btn-clear:hover {
-            background-color: var(--btn-secondary-hover-bg);
-        }
-
 
         #result {
             text-align: center;
@@ -291,6 +305,7 @@
                 <button id="clear-left-btn" class="btn btn-clear">Clear Left</button>
                 <button id="clear-right-btn" class="btn btn-clear">Clear Right</button>
             </div>
+            <div id="result"></div>
         </div>
         <div class="editors-container">
             <div class="editor-wrapper">
@@ -314,9 +329,10 @@
                 </div>
             </div>
         </div>
-        <div id="result"></div>
     </div>
     <button id="floating-compare-btn" class="btn" title="Compare Texts">Compare</button>
+    <div id="toast" class="toast"></div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const textInput1 = document.getElementById('text-input1');
@@ -337,6 +353,7 @@
             const clearRightBtn = document.getElementById('clear-right-btn');
             const copyBtn1 = document.getElementById('copy-btn1');
             const copyBtn2 = document.getElementById('copy-btn2');
+            const toast = document.getElementById('toast');
 
             const LINE_HEIGHT_PX = 24;
 
@@ -355,6 +372,17 @@
                 if (autoCompareCheck.checked) {
                     runCompare();
                 }
+            };
+
+            const showToast = (message, color=null) => {
+                toast.textContent = message;
+                toast.className = "toast show";
+                if (color != null) {
+                    toast.style.color = color;
+                }
+                setTimeout(() => {
+                    toast.className = toast.className.replace("show", "");
+                }, 3000);
             };
             
             textInput1.addEventListener('input', () => {
@@ -415,7 +443,7 @@
                 const lines2 = text2.split('\n');
                 
                 let differences = 0;
-                let firstDifferenceHighlighted = false;
+                let firstDifferenceHighlighted = -1;
 
                 highlight1.innerHTML = '';
                 highlight2.innerHTML = '';
@@ -455,10 +483,10 @@
 
                         if (comparableLine1 !== comparableLine2) {
                             differences++;
-                            if (!firstDifferenceHighlighted) {
+                            if (firstDifferenceHighlighted <= -1) {
                                 if (item1) addHighlightBar(highlight1, item1.originalIndex);
                                 if (item2) addHighlightBar(highlight2, item2.originalIndex);
-                                firstDifferenceHighlighted = true;
+                                firstDifferenceHighlighted = i;
                             }
                         }
                     }
@@ -483,21 +511,29 @@
 
                         if (comparableLine1 !== comparableLine2) {
                             differences++;
-                             if (!firstDifferenceHighlighted) {
+                             if (firstDifferenceHighlighted <= -1) {
                                 if (i < lines1.length) addHighlightBar(highlight1, i);
                                 if (i < lines2.length) addHighlightBar(highlight2, i);
-                                firstDifferenceHighlighted = true;
+                                firstDifferenceHighlighted = i;
                             }
                         }
                     }
                 }
+
+                let text;
+                let color;
                 
                 if (differences === 0) {
-                    resultDiv.textContent = 'The texts are identical (based on selected options).';
-                    resultDiv.style.color = 'var(--success-color)';
+                    text = 'The texts are identical (based on selected options).';
+                    color = 'var(--success-color)';
                 } else {
-                    resultDiv.textContent = `Found ${differences} different line(s).`;
-                    resultDiv.style.color = 'var(--warning-color)';
+                    text = `Found ${differences} different line(s) at ${firstDifferenceHighlighted}.`
+                    color = 'var(--warning-color)';
+                }
+                resultDiv.textContent = text;
+                resultDiv.style.color = color;
+                if (floatingCompareBtn.classList.contains('visible')) {
+                    showToast(text, color);
                 }
             };
             
