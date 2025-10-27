@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,10 +14,8 @@
       --border-color: #dce1e6;
       --primary-bg: #1b74e4;
       --primary-text: #ffffff;
-      --primary-hover-bg: #1868cd;
       --secondary-bg: #e4e6eb;
       --secondary-text: #1c1e21;
-      --secondary-hover-bg: #d8dade;
       --font-family: sans-serif;
     }
 
@@ -29,10 +28,8 @@
         --border-color: #3e4042;
         --primary-bg: #2d88ff;
         --primary-text: #ffffff;
-        --primary-hover-bg: #3a8ffd;
         --secondary-bg: #3a3b3c;
         --secondary-text: #e4e6eb;
-        --secondary-hover-bg: #4f5051;
       }
     }
 
@@ -42,8 +39,9 @@
       padding: 0;
     }
 
-    html, body {
-        height: 100%;
+    html,
+    body {
+      height: 100%;
     }
 
     body {
@@ -90,12 +88,12 @@
     }
 
     .output-wrapper {
-        position: relative;
+      position: relative;
     }
 
     textarea {
       width: 100%;
-      height: 150px;
+      height: 300px;
       padding: 0.75rem;
       border: 1px solid var(--border-color);
       border-radius: 0.5rem;
@@ -112,11 +110,12 @@
       border-color: var(--primary-bg);
       box-shadow: 0 0 0 2px rgba(27, 116, 228, 0.3);
     }
-    
+
     .button-group {
       display: flex;
       flex-wrap: wrap;
       gap: 0.75rem;
+      margin-top: 1rem;
       justify-content: center;
     }
 
@@ -139,66 +138,71 @@
     button:active {
       transform: scale(0.97);
     }
-    
+
+    button:hover {
+      filter: brightness(0.8);
+    }
+
     .btn-primary {
       background-color: var(--primary-bg);
       color: var(--primary-text);
     }
-    .btn-primary:hover {
-      background-color: var(--primary-hover-bg);
-    }
-    
+
     .btn-secondary {
       background-color: var(--secondary-bg);
       color: var(--secondary-text);
     }
-    .btn-secondary:hover {
-      background-color: var(--secondary-hover-bg);
-    }
 
     #copy-btn {
-        position: absolute;
-        top: 0.75rem;
-        right: 0.75rem;
-        padding: 0.25rem 0.6rem;
-        font-size: 0.875rem;
-        background-color: var(--secondary-bg);
-        color: var(--secondary-text);
-        z-index: 1;
-    }
-    
-    #copy-btn:hover {
-        background-color: var(--secondary-hover-bg);
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.875rem;
+      background-color: var(--secondary-bg);
+      color: var(--secondary-text);
+      z-index: 1;
     }
 
+    #copy-btn:hover {
+      background-color: var(--secondary-hover-bg);
+    }
   </style>
 </head>
+
 <body>
 
   <main class="container">
     <h1>Base64 Encoder/Decoder</h1>
 
     <div class="io-card">
-      <label for="input">Input Text</label>
+      <label for="input">Input</label>
       <textarea id="input" placeholder="Enter text or Base64 string here..."></textarea>
-    </div>
 
-    <div class="button-group">
-      <button class="btn-primary" onclick="encode()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"/></svg>
-        Encode
-      </button>
-      <button class="btn-primary" onclick="decode()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z"/></svg>
-        Decode
-      </button>
-      <button class="btn-secondary" onclick="swapContent()" title="Swap Input and Output">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5zm14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5z"/></svg>
-        Swap
-      </button>
-    </div>
+      <div class="button-group">
+        <button class="btn-primary" onclick="encode()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd"
+              d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z" />
+          </svg>
+          Encode
+        </button>
+        <button class="btn-primary" onclick="decode()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd"
+              d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z" />
+          </svg>
+          Decode
+        </button>
+        <button class="btn-secondary" onclick="swapContent()" title="Swap Input and Output">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd"
+              d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5zm14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5z" />
+          </svg>
+          Swap
+        </button>
+      </div>
 
-    <div class="io-card">
       <label for="output">Output</label>
       <div class="output-wrapper">
         <textarea id="output" placeholder="Output will appear here..." readonly></textarea>
@@ -229,39 +233,37 @@
         console.error(e);
       }
     }
-    
+
     function copyOutput() {
-        const output = document.getElementById('output');
-        const copyBtn = document.getElementById('copy-btn');
-        const originalText = copyBtn.textContent;
+      const output = document.getElementById('output');
+      const copyBtn = document.getElementById('copy-btn');
+      const originalText = copyBtn.textContent;
 
-        if (output.value) {
-            output.select();
-            output.setSelectionRange(0, 99999); 
-            
-            try {
-                document.execCommand('copy');
-                copyBtn.textContent = 'Copied!';
-            } catch (err) {
-                copyBtn.textContent = 'Failed!';
-                console.error('Failed to copy: ', err);
-            }
+      if (output.value) {
+        output.select();
+        output.setSelectionRange(0, 99999);
 
-            setTimeout(() => {
-                copyBtn.textContent = originalText;
-            }, 2000);
+        try {
+          document.execCommand('copy');
+          copyBtn.textContent = 'Copied!';
+        } catch (err) {
+          copyBtn.textContent = 'Failed!';
+          console.error('Failed to copy: ', err);
         }
+
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
+      }
     }
 
     function swapContent() {
-        const input = document.getElementById('input');
-        const output = document.getElementById('output');
-        const temp = input.value;
-        input.value = output.value;
-        output.value = temp;
+      const input = document.getElementById('input');
+      const output = document.getElementById('output');
+      const temp = input.value;
+      input.value = output.value;
+      output.value = temp;
     }
   </script>
-
 </body>
 </html>
-

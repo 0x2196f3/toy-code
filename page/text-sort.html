@@ -16,9 +16,7 @@
             --highlight-color: rgba(255, 235, 59, 0.4);
             --btn-bg: #1877f2;
             --btn-text: #ffffff;
-            --btn-hover-bg: #166fe5;
             --btn-secondary-bg: #6c757d;
-            --btn-secondary-hover-bg: #5a6268;
             --success-color: #31a24c;
             --warning-color: #f5a623;
             --font-family-mono: monospace;
@@ -34,9 +32,7 @@
                 --line-number-color: #8a8d91;
                 --highlight-color: rgba(250, 179, 0, 0.25);
                 --btn-bg: #2d88ff;
-                --btn-hover-bg: #3a91ff;
                 --btn-secondary-bg: #4e4f50;
-                --btn-secondary-hover-bg: #5a6268;
                 --success-color: #45bd62;
                 --warning-color: #ffc400;
             }
@@ -199,27 +195,24 @@
             transition: background-color 0.2s ease, opacity 0.3s, transform 0.3s;
         }
 
-        #sort-btn {
-            background-color: var(--btn-bg);
+        button:hover {
+            filter: brightness(0.8);
         }
 
-        #sort-btn:hover {
-            background-color: var(--btn-hover-bg);
+        #sort-btn {
+            background-color: var(--btn-bg);
         }
 
         .btn-clear {
             background-color: var(--btn-secondary-bg);
         }
 
-        .btn-clear:hover {
-            background-color: var(--btn-secondary-hover-bg);
-        }
-
         #result {
+            margin-top: 8px;
             text-align: center;
             font-size: 1.2em;
             font-weight: 500;
-            min-height: 25px;
+            min-height: 30px;
         }
 
         .copy-btn {
@@ -235,11 +228,6 @@
             border-radius: 4px;
             opacity: 0.5;
             transition: opacity 0.2s, background-color 0.2s;
-        }
-
-        .copy-btn:hover {
-            opacity: 1;
-            background-color: var(--border-color);
         }
 
         .copy-btn svg {

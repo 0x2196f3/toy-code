@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Test</title>
     <style>
-        /* CSS Variables for Theming (Light & Dark Mode) */
         :root {
             --bg-color: #f3f4f6;
             --text-color: #1f2937;
@@ -52,7 +51,6 @@
             }
         }
 
-        /* General Styles */
         body {
             font-family: var(--font-family);
             background-color: var(--bg-color);
@@ -74,7 +72,6 @@
             .container { padding: 2rem; }
         }
         
-        /* Header */
         header {
             text-align: center;
             margin-bottom: 2rem;
@@ -92,7 +89,6 @@
              header p { color: #9ca3af; }
         }
 
-        /* Card Styles */
         .card {
             background-color: var(--card-bg);
             border-radius: 0.5rem;
@@ -108,7 +104,6 @@
             margin-top: 0;
         }
 
-        /* Form Elements */
         .input, select, textarea {
             background-color: var(--input-bg);
             border: 1px solid var(--border-color);
@@ -208,7 +203,6 @@
             .remove-btn:hover { background-color: #7f1d1d; }
         }
 
-        /* Tabs */
         .tabs-container { border-top: 1px solid var(--border-color); padding-top: 1rem; }
         .tab-nav { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
         .tab-btn, .resp-tab-btn {
@@ -227,7 +221,6 @@
             background-color: var(--tab-active-bg);
         }
 
-        /* Response Section */
         pre {
             background-color: var(--pre-bg);
             color: var(--pre-text);
@@ -237,8 +230,8 @@
             overflow-x: auto;
             max-height: 24rem;
             font-size: 0.875rem;
-            white-space: pre-wrap; /* Wrap long lines */
-            word-break: break-all; /* Break long words */
+            white-space: pre-wrap;
+            word-break: break-all;
         }
         
         pre::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -250,7 +243,6 @@
         #status-code.ok { color: var(--success-color); }
         #status-code.error { color: var(--error-color); }
 
-        /* Utility classes */
         .hidden { display: none !important; }
         .flex { display: flex; }
         .justify-end { justify-content: flex-end; }
@@ -262,7 +254,6 @@
         .space-y-2 > *:not([hidden]) ~ *:not([hidden]) { margin-top: 0.5rem; }
         .font-bold { font-weight: 700; }
         
-        /* Loader */
         .loader-container { justify-content: center; align-items: center; padding: 1.5rem; }
         .loader {
             border: 4px solid #e5e7eb;
@@ -277,7 +268,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* CORS Warning */
         #cors-warning {
             background-color: var(--warning-bg);
             border-left: 4px solid var(--warning-border);
@@ -298,7 +288,6 @@
             <h1>API Test</h1>
         </header>
 
-        <!-- Request Section -->
         <div class="card">
             <h2>Request</h2>
             
@@ -347,8 +336,6 @@
             <p>The request was blocked by the browser's Cross-Origin Resource Sharing (CORS) policy. This is a security feature. The server at the requested URL does not allow requests from this origin.</p>
         </div>
 
-
-        <!-- Response Section -->
         <div id="response-section" class="hidden card">
             <div class="flex justify-between items-center mb-4">
                 <h2>Response</h2>
@@ -385,7 +372,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // DOM Elements
             const methodSelect = document.getElementById('method');
             const urlInput = document.getElementById('url');
             const sendBtn = document.getElementById('send-btn');
@@ -415,7 +401,6 @@
             const responseTabs = document.querySelectorAll('.resp-tab-btn');
             const responseTabContents = document.querySelectorAll('.resp-tab-content');
 
-            // --- Tabbing Logic ---
             function setupTabs(tabs, contents, defaultTab) {
                 tabs.forEach(tab => {
                     tab.addEventListener('click', () => {
@@ -437,7 +422,6 @@
             setupTabs(requestTabs, requestTabContents, 'params');
             setupTabs(responseTabs, responseTabContents, 'resp-body');
 
-            // --- Key-Value Pair Management ---
             function createKeyValuePair(container, type) {
                 const div = document.createElement('div');
                 div.className = 'kv-pair';
@@ -468,8 +452,6 @@
             createKeyValuePair(paramsContainer, 'param');
             createKeyValuePair(headersContainer, 'header');
 
-
-            // --- URL Param Logic ---
             function updateUrlParams() {
                 try {
                     const baseUrl = urlInput.value.split('?')[0];
@@ -485,7 +467,6 @@
                     const queryString = params.toString();
                     urlInput.value = queryString ? `${baseUrl}?${queryString}` : baseUrl;
                 } catch (e) {
-                    // Handle invalid URL during typing, do nothing
                 }
             }
             
@@ -523,8 +504,6 @@
                 }
             });
 
-
-            // --- Send Request Logic ---
             sendBtn.addEventListener('click', async () => {
                 const url = urlInput.value.trim();
                 if (!url) {
@@ -579,7 +558,6 @@
                     responseHeadersEl.textContent = headersText || 'No headers received.';
 
                     const bodyText = await response.text();
-                    // Securely set the response body as plain text
                     responseBodyEl.textContent = bodyText || 'No body content.';
 
                 } catch (error) {
@@ -605,12 +583,9 @@
                     const parsedJson = JSON.parse(currentBody);
                     responseBodyEl.textContent = JSON.stringify(parsedJson, null, 2);
                 } catch (e) {
-                    // Not valid JSON.
                 }
             });
         });
     </script>
-
 </body>
 </html>
-
