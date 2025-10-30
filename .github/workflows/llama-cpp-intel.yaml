@@ -24,21 +24,14 @@ jobs:
       matrix:
         march: [alderlake, skylake]
     steps:
-      - name: Aggressive Docker cleanup (free disk)
+      - name: Freeup Space
         run: |
           set -eux
-            echo "Stopping all running containers (may be none)..."
-            docker ps -aq | xargs -r docker stop || true
-            echo "Removing all containers..."
-            docker ps -aq | xargs -r docker rm -f || true
-            echo "Removing unused images..."
-            docker image prune -a -f || true
-            echo "Pruning build cache..."
-            docker builder prune -a -f || true
-            echo "Removing unused volumes..."
-            docker volume prune -f || true
-            echo "Docker info after cleanup:"
-            docker system df
+            sudo rm -rf /usr/share/dotnet
+            sudo rm -rf /usr/local/lib/android
+            sudo rm -rf /opt/ghc
+            sudo rm -rf /opt/hostedtoolcache/CodeQL
+          
       - name: Checkout repository
         uses: actions/checkout@v4
 
