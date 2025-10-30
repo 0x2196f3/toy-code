@@ -12,6 +12,7 @@ env:
   IMAGE: llama-cpp-intel
 
 jobs:
+  
   build-and-push:
     runs-on: ubuntu-24.04
     permissions:
@@ -19,15 +20,25 @@ jobs:
       packages: write
 
     strategy:
+      max-parallel: 1
       matrix:
         march: [alderlake, skylake]
     steps:
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 512
-          swap-size-mb: 1024
-          remove-dotnet: 'true'
+      - name: Aggressive Docker cleanup (free disk)
+        run: |
+          set -eux
+            echo "Stopping all running containers (may be none)..."
+            docker ps -aq | xargs -r docker stop || true
+            echo "Removing all containers..."
+            docker ps -aq | xargs -r docker rm -f || true
+            echo "Removing unused images..."
+            docker image prune -a -f || true
+            echo "Pruning build cache..."
+            docker builder prune -a -f || true
+            echo "Removing unused volumes..."
+            docker volume prune -f || true
+            echo "Docker info after cleanup:"
+            docker system df
       - name: Checkout repository
         uses: actions/checkout@v4
 
