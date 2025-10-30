@@ -1,0 +1,53 @@
+============================================================
+OpenAI-compatible API Performance Test Script (via curl)
+============================================================
+  Target URL: http://192.168.2.2:8080/v1/chat/completions
+  Test Model: gemma-3-1b
+  Max Tokens: 512
+  Test Rounds: 2
+  Prompt Count: 3
+------------------------------------------------------------
+🚀 Performing a warm-up run to load the model...
+✅ Warm-up complete. Model is now loaded.
+
+🔬 Starting main tests, with a total of 6 requests...
+
+--- Round 1/2 ---
+  (1/6) Testing Prompt #1...
+  (2/6) Testing Prompt #2...
+  (3/6) Testing Prompt #3...
+
+--- Round 2/2 ---
+  (4/6) Testing Prompt #1...
+  (5/6) Testing Prompt #2...
+  (6/6) Testing Prompt #3...
+
+
+============================================================
+📊 Performance Test Summary Report
+============================================================
+Successfully collected data points: 6 / 6
+------------------------------------------------------------
+🔑 Core Metrics (Single-User Performance):
+
+1. Generation Throughput (tokens/s)
+   - Average: 10.76
+   - Std Dev: 0.11 (lower is more stable)
+   - Min:     10.62
+   - Max:     10.96
+
+2. Prompt Processing Throughput (tokens/s)
+   - Average: 27.18
+   - Std Dev: 1.09
+   - Min:     25.45
+   - Max:     28.87
+
+3. Time to First Token (TTFT - seconds)
+   (Note: Approximated by prompt evaluation time)
+   - Average: 4.6558
+   - Std Dev: 1.1577
+   - Min:     3.0686 (fastest response)
+   - Max:     6.1316 (slowest response)
+
+============================================================
+✅ Testing complete.

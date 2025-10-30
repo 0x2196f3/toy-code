@@ -1,0 +1,53 @@
+============================================================
+OpenAI-compatible API Performance Test Script (via curl)
+============================================================
+  Target URL: http://192.168.2.11:9090/v1/chat/completions
+  Test Model: test.gguf
+  Max Tokens: 512
+  Test Rounds: 2
+  Prompt Count: 3
+------------------------------------------------------------
+🚀 Performing a warm-up run to load the model...
+✅ Warm-up complete. Model is now loaded.
+
+🔬 Starting main tests, with a total of 6 requests...
+
+--- Round 1/2 ---
+  (1/6) Testing Prompt #1...
+  (2/6) Testing Prompt #2...
+  (3/6) Testing Prompt #3...
+
+--- Round 2/2 ---
+  (4/6) Testing Prompt #1...
+  (5/6) Testing Prompt #2...
+  (6/6) Testing Prompt #3...
+
+
+============================================================
+📊 Performance Test Summary Report
+============================================================
+Successfully collected data points: 6 / 6
+------------------------------------------------------------
+🔑 Core Metrics (Single-User Performance):
+
+1. Generation Throughput (tokens/s)
+   - Average: 15.85
+   - Std Dev: 0.21 (lower is more stable)
+   - Min:     15.66
+   - Max:     16.15
+
+2. Prompt Processing Throughput (tokens/s)
+   - Average: 103.76
+   - Std Dev: 1.11
+   - Min:     101.94
+   - Max:     105.15
+
+3. Time to First Token (TTFT - seconds)
+   (Note: Approximated by prompt evaluation time)
+   - Average: 1.2229
+   - Std Dev: 0.3197
+   - Min:     0.8173 (fastest response)
+   - Max:     1.6145 (slowest response)
+
+============================================================
+✅ Testing complete.
