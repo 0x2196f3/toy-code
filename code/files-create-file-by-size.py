@@ -33,11 +33,9 @@ def parse_size(s: str) -> int:
     return int(num * UNIT_MAP[unit])
 
 def create_sparse(path: Path, size: int):
-    # Create file of given size. Use sparse creation where possible for speed.
     with open(path, 'wb') as f:
         if size == 0:
             return
-        # Seek to size-1 and write one null byte
         f.seek(size - 1)
         f.write(b'\0')
 

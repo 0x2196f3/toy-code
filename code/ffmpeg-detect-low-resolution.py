@@ -2,10 +2,8 @@ import os
 import subprocess
 import shutil
 
-# Define thresholds
-threshold = 1200 * 720  # 864000 pixels
+threshold = 1200 * 720
 
-# Path to ffmpeg/ffprobe executable
 FFPROBE = os.path.abspath('./ffprobe.exe')
 
 for root, _, files in os.walk('./video'):
@@ -14,7 +12,6 @@ for root, _, files in os.walk('./video'):
             continue
 
         src_path = os.path.join(root, fname)
-        # Probe width and height
         cmd = [
             FFPROBE, '-v', 'error',
             '-select_streams', 'v:0',
@@ -30,7 +27,6 @@ for root, _, files in os.walk('./video'):
             continue
 
         if w * h < threshold:
-            # Determine destination folder
             parent_folder = os.path.basename(os.path.abspath(root))
             dest_folder = os.path.join('.', f'low_{parent_folder}')
             os.makedirs(dest_folder, exist_ok=True)

@@ -3,13 +3,10 @@ import os
 import subprocess
 import sys
 
-# Path to 7z executable
 SEVEN_Z_PATH = r"C:\Program Files\7-Zip\7z.exe"
 
-# File extensions to target (lowercase)
 TARGET_EXTS = {'.iso', '.cso'}
 
-# 7z options: maximum compression, solid archive, multithread (auto)
 SEVEN_Z_OPTS = ['a', '-t7z', '-mx=9', '-m0=LZMA2', '-mmt=on', '-ms=on']
 
 def find_executable(path):
@@ -34,10 +31,9 @@ def fmt_mb(n_bytes):
 def compress_file(sevenz, src_path, results):
     src_dir = os.path.dirname(src_path)
     base = os.path.basename(src_path)
-    dest_name = base + '.7z'               # e.g. game.iso.7z
+    dest_name = base + '.7z' 
     dest_path = os.path.join(src_dir, dest_name)
 
-    # If dest already exists, skip
     if os.path.exists(dest_path):
         print(f"Skipping (archive exists): {src_path}")
         results['failed'].append((src_path, "archive_exists"))
@@ -54,18 +50,14 @@ def compress_file(sevenz, src_path, results):
         results['failed'].append((src_path, str(e)))
         return
 
-    # 7z returns exit code 0 for no error. 1 = warning, >=2 = error.
     if proc.returncode == 0:
-        # verify archive contains the file (list)
         verify_cmd = [sevenz, 'l', dest_path]
         try:
             vproc = subprocess.run(verify_cmd, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             if vproc.returncode == 0 and base in vproc.stdout:
-                # get compressed size
                 comp_size = sizeof_bytes(dest_path)
                 try:
                     os.remove(src_path)
-                    # compute ratio: compressed / original, and percent
                     ratio = (comp_size / orig_size) if orig_size > 0 else 0
                     ratio_pct = ratio * 100
                     print(f"Compressed and removed: {src_path} -> {dest_path}")
@@ -73,7 +65,6 @@ def compress_file(sevenz, src_path, results):
                     results['succeeded'].append((src_path, orig_size, comp_size))
                 except OSError as e:
                     print(f"Archive created but failed to remove original {src_path}: {e}")
-                    # still treat as failed since original not removed
                     comp_size = sizeof_bytes(dest_path)
                     results['failed'].append((src_path, f"remove_failed: {e}"))
             else:
@@ -116,8 +107,8 @@ def main():
         sys.exit(1)
 
     results = {
-        'succeeded': [],  # list of tuples (src_path, orig_size, comp_size)
-        'failed': []      # list of tuples (src_path, reason)
+        'succeeded': [], 
+        'failed': []  
     }
 
     start_dir = os.path.abspath('.')

@@ -5,26 +5,18 @@ import logging
 import re
 from collections import defaultdict
 
-# Set up logging with StreamHandler (works on Windows PowerShell too)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler()]
 )
 
-# Regular expression to match a valid MD5 hash (32 hex characters)
 MD5_REGEX = re.compile(r"^[a-fA-F0-9]{32}$")
 
 def calculate_md5(file_path):
-    """
-    Calculate the MD5 checksum of a file using the appropriate command based on the OS.
-    Returns the MD5 hash if valid, otherwise returns None.
-    """
     if platform.system() == "Windows":
-        # Use certutil on Windows
         command = ['certutil', '-hashfile', file_path, 'MD5']
     else:
-        # Use md5sum on Linux and similar
         command = ['md5sum', file_path]
 
     try:
@@ -65,21 +57,15 @@ def calculate_md5(file_path):
     return computed_hash
 
 def deduplicate_files(directory):
-    """
-    Deduplicate files in the given directory based on their sizes and MD5 checksums.
-    Returns a summary dictionary.
-    """
     size_map = defaultdict(list)
     total_files = 0
     removed_duplicates = 0
     errors = 0
-    skipped_files = 0  # Files skipped because MD5 couldn't be calculated
+    skipped_files = 0
 
-    # First pass: index files by size
     logging.info("Indexing files by size in directory: %s", directory)
     for root, _, files in os.walk(directory):
         for file in files:
-            # Use os.path.join to correctly handle odd names
             file_path = os.path.join(root, file)
             try:
                 file_size = os.path.getsize(file_path)
@@ -94,9 +80,8 @@ def deduplicate_files(directory):
 
     processed_files = 0
 
-    # Second pass: check for duplicates by size and MD5
     for file_size, file_paths in size_map.items():
-        if len(file_paths) > 1:  # Only check potential duplicates
+        if len(file_paths) > 1:
             md5_map = {}
             for file_path in file_paths:
                 file_md5 = calculate_md5(file_path)
@@ -131,7 +116,6 @@ if __name__ == "__main__":
     logging.info("Starting deduplication in directory: %s", directory_path)
     summary = deduplicate_files(directory_path)
     
-    # Print summary output before exit
     logging.info("Deduplication complete.")
     logging.info("Total files found: %d", summary["total_files_found"])
     logging.info("Files processed: %d", summary["files_processed"])

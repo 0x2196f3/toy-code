@@ -15,7 +15,6 @@ def print_cmd(cmd: list[str]) -> None:
         if not part:
             safe_parts.append("''")
         elif any(c in part for c in " \t\n'\"\\"):
-            # prefer single quotes and escape existing single quotes
             safe_parts.append("'" + part.replace("'", "'\"'\"'") + "'")
         else:
             safe_parts.append(part)

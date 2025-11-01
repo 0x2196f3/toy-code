@@ -7,14 +7,11 @@ def xor_encrypt_decrypt(data: bytes, password: str) -> bytes:
     return bytes(result)
 
 def main(src_file_path: str, dst_file_path: str, password: str):
-    # Read the contents of the source file
     with open(src_file_path, 'rb') as src_file:
         data = src_file.read()
     
-    # Encrypt or decrypt the data
     encrypted_decrypted_data = xor_encrypt_decrypt(data, password)
     
-    # Write the result to the destination file
     with open(dst_file_path, 'wb') as dst_file:
         dst_file.write(encrypted_decrypted_data)
 

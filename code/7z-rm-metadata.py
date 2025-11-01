@@ -17,7 +17,6 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Optional: used to set creation time on Windows
 try:
     import pywintypes
     import win32file
@@ -38,7 +37,6 @@ def find_7z_exe():
     for p in candidates:
         if p.exists():
             return str(p)
-    # fallback: rely on PATH
     return "7z.exe"
 
 def run(cmd, cwd=None):
@@ -48,14 +46,10 @@ def run(cmd, cwd=None):
     return proc.stdout
 
 def set_file_times(path: Path, ts: datetime):
-    # Set mtime and atime
-    # Convert to timestamp in local time epoch seconds
-    # Use os.utime for mtime/atime
+    
     epoch_seconds = ts.timestamp()
     os.utime(path, (epoch_seconds, epoch_seconds))
-    # Attempt to set creation time on Windows if pywin32 available
     if WIN32_AVAILABLE and os.name == "nt":
-        # open file handle and set file time
         wintime = pywintypes.Time(ts)
         fh = win32file.CreateFile(
             str(path),
@@ -76,7 +70,6 @@ def normalize_directory_timestamps(root: Path, timestamp: datetime):
         if p.is_file():
             set_file_times(p, timestamp)
         elif p.is_dir():
-            # set directory times too
             set_file_times(p, timestamp)
 
 def process_archive(archive_path: Path, sevenz_exe: str, dry_run=False):
@@ -87,17 +80,11 @@ def process_archive(archive_path: Path, sevenz_exe: str, dry_run=False):
     print(f"Processing: {archive_path}")
     with tempfile.TemporaryDirectory() as tmpd:
         tmpd_path = Path(tmpd)
-        # Extract
         cmd_extract = [sevenz_exe, "x", str(archive_path), f"-o{str(tmpd_path)}", "-y"]
         run(cmd_extract)
-        # Normalize timestamps
         normalize_directory_timestamps(tmpd_path, DEFAULT_TIMESTAMP)
 
-        # Recompress into same format. Create a temp archive path to avoid clobbering on failure
         temp_archive = archive_path.with_suffix(archive_path.suffix + ".tmp")
-        # 7z compression switches:
-        # -mx=9 maximum
-        # For zip use 'a -tzip' ; for 7z use 'a -t7z'
         if ext == ".zip":
             cmd_add = [sevenz_exe, "a", "-tzip", f"-mx=9", str(temp_archive), str(tmpd_path) + os.sep + "*"]
         else:  # .7z
@@ -105,21 +92,16 @@ def process_archive(archive_path: Path, sevenz_exe: str, dry_run=False):
 
         run(cmd_add)
 
-        # Optionally, preserve original attributes like readonly flags on archive if desired.
-        # Replace original atomically
         if dry_run:
             print(f"[dry-run] would replace {archive_path} with {temp_archive}")
             temp_archive.unlink(missing_ok=True)
         else:
             backup = archive_path.with_suffix(archive_path.suffix + ".bak")
             try:
-                # move original to backup, then move temp into place
                 archive_path.replace(backup)
                 temp_archive.replace(archive_path)
-                # remove backup
                 backup.unlink(missing_ok=True)
             except Exception as e:
-                # try to restore
                 if archive_path.exists():
                     temp_archive.unlink(missing_ok=True)
                 else:
@@ -141,7 +123,6 @@ def main():
     sevenz = find_7z_exe()
     print("Using 7z executable:", sevenz)
 
-    # Walk directory
     for p in base.rglob("*"):
         if p.suffix.lower() in (".zip", ".7z"):
             try:

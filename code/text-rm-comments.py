@@ -1,7 +1,6 @@
 import os
 import argparse
 
-# Map of common text formats and their single line comment symbols
 comment_symbols = {
     'python': '#',
     'java': '//',
@@ -19,22 +18,13 @@ comment_symbols = {
     'tpl': '#',
     'yaml': '#',
     'yml': '#',
-    'json': '//',  # Note: JSON does not officially support comments, but some parsers may allow them
+    'json': '//',
     'list': '#',
     'txt': '#'
 }
 
 def remove_comments_and_empty_lines(file_path, file_format):
-    """
-    Removes all comment lines and empty lines from an input text file.
-
-    Args:
-        file_path (str): Path to the input text file.
-        file_format (str): Format of the input text file.
-
-    Returns:
-        str: The input text with all comment lines and empty lines removed.
-    """
+    
     comment_symbol = comment_symbols.get(file_format.lower())
     if comment_symbol is None:
         raise ValueError(f"Unsupported file format: {file_format}")
@@ -48,13 +38,7 @@ def remove_comments_and_empty_lines(file_path, file_format):
 
 
 def overwrite_file(file_path, content):
-    """
-    Overwrites the content of a file.
 
-    Args:
-        file_path (str): Path to the file.
-        content (str): New content to be written.
-    """
     with open(file_path, 'w') as file:
         file.write(content)
 

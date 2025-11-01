@@ -1,13 +1,10 @@
 def remove_lines_from_file(source_file, filter_file, output_file):
-    # Read lines from filter_file and store them in a set for quick lookup
     with open(filter_file, 'r', encoding='utf-8') as filter_file_handle:
         filter_lines_set = set(line.strip() for line in filter_file_handle)
 
-    # Read lines from source_file and filter out those that are in filter_file
     with open(source_file, 'r', encoding='utf-8') as source_file_handle:
         filtered_lines = [line for line in source_file_handle if line.strip() not in filter_lines_set]
 
-    # Write the filtered lines to output_file
     with open(output_file, 'w', encoding='utf-8') as output_file_handle:
         output_file_handle.writelines(filtered_lines)
 

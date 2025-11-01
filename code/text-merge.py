@@ -1,22 +1,17 @@
 import os
 
 def merge_text_files_from_directory(input_directory, output_file_name):
-    # Create a set to store unique lines
     unique_lines_set = set()
 
-    # Iterate over all files in the specified directory
     for filename in os.listdir(input_directory):
         if filename.endswith('.txt'):
             file_path = os.path.join(input_directory, filename)
             with open(file_path, 'r', encoding='utf-8') as text_file:
-                # Read lines and add them to the set
                 for line in text_file:
                     unique_lines_set.add(line.strip())
 
-    # Sort the unique lines alphabetically
     sorted_unique_lines = sorted(unique_lines_set)
 
-    # Write the sorted unique lines to the specified output file
     with open(output_file_name, 'w', encoding='utf-8') as output_file:
         for line in sorted_unique_lines:
             output_file.write(line + '\n')

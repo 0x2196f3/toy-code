@@ -4,14 +4,8 @@ from typing import List, Tuple
 
 
 def sort_and_clean_file(lines: List[str], encoding: str) -> List[str]:
-    """
-    Accepts lines (list of strings) and encoding (the encoding used to read them),
-    returns cleaned & sorted lines (list of strings).
-    """
-    # Remove empty lines and strip whitespace
     cleaned_lines = [line.strip() for line in lines if line.strip()]
 
-    # Sort case-insensitively but preserve original casing
     cleaned_lines.sort(key=lambda s: s.casefold())
 
     return cleaned_lines

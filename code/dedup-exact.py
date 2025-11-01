@@ -5,26 +5,18 @@ import logging
 import re
 from collections import defaultdict
 
-# Set up logging with StreamHandler (works on Windows PowerShell too)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler()]
 )
 
-# Regular expression to match a valid MD5 hash (32 hex characters)
 MD5_REGEX = re.compile(r"^[a-fA-F0-9]{32}$")
 
 def calculate_md5(file_path):
-    """
-    Calculate the MD5 checksum of a file using the appropriate command based on the OS.
-    Returns the MD5 hash if valid, otherwise returns None.
-    """
     if platform.system() == "Windows":
-        # Use certutil on Windows
         command = ['certutil', '-hashfile', file_path, 'MD5']
     else:
-        # Use md5sum on Linux and similar
         command = ['md5sum', file_path]
 
     try:
@@ -41,7 +33,6 @@ def calculate_md5(file_path):
     try:
         if platform.system() == "Windows":
             output_lines = result.stdout.splitlines()
-            # Expecting output with the MD5 hash on the second line
             if len(output_lines) < 2:
                 logging.error("Unexpected output format from certutil for file %s: %s", file_path, result.stdout)
                 return None
@@ -66,10 +57,7 @@ def calculate_md5(file_path):
     return computed_hash
 
 def files_are_identical(file1, file2, chunk_size=4096):
-    """
-    Compare two files' contents byte-by-byte.
-    Returns True if files are identical, otherwise False.
-    """
+
     try:
         with open(file1, 'rb') as f1, open(file2, 'rb') as f2:
             while True:
@@ -77,7 +65,7 @@ def files_are_identical(file1, file2, chunk_size=4096):
                 b2 = f2.read(chunk_size)
                 if b1 != b2:
                     return False
-                if not b1:  # End of file reached
+                if not b1:  
                     break
     except Exception as e:
         logging.error("Error comparing files %s and %s: %s", file1, file2, e)
@@ -85,18 +73,11 @@ def files_are_identical(file1, file2, chunk_size=4096):
     return True
 
 def deduplicate_files(directory):
-    """
-    Deduplicate files in the given directory based on their sizes, MD5 checksums,
-    and a final byte-by-byte comparison. Returns a summary dictionary.
-    """
-    # Mapping file size to a list of filenames
     size_map = defaultdict(list)
     total_files = 0
     removed_duplicates = 0
     errors = 0
-    skipped_files = 0  # Files skipped because MD5 couldn't be calculated
-
-    # Indexing: Group files by file size
+    skipped_files = 0  
     logging.info("Indexing files by size in directory: %s", directory)
     for root, _, files in os.walk(directory):
         for file in files:
@@ -114,9 +95,7 @@ def deduplicate_files(directory):
 
     processed_files = 0
 
-    # Second Pass: For files with same sizes, check MD5 and then do a secure comparison.
     for file_size, file_paths in size_map.items():
-        # Only potential duplicates (i.e. groups with more than one file) need further checks.
         if len(file_paths) > 1:
             md5_map = {}
             for file_path in file_paths:
@@ -129,7 +108,6 @@ def deduplicate_files(directory):
                     continue
 
                 if file_md5 in md5_map:
-                    # At least one file with the same MD5 exists.
                     canonical_file = md5_map[file_md5]
                     if files_are_identical(canonical_file, file_path):
                         try:
@@ -140,8 +118,7 @@ def deduplicate_files(directory):
                             logging.error("Failed to delete file %s: %s", file_path, e)
                             errors += 1
                     else:
-                        # MD5 collision but files are not identical. Use a unique key by appending filename.
-                        # This is extremely unlikely but handled here for completeness.
+                        
                         logging.warning("MD5 collision detected but files differ: %s and %s", canonical_file, file_path)
                         key = file_md5 + "_" + os.path.basename(file_path)
                         md5_map[key] = file_path
@@ -162,7 +139,6 @@ if __name__ == "__main__":
     logging.info("Starting deduplication in directory: %s", directory_path)
     summary = deduplicate_files(directory_path)
     
-    # Print summary output
     logging.info("Deduplication complete.")
     logging.info("Total files found: %d", summary["total_files_found"])
     logging.info("Files processed: %d", summary["files_processed"])

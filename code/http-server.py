@@ -4,28 +4,22 @@ import mimetypes
 
 class StaticServer(BaseHTTPRequestHandler):
     def do_GET(self):
-        # Serve the index.html file if the root is requested
         if self.path == '/':
             self.path = '/index.html'
         
-        # Construct the file path
         file_path = os.path.join(os.getcwd(), self.path.lstrip('/'))
 
-        # Check if the requested file exists
         if os.path.exists(file_path):
-            # Guess the MIME type of the file
             mime_type, _ = mimetypes.guess_type(file_path)
             if mime_type is None:
-                mime_type = 'application/octet-stream'  # Default to binary type if unknown
+                mime_type = 'application/octet-stream'
             
-            # Send the response
             self.send_response(200)
             self.send_header('Content-type', mime_type)
             self.end_headers()
             with open(file_path, 'rb') as file:
                 self.wfile.write(file.read())
         else:
-            # If the file does not exist, send a 404 response
             self.send_response(404)
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
