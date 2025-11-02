@@ -51,15 +51,21 @@ def convert(root):
         info_path = os.path.join(dir_path, "entry.json")
         if not os.path.exists(info_path):
             continue
-
+        dir_name = None
+        strid = None
+        subtitle = None
+        
         with open(info_path, "r", encoding="utf-8") as info:
             data = json.load(info)
             if name is None:
                 name = sanitize_filename(data["title"])
             dir_name = sanitize_filename(data["type_tag"])
-            strid = sanitize_filename(str(data.get("ep", {}).get("index", "")))
-            subtitle = sanitize_filename(str(data.get("ep", {}).get("index_title", "")))
-
+            try:
+                strid = sanitize_filename(str(data.get("ep", {}).get("index", "")))
+                subtitle = sanitize_filename(str(data.get("ep", {}).get("index_title", "")))
+            except BaseException as e:
+                pass
+                
         file_name = os.path.join(root, f"{strid} {subtitle}.mp4" if strid else f"{name}.mp4")
         audio = os.path.join(dir_path, dir_name, "audio.m4s")
         video = os.path.join(dir_path, dir_name, "video.m4s")
