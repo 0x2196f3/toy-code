@@ -120,11 +120,13 @@ def run_single_test(prompt):
         
         ttft_seconds = prompt_eval_seconds
 
-        return {
+        test_result = {
             "gen_throughput": eval_count / eval_seconds if eval_seconds > 0 else 0,
             "prompt_throughput": prompt_eval_count / prompt_eval_seconds if prompt_eval_seconds > 0 else 0,
             "ttft": ttft_seconds
         }
+        print(test_result)
+        return test_result
 
     except subprocess.CalledProcessError as e:
         print(f"\n❌ Test execution failed.")

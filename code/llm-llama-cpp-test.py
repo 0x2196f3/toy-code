@@ -86,16 +86,6 @@ def run_warmup():
         sys.exit(1)
 
 def parse_openai_timing_fields(resp_json):
-    """
-    Parse timing fields from llama.cpp OpenAI-compatible response JSON.
-    Returns (eval_count, eval_duration_ns, prompt_eval_count, prompt_eval_duration_ns).
-    Uses these mappings based on the provided example:
-      - timings.predicted_n -> eval_count
-      - timings.predicted_ms -> eval_duration_ns (ms -> ns)
-      - timings.prompt_n -> prompt_eval_count
-      - timings.prompt_ms -> prompt_eval_duration_ns (ms -> ns)
-    Falls back to sensible defaults if fields are missing.
-    """
     eval_count = 0
     eval_duration_ns = 1
     prompt_eval_count = 0
@@ -106,7 +96,6 @@ def parse_openai_timing_fields(resp_json):
 
     timings = resp_json.get("timings") or {}
     if isinstance(timings, dict):
-        # predicted -> generation/completion metrics
         predicted_n = timings.get("predicted_n")
         predicted_ms = timings.get("predicted_ms")
         if isinstance(predicted_n, (int, float)):
@@ -114,7 +103,6 @@ def parse_openai_timing_fields(resp_json):
         if isinstance(predicted_ms, (int, float)):
             eval_duration_ns = int(predicted_ms * 1_000_000)  # ms -> ns
 
-        # prompt -> prompt-processing metrics
         prompt_n = timings.get("prompt_n")
         prompt_ms = timings.get("prompt_ms")
         if isinstance(prompt_n, (int, float)):
@@ -122,7 +110,6 @@ def parse_openai_timing_fields(resp_json):
         if isinstance(prompt_ms, (int, float)):
             prompt_eval_duration_ns = int(prompt_ms * 1_000_000)  # ms -> ns
 
-    # If predicted fields missing, try fallback to usage token counts
     if eval_count == 0:
         usage = resp_json.get("usage") or {}
         completion_tokens = usage.get("completion_tokens")
@@ -181,11 +168,13 @@ def run_single_test(prompt):
         eval_seconds = eval_duration_ns / 1_000_000_000
         prompt_eval_seconds = prompt_eval_duration_ns / 1_000_000_000
 
-        return {
+        test_result = {
             "gen_throughput": (eval_count / eval_seconds) if eval_seconds > 0 else 0,
             "prompt_throughput": (prompt_eval_count / prompt_eval_seconds) if prompt_eval_seconds > 0 else 0,
             "ttft": prompt_eval_seconds
         }
+        print(test_result)
+        return test_result
 
     except subprocess.CalledProcessError as e:
         print(f"\n❌ Test execution failed.")
