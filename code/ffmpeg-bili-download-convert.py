@@ -64,9 +64,13 @@ def convert(root):
                 strid = sanitize_filename(str(data.get("ep", {}).get("index", "")))
                 subtitle = sanitize_filename(str(data.get("ep", {}).get("index_title", "")))
             except BaseException as e:
-                pass
+                try:
+                    strid = sanitize_filename(str(data.get("page_data", {}).get("page", "")))
+                    subtitle = sanitize_filename(str(data.get("page_data", {}).get("part", "")))
+                except BaseException as e:
+                    pass
                 
-        file_name = os.path.join(root, f"{strid} {subtitle}.mp4" if strid else f"{name}.mp4")
+        file_name = os.path.join(root, f"{strid}_{subtitle}.mp4" if strid else f"{name}.mp4")
         audio = os.path.join(dir_path, dir_name, "audio.m4s")
         video = os.path.join(dir_path, dir_name, "video.m4s")
         
