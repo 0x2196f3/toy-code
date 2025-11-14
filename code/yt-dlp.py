@@ -60,7 +60,6 @@ def _append_line_safe(path: str, text: str):
     except Exception:
         pass
         
-
 def extract_youtube_tag_from_line(line: str) -> Optional[str]:
     if line is None:
         return None
@@ -102,7 +101,6 @@ def extract_youtube_tag_from_line(line: str) -> Optional[str]:
     result = "".join(cleaned)
     return result
 
-
 def enqueue_lines(stream, q: queue.Queue, tag: str):
     try:
         for line in iter(stream.readline, ""):
@@ -131,7 +129,7 @@ def dedupe_file(path):
     except Exception:
         pass
         
-def download_single(url: str, resolution: str = "4K") -> int:
+def build_basic_cmd(resolution, force_ipvx):
     yt_dlp_exe = os.path.join(".", "yt-dlp.exe")
     if not os.path.isfile(yt_dlp_exe):
         found = shutil.which("yt-dlp.exe") or shutil.which("yt-dlp")
@@ -141,7 +139,7 @@ def download_single(url: str, resolution: str = "4K") -> int:
     cmd = [yt_dlp_exe]
 
     if resolution == "4K":
-        cmd += ["-f", "bv*+ba+ba.1"]
+        cmd += ["-S", "+res:2160,br"]
     elif resolution == "1080P":
         cmd += ["-S", "+res:1080,br"]
     elif resolution == "480P":
@@ -150,20 +148,30 @@ def download_single(url: str, resolution: str = "4K") -> int:
         cmd += ["-S", "+res:360,br"]
     else:
         cmd += ["-S", "+res:720,br"]
-    
-
+        
+    if force_ipvx:
+        cmd += [force_ipvx]
+        
     cmd += [
+        "-f", "bv+(ba[format_note*=original]/ba)",
+        "--abort-on-unavailable-fragments",
         "--embed-thumbnail",
         "--embed-metadata",
         "--embed-subs",
         "--embed-chapters",
-        "--no-playlist",
         "--paths", "temp:./tmp",
-        "-o", fr".\download\%(title.0:50)s_[%(id)s].%(ext)s",
         "--merge-output-format", "mp4",
         "--remux-video", "mp4",
         "-t", "sleep",
         "--compat-options", "no-live-chat",
+    ]
+        
+def download_single(url: str, resolution: str = "4K", force_ipvx = None) -> int:
+    cmd = build_basic_cmd(resolution, force_ipvx)
+
+    cmd += [
+        "--no-playlist",
+        "-o", fr".\download\%(title.0:50)s_[%(id)s].%(ext)s",
         url,
     ]
 
@@ -217,7 +225,7 @@ def download_single(url: str, resolution: str = "4K") -> int:
     return retcode
 
         
-def download_batch(archive_path: str, url: str, resolution: str = "720P", append_mode: bool = False) -> int:
+def download_batch(archive_path: str, url: str, resolution: str = "720P", append_mode: bool = False, force_ipvx = None) -> int:
     if not os.path.isfile(archive_path):
         print(f"ERROR: archive file does not exist: {archive_path}", file=sys.stderr)
         return 1
@@ -235,40 +243,15 @@ def download_batch(archive_path: str, url: str, resolution: str = "720P", append
     tmp_channel_dir = os.path.join(".", "download", channel_name)
     os.makedirs(tmp_channel_dir, exist_ok=True)
 
-    yt_dlp_exe = os.path.join(".", "yt-dlp.exe")
-    if not os.path.isfile(yt_dlp_exe):
-        found = shutil.which("yt-dlp.exe") or shutil.which("yt-dlp")
-        if found:
-            yt_dlp_exe = found
-
-    cmd = [yt_dlp_exe]
-    cmd += ["--download-archive", archive_path]
+    cmd = build_basic_cmd(resolution, force_ipvx)
+    
     if append_mode:
         cmd += ["--break-on-existing"]
-
-    if resolution == "4K":
-        cmd += ["-f", "bv*+ba+ba.1"]
-    elif resolution == "1080P":
-        cmd += ["-S", "+res:1080,br"]
-    elif resolution == "480P":
-        cmd += ["-S", "+res:480,br"]
-    elif resolution == "360P":
-        cmd += ["-S", "+res:360,br"]
-    else:
-        cmd += ["-S", "+res:720,br"]
-
+    
     cmd += [
-        "--embed-thumbnail",
-        "--embed-metadata",
-        "--embed-subs",
-        "--embed-chapters",
+        "--download-archive", archive_path,
         "-o", fr".\download\{channel_name}\%(title.0:50)s_[%(id)s].%(ext)s",
-        "--paths", "temp:./tmp",
-        "--merge-output-format", "mp4",
-        "--remux-video", "mp4",
-        "-t", "sleep",
-        "--compat-options", "no-live-chat",
-        url,
+        url
     ]
     
     print_cmd(cmd)
@@ -337,7 +320,11 @@ def main(argv):
     group.add_argument("--id", help='Channel ID without \'@\' (will be expanded to three URLs)')
     group.add_argument("--single", help='Single URL download; if set, other args are ignored')
     p.add_argument("--append", "-a", action="store_true", help='If set, add --break-on-existing to yt-dlp')
-    p.add_argument("--no-stream", action="store_true", help='(Only for --id) Do not include the /streams URL when expanding a channel ID')
+    p.add_argument("--no-shorts", dest="shorts", action="store_false", default=True, help="Include /shorts when expanding a channel (default: true).")
+    p.add_argument("--no-streams", dest="streams", action="store_false", default=True, help="Include /streams when expanding a channel (default: true).")
+    ip_group = p.add_mutually_exclusive_group()
+    ip_group.add_argument("-4", dest="ipv", action="store_const", const="-4", help="Force IPv4 when downloading.")
+    ip_group.add_argument("-6", dest="ipv", action="store_const", const="-6", help="Force IPv6 when downloading.")
 
     args = p.parse_args(argv)
     resolution = args.resolution if args.resolution is not None else "720P"
@@ -349,19 +336,18 @@ def main(argv):
     append_mode = args.append
     
     if args.url:
-        return download_batch(archive_path=archive_path, url=args.url, resolution=resolution, append_mode=append_mode)
+        return download_batch(archive_path=archive_path, url=u, resolution=resolution, append_mode=append_mode, force_ipvx=args.ipv)
     else:
         cid = args.id
-        urls = [
-            f"https://youtube.com/@{cid}/videos",
-            f"https://youtube.com/@{cid}/shorts",
-        ]
-        if not args.no_stream:
+        urls = [f"https://youtube.com/@{cid}/videos"]
+        if args.shorts:
+            urls.append(f"https://youtube.com/@{cid}/shorts")
+        if args.streams:
             urls.append(f"https://youtube.com/@{cid}/streams")
 
         final_ret = 0
         for u in urls:
-            ret = download_batch(archive_path=archive_path, url=u, resolution=resolution, append_mode=append_mode)
+            ret = download_batch(archive_path=archive_path, url=u, resolution=resolution, append_mode=append_mode, force_ipvx=args.ipv)
             if ret != 0:
                 final_ret = ret
         return final_ret

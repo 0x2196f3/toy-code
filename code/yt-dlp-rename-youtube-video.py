@@ -10,12 +10,9 @@ from urllib.parse import urlparse, parse_qs, unquote
 import itertools
 FFPROBE = "./ffprobe.exe"
 
-
-
 MAX_BYTES=255
 
 def extract_video_id_from_query(qs):
-    # parse_qs returns lists; ensure we take first and trim to 11 chars
     vid_list = qs.get("v")
     if not vid_list:
         return None
