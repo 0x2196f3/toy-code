@@ -38,7 +38,7 @@ RUN apt-get update \
     && find /var/cache -type f -delete
 
 COPY --from=build /app/lib/ /app
-COPY --from=build /app/full/llama-server /app
+COPY --from=build /app/dist/* /app
 
 ENV LLAMA_ARG_HOST=0.0.0.0
 
