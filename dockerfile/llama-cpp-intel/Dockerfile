@@ -23,12 +23,9 @@ RUN rm -rf build && \
         -DCMAKE_CXX_FLAGS="-O3 -march=${MARCH}" && \
     cmake --build build --config Release
 
-RUN mkdir -p /app/dist/lib && \
-    find build -name "*.so" -exec cp {} /app/dist/lib \;
+RUN mkdir -p /app/lib && \
+    find build -name "*.so*" -exec cp -P {} /app/lib \;
 
-RUN cp build/bin/llama-server /app/dist/ && \
-    strip /app/dist/llama-server && \
-    find /app/dist/lib -name "*.so*" -type f -exec strip --strip-unneeded {} \; 2>/dev/null || true
 
 FROM intel/oneapi-runtime:2025.3.0-0-devel-ubuntu24.04 AS final
 
@@ -40,9 +37,9 @@ RUN apt-get update \
     && find /var/cache/apt/archives /var/lib/apt/lists -not -name lock -type f -delete \
     && find /var/cache -type f -delete
 
-COPY --from=build /app/dist/* /app
+COPY --from=build /app/lib/ /app
+COPY --from=build /app/full/llama-server /app
 
-ENV LD_LIBRARY_PATH=/app
 ENV LLAMA_ARG_HOST=0.0.0.0
 
 WORKDIR /app
