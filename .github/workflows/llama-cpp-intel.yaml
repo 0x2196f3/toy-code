@@ -20,7 +20,7 @@ jobs:
       packages: write
 
     strategy:
-      # max-parallel: 1
+      max-parallel: 1
       matrix:
         march: [alderlake, skylake]
     steps:
