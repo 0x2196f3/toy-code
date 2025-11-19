@@ -1,0 +1,7 @@
+*://*.reddit.com/*
+*://*.makerworld.com/*
+*://*.makerworld.com.cn/*
+*://*.csdn.net/*
+*://*.gitcode.com/*
+*://*.facebook.com/*
+*://*.instagram.com/*
