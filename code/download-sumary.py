@@ -7,7 +7,6 @@ def get_file_creation_time(file_path):
     return os.path.getctime(file_path)
 
 def format_size(size_bytes):
-    """Helper to format bytes into readable GB/MB"""
     if size_bytes >= 1024 * 1024 * 1024:
         return f"{size_bytes / (1024 * 1024 * 1024):.2f} GB"
     elif size_bytes >= 1024 * 1024:
@@ -75,21 +74,10 @@ def print_chart(file_sizes_by_hour, file_counts_by_hour, global_stats):
         duration_str = "0:00:00"
         total_avg_speed_mb = 0
         avg_file_size = 0
-
+    
     print("="*70)
     print(f" DOWNLOAD SUMMARY: {directory}")
     print("="*70)
-    print(f" Total Files      : {total_files:,}")
-    print(f" Total Size       : {format_size(total_size)}")
-    print(f" Avg File Size    : {format_size(avg_file_size)}")
-    print("-" * 30)
-    print(f" First File       : {start_date}")
-    print(f" Last File        : {end_date}")
-    print(f" Total Duration   : {duration_str}")
-    print("-" * 30)
-    print(f" Overall Speed    : {total_avg_speed_mb:.2f} MB/s")
-    print("="*70)
-    print("\n")
 
     print("Hour             | Size (GB)  | Avg Speed (MB/s) | File Count")
     print("-----------------|------------|------------------|------------")
@@ -101,12 +89,24 @@ def print_chart(file_sizes_by_hour, file_counts_by_hour, global_stats):
         h_avg_speed = (h_total_size / (1024 * 1024)) / 3600 if h_file_count > 0 else 0
         
         print(f"{hour} | {h_total_size / (1024 * 1024 * 1024):<10.2f} | {h_avg_speed:<16.2f} | {h_file_count:<10}")
+    
+    print("="*70)
+    print(f" Total Files      : {total_files:,}")
+    print(f" Total Size       : {format_size(total_size)}")
+    print(f" Avg File Size    : {format_size(avg_file_size)}")
+    print("-" * 30)
+    print(f" First File       : {start_date}")
+    print(f" Last File        : {end_date}")
+    print(f" Total Duration   : {duration_str}")
+    print("-" * 30)
+    print(f" Overall Speed    : {total_avg_speed_mb:.2f} MB/s")
+    print("="*70)
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
     
-    directory = './dl' 
+    directory = './' 
     
     if os.path.exists(directory):
         file_sizes, file_counts, stats = list_files_and_summarize_sizes(directory)
@@ -114,4 +114,4 @@ if __name__ == "__main__":
     else:
         print(f"Error: Directory '{directory}' not found.")
     
-    input("\nPress Enter to exit...")
+    input("Press Enter to exit...")
