@@ -92,9 +92,12 @@ def remove_empty_dirs(root_dir, skip_paths=None):
     return removed
 
 if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_dir)
     if not os.path.isdir(ROOT_DIR):
         raise SystemExit(f"Root directory does not exist: {ROOT_DIR}")
     script_path = os.path.abspath(__file__) if '__file__' in globals() else None
+    
     skip_paths = set()
     if script_path:
         script_dir = os.path.abspath(os.path.dirname(script_path))
