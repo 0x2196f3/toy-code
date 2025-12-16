@@ -7,13 +7,32 @@ from multiprocessing import Pool, cpu_count
 from datetime import datetime
 import logging
 
-SRC_ROOT = Path("png")
-DST_ROOT = Path("jpg")
+SRC_ROOT = Path("./png")
+DST_ROOT = Path("./jpg")
 MAGICK = Path("./ImageMagick-full/magick.exe")
 QUALITY = "90"  
 
 WORKERS = max(1, cpu_count() - 1)
 MAX_FILES_PER_JOB = 200
+
+EXCLUDE_FILENAMES = {
+    ".ds_store",
+    "thumbs.db",
+    "desktop.ini",
+    "ehthumbs.db"
+}
+
+EXCLUDE_EXTENSIONS = {
+    ".exe",
+    ".py",
+    ".pyc",
+    ".bat",
+    ".sh",
+    ".txt",
+    ".md",
+    ".log",
+    ".tmp"
+}
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,12 +50,20 @@ summary = {
     "non_png_found": 0,
     "non_png_synced": 0,
     "non_png_skipped": 0,
+    "files_ignored_src": 0,
     "files_deleted": 0,
     "dirs_deleted": 0,
     "convert_errors": 0,
     "copy_errors": 0,
     "delete_errors": 0,
 }
+
+def is_excluded(p: Path) -> bool:
+    if p.name.lower() in EXCLUDE_FILENAMES:
+        return True
+    if p.suffix.lower() in EXCLUDE_EXTENSIONS:
+        return True
+    return False
 
 def ensure_dir(p: Path):
     if not p.exists():
@@ -48,8 +75,8 @@ def ensure_dir(p: Path):
             logging.error(f"Failed to create directory {p}: {e}")
 
 def gather_tasks(src_root: Path, dst_root: Path):
-    mogrify_tasks = []
-    copy_tasks = []
+    mogrify_tasks = [] 
+    copy_tasks = []    
 
     for src_dir, _, files in os.walk(src_root):
         src_dir = Path(src_dir)
@@ -63,6 +90,10 @@ def gather_tasks(src_root: Path, dst_root: Path):
         for fname in files:
             src_file = src_dir / fname
             
+            if is_excluded(src_file):
+                summary["files_ignored_src"] += 1
+                continue
+
             if src_file.suffix.lower() == ".png":
                 summary["png_found"] += 1
                 dst_jpg = dst_dir / (src_file.stem + ".jpg")
@@ -168,19 +199,23 @@ def mirror_delete_extras(src_root: Path, dst_root: Path):
 
         for fname in files:
             dst_file = dst_dir_path.joinpath(fname)
-            
             should_delete = False
-            
-            if dst_file.suffix.lower() == ".jpg":
-                src_png = src_dir_path.joinpath(dst_file.stem + ".png")
-                src_exact_jpg = src_dir_path.joinpath(dst_file.name)
-                
-                if not src_png.exists() and not src_exact_jpg.exists():
-                    should_delete = True
-            else:
-                src_equiv = src_dir_path.joinpath(fname)
-                if not src_equiv.exists():
-                    should_delete = True
+
+            if is_excluded(dst_file):
+                should_delete = True
+                logging.info(f"Deleting excluded file found in dest: {dst_file.name}")
+
+            elif not should_delete:
+                if dst_file.suffix.lower() == ".jpg":
+                    src_png = src_dir_path.joinpath(dst_file.stem + ".png")
+                    src_exact_jpg = src_dir_path.joinpath(dst_file.name)
+                    
+                    if not src_png.exists() and not src_exact_jpg.exists():
+                        should_delete = True
+                else:
+                    src_equiv = src_dir_path.joinpath(fname)
+                    if not src_equiv.exists():
+                        should_delete = True
 
             if should_delete:
                 try:
@@ -225,6 +260,8 @@ def main():
         f"Duration:   {duration:.2f} seconds",
         "-" * 30,
         f"Directories created: {summary['dirs_created']}",
+        "-" * 30,
+        f"Source files ignored (Excluded): {summary['files_ignored_src']}",
         "-" * 30,
         f"PNGs found in source: {summary['png_found']}",
         f"JPEGs converted/updated: {summary['jpg_converted']}",
