@@ -224,13 +224,38 @@
     }
 
     function decode() {
+      function base64ToUint8Array(base64) {
+        base64 = base64.replace(/\s+/g, '');
+        const bin = atob(base64);
+        const len = bin.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+        return bytes;
+      }
+
+      function uint8ArrayToBinaryString(bytes) {
+        const CHUNK = 0x8000;
+        let result = '';
+        for (let i = 0; i < bytes.length; i += CHUNK) {
+          const slice = bytes.subarray(i, i + CHUNK);
+          result += String.fromCharCode.apply(null, slice);
+        }
+        return result;
+      }
+
       const input = document.getElementById('input').value;
+      const outEl = document.getElementById('output');
+
       try {
-        const output = decodeURIComponent(escape(atob(input)));
-        document.getElementById('output').value = output;
+        outEl.value = decodeURIComponent(escape(atob(input)));
       } catch (e) {
-        document.getElementById('output').value = 'Error: Invalid Base64 string.';
-        console.error(e);
+        try {
+          const bytes = base64ToUint8Array(input);
+          outEl.value = uint8ArrayToBinaryString(bytes);
+        } catch (e2) {
+          outEl.value = 'Error: Invalid Base64 string.';
+          console.error(e2);
+        }
       }
     }
 
@@ -266,4 +291,5 @@
     }
   </script>
 </body>
+
 </html>
