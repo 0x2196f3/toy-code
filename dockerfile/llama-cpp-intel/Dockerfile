@@ -2,11 +2,11 @@ ARG TARGETARCH=amd64
 ARG MARCH
 ARG VERSION
 
-FROM intel/oneapi-basekit:2025.2.2-0-devel-ubuntu22.04 AS build
+FROM intel/oneapi-basekit:2025.3.0-0-devel-ubuntu22.04 AS build
 
 ARG TARGETARCH
-# ARG MARCH
-# ARG VERSION
+ARG MARCH
+ARG VERSION
 
 RUN apt-get update && \
     apt-get install -y build-essential git cmake libcurl4-openssl-dev jq wget curl
@@ -22,9 +22,7 @@ RUN if [ -n "${VERSION}" ]; then \
     wget -O- "$SRC_URL" | tar -xz --strip-components=1
 
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-#        cmake -S . -B build -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx -DCMAKE_C_FLAGS="-O3 -march=${MARCH}" -DCMAKE_CXX_FLAGS="-O3 -march=${MARCH}" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DLLAMA_BUILD_TESTS=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON; \
-        cmake -S . -B build -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx -DCMAKE_C_FLAGS="-O3 -march=x86-64-v3" -DCMAKE_CXX_FLAGS="-O3 -march=x86-64-v3" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_AVX2=ON ; \
-
+        cmake -S . -B build -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx -DCMAKE_C_FLAGS="-O3 -march=${MARCH}" -DCMAKE_CXX_FLAGS="-O3 -march=${MARCH}" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DLLAMA_BUILD_TESTS=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON; \
     else \
         echo "Unsupported architecture"; \
         exit 1; \
@@ -43,7 +41,7 @@ RUN mkdir -p /app/full \
     && cp requirements.txt /app/full \
     && cp .devops/tools.sh /app/full/tools.sh
 
-FROM intel/oneapi-runtime:2025.2.2-0-devel-ubuntu22.04 AS final
+FROM intel/oneapi-runtime:2025.3.0-0-devel-ubuntu22.04 AS final
 
 RUN apt-get update \
     && apt-get install -y libgomp1 curl\
