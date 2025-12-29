@@ -36,8 +36,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
             -DGGML_BLAS=ON \
             -DGGML_BLAS_VENDOR=Intel10_64lp \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_FLAGS="-O3 -march=alderlake -mtune=alderlake -mno-avx512f -fno-math-errno -fno-trapping-math" \
-            -DCMAKE_CXX_FLAGS="-O3 -march=alderlake -mtune=alderlake -mno-avx512f -fno-math-errno -fno-trapping-math" \
+            -DCMAKE_C_FLAGS="-O3 -march=x86-64-v3 -mtune=alderlake -mno-avx512f -fno-math-errno -fno-trapping-math" \
+            -DCMAKE_CXX_FLAGS="-O3 -march=x86-64-v3 -mtune=alderlake -mno-avx512f -fno-math-errno -fno-trapping-math" \
             -DGGML_NATIVE=OFF \
             -DGGML_CPU_ALL_VARIANTS=OFF \
             -DGGML_AVX=ON \
