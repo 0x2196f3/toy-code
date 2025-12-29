@@ -2,7 +2,7 @@ ARG TARGETARCH=amd64
 ARG MARCH
 ARG VERSION
 
-FROM intel/oneapi-basekit:2025.3.0-0-devel-ubuntu22.04 AS build
+FROM intel/oneapi-basekit:2025.2.2-0-devel-ubuntu22.04 AS build
 
 ARG TARGETARCH
 # ARG MARCH
@@ -42,7 +42,7 @@ RUN mkdir -p /app/full \
     && cp requirements.txt /app/full \
     && cp .devops/tools.sh /app/full/tools.sh
 
-FROM intel/oneapi-runtime:2025.3.0-0-devel-ubuntu22.04 AS final
+FROM intel/oneapi-runtime:2025.2.2-0-devel-ubuntu22.04 AS final
 
 RUN apt-get update \
     && apt-get install -y libgomp1 curl\
