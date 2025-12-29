@@ -1,6 +1,6 @@
 ARG TARGETARCH=amd64
 ARG MARCH=alderlake
-ARG VERSION
+ARG VERSION=b7406
 
 FROM intel/oneapi-basekit:2025.3.0-0-devel-ubuntu22.04 AS build
 
@@ -14,7 +14,7 @@ RUN apt-get update && \
 WORKDIR /app
 
 RUN if [ -n "${VERSION}" ]; then \
-        SRC_URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/b7406.tar.gz"; \
+        SRC_URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/${VERSION}.tar.gz"; \
     else \
         SRC_URL=$(curl -s "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" | jq -r .tarball_url); \
     fi && \
@@ -27,8 +27,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
             -DGGML_BLAS=ON \
             -DGGML_BLAS_VENDOR=Intel10_64lp \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_FLAGS="-O3 -xALDERLAKE -mtune=alderlake" \
-            -DCMAKE_CXX_FLAGS="-O3 -xALDERLAKE -mtune=alderlake" \
+            -DCMAKE_C_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
+            -DCMAKE_CXX_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
             -DGGML_NATIVE=OFF \
             -DGGML_CPU_ALL_VARIANTS=OFF \
             -DGGML_AVX=ON \
