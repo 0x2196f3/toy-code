@@ -1,5 +1,6 @@
 ARG MARCH=alderlake
 ARG TARGETARCH=amd64
+ARG VERSION
 
 FROM intel/oneapi-basekit:2025.3.0-0-devel-ubuntu22.04 AS build
 
@@ -8,9 +9,14 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-RUN for i in 1 2 3; do \
-      LATEST_RELEASE_URL=$(curl -s "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" | jq -r .tarball_url) && \
-      wget -qO- "$LATEST_RELEASE_URL" | tar -xz --strip-components=1 && break || \
+RUN set -eux; \
+    for i in 1 2 3; do \
+      if [ -n "${VERSION:-}" ]; then \
+        URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/${VERSION}.tar.gz"; \
+      else \
+        URL=$(curl -s "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" | jq -r .tarball_url); \
+      fi && \
+      wget -qO- "$URL" | tar -xz --strip-components=1 && break || \
       { echo "Attempt $i failed, retrying..."; sleep 2; }; \
     done
     
