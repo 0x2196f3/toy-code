@@ -1,8 +1,12 @@
-ENV TARGETARCH=amd64
-ENV MARCH=alderlake
-ENV VERSION=7389
+ARG TARGETARCH=amd64
+ARG MARCH
+ARG VERSION=b7389
 
 FROM intel/oneapi-basekit:2025.3.0-0-devel-ubuntu22.04 AS build
+
+ARG TARGETARCH
+ARG MARCH
+ARG VERSION
 
 RUN apt-get update && \
     apt-get install -y build-essential git cmake libcurl4-openssl-dev jq wget curl
