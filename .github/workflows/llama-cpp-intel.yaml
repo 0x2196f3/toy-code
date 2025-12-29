@@ -60,5 +60,7 @@ jobs:
           push: true
           tags: |
             ${{ steps.meta.outputs.tags }}-${{ matrix.march }}
+            ${{ steps.meta.outputs.tags }}-b7389-${{ matrix.march }}
           build-args: |
             MARCH=${{ matrix.march }}
+            VERSION=b7389
