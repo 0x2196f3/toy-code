@@ -5,7 +5,7 @@ ARG VERSION
 FROM intel/oneapi-basekit:2025.3.0-0-devel-ubuntu22.04 AS build
 
 ARG TARGETARCH
-# ARG MARCH
+ARG MARCH
 # ARG VERSION
 
 RUN apt-get update && \
