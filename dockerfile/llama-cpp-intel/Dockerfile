@@ -1,6 +1,6 @@
 ARG MARCH=alderlake
 ARG TARGETARCH=amd64
-ARG VERSION
+ARG VERSION=b7389
 
 FROM intel/oneapi-basekit:2025.3.0-0-devel-ubuntu22.04 AS build
 
@@ -10,15 +10,12 @@ RUN apt-get update && \
 WORKDIR /app
 
 RUN set -eux; \
-    for i in 1 2 3; do \
-      if [ -n "${VERSION:-}" ]; then \
-        URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/${VERSION}.tar.gz"; \
-      else \
-        URL=$(curl -s "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" | jq -r .tarball_url); \
-      fi && \
-      wget -qO- "$URL" | tar -xz --strip-components=1 && break || \
-      { echo "Attempt $i failed, retrying..."; sleep 2; }; \
-    done
+    if [ -n "${VERSION:-}" ]; then \
+      URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/${VERSION}.tar.gz"; \
+    else \
+      URL=$(curl -s "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" | jq -r .tarball_url); \
+    fi && \
+    wget -qO- "$URL" | tar -xz --strip-components=1
     
 RUN  cmake -S . -B build -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx -DCMAKE_C_FLAGS="-O3 -march=${MARCH}" -DCMAKE_CXX_FLAGS="-O3 -march=${MARCH}" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DLLAMA_BUILD_TESTS=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON; cmake --build build -j $(nproc)
 
