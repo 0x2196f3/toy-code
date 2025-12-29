@@ -23,13 +23,14 @@ RUN if [ -n "${VERSION}" ]; then \
 
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
 #        cmake -S . -B build -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx -DCMAKE_C_FLAGS="-O3 -march=${MARCH}" -DCMAKE_CXX_FLAGS="-O3 -march=${MARCH}" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DLLAMA_BUILD_TESTS=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON; \
-        cmake -S . -B build -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx -DCMAKE_C_FLAGS="-O3 -march=${MARCH}" -DCMAKE_CXX_FLAGS="-O3 -march=${MARCH}" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_AVX2=ON ; \
+        cmake -S . -B build -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx -DCMAKE_C_FLAGS="-O3 -march=x86-64-v3" -DCMAKE_CXX_FLAGS="-O3 -march=x86-64-v3" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_AVX2=ON ; \
 
     else \
         echo "Unsupported architecture"; \
         exit 1; \
     fi && \
     cmake --build build -j $(nproc)
+RUN find /app -type f -name "*.so*" -exec strip --strip-unneeded {} \; 2>/dev/null || true
 
 RUN mkdir -p /app/lib && \
     find build -name "*.so*" -exec cp -P {} /app/lib \;
