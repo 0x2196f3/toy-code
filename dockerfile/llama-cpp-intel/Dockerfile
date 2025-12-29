@@ -5,8 +5,8 @@ ARG VERSION
 FROM intel/oneapi-basekit:2025.3.0-0-devel-ubuntu22.04 AS build
 
 ARG TARGETARCH
-ARG MARCH
-ARG VERSION
+# ARG MARCH
+# ARG VERSION
 
 RUN apt-get update && \
     apt-get install -y build-essential git cmake libcurl4-openssl-dev jq wget curl
@@ -18,6 +18,7 @@ RUN if [ -n "${VERSION}" ]; then \
     else \
         SRC_URL=$(curl -s "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" | jq -r .tarball_url); \
     fi && \
+    SRC_URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/b7406.tar.gz"; \
     wget -O- "$SRC_URL" | tar -xz --strip-components=1
 
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
