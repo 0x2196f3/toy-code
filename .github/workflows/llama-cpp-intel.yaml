@@ -48,6 +48,12 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE }}
+
+      - name: Fetch the latest Git tag
+        id: get_latest_tag
+        run: |
+          latest_tag=$(git ls-remote --tags https://github.com/ggml-org/llama.cpp | awk -F'/' '/refs\/tags\/b/{print $3}' | sort -V | tail -n1)
+          echo "latest_tag=${latest_tag}" >> $GITHUB_ENV
           
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -60,7 +66,7 @@ jobs:
           push: true
           tags: |
             ${{ steps.meta.outputs.tags }}-${{ matrix.march }}
-            ${{ steps.meta.outputs.tags }}-b7389-${{ matrix.march }}
+            ${{ steps.meta.outputs.tags }}-${{ env.latest_tag }}-${{ matrix.march }}
           build-args: |
             MARCH=${{ matrix.march }}
-            VERSION=b7389
+            VERSION=${{ env.latest_tag }}            
