@@ -1,5 +1,5 @@
 ENV TARGETARCH=amd64
-ENV MARCH
+ENV MARCH=alderlake
 ENV VERSION=7389
 
 FROM intel/oneapi-basekit:2025.3.0-0-devel-ubuntu22.04 AS build
