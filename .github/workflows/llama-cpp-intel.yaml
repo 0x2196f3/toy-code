@@ -1,4 +1,4 @@
-name: llama-server-intel Compile & Build & Push 
+name: llama-cpp-intel Compile & Build & Push 
 
 on:
   #push:
@@ -53,8 +53,7 @@ jobs:
         id: get_latest_tag
         run: |
           latest_tag=$(git ls-remote --tags https://github.com/ggml-org/llama.cpp | awk -F'/' '/refs\/tags\/b/{print $3}' | sort -V | tail -n1)
-          # echo "latest_tag=${latest_tag}" >> $GITHUB_ENV
-          echo "latest_tag=b7406" >> $GITHUB_ENV
+          echo "latest_tag=${latest_tag}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
