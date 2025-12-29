@@ -27,8 +27,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
             -DGGML_BLAS=ON \
             -DGGML_BLAS_VENDOR=Intel10_64lp \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_FLAGS="-O3 -xALDERLAKE -mtune=alderlake -mno-avx512f" \
-            -DCMAKE_CXX_FLAGS="-O3 -xALDERLAKE -mtune=alderlake -mno-avx512f" \
+            -DCMAKE_C_FLAGS="-O3 -xALDERLAKE -mtune=alderlake" \
+            -DCMAKE_CXX_FLAGS="-O3 -xALDERLAKE -mtune=alderlake" \
             -DGGML_NATIVE=OFF \
             -DGGML_CPU_ALL_VARIANTS=OFF \
             -DGGML_AVX=ON \
@@ -68,9 +68,6 @@ RUN apt-get update \
     && find /var/cache -type f -delete
 
 ENV LLAMA_ARG_HOST=0.0.0.0
-
-ENV MKL_NUM_THREADS=1 
-ENV MKL_DYNAMIC=FALSE
 
 COPY --from=build /app/lib/ /app
 COPY --from=build /app/full/llama-server /app
