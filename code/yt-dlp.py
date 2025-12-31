@@ -129,7 +129,7 @@ def dedupe_file(path):
     except Exception:
         pass
         
-def build_basic_cmd(resolution, force_ipvx):
+def build_basic_cmd(resolution, force_ipvx) -> list[str]:
     yt_dlp_exe = os.path.join(".", "yt-dlp.exe")
     if not os.path.isfile(yt_dlp_exe):
         found = shutil.which("yt-dlp.exe") or shutil.which("yt-dlp")
@@ -164,7 +164,9 @@ def build_basic_cmd(resolution, force_ipvx):
         "--remux-video", "mp4",
         "-t", "sleep",
         "--compat-options", "no-live-chat",
+        "--retries", "30"
     ]
+    return cmd
         
 def download_single(url: str, resolution: str = "4K", force_ipvx = None) -> int:
     cmd = build_basic_cmd(resolution, force_ipvx)
@@ -336,7 +338,7 @@ def main(argv):
     append_mode = args.append
     
     if args.url:
-        return download_batch(archive_path=archive_path, url=u, resolution=resolution, append_mode=append_mode, force_ipvx=args.ipv)
+        return download_batch(archive_path=archive_path, url=args.url, resolution=resolution, append_mode=append_mode, force_ipvx=args.ipv)
     else:
         cid = args.id
         urls = [f"https://youtube.com/@{cid}/videos"]
