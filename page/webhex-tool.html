@@ -300,9 +300,9 @@ Check your Browserslist config to be sure that your targets are set up correctly
                 for(let i=0; i<len; i++) {
                     const byte = rawData[i];
                     if (byte >= 32 && byte <= 126) {
-                        formattedItems.push(String.fromCharCode(byte));
+                        formattedItems.push('[' + String.fromCharCode(byte) + ']');
                     } else {
-                        formattedItems.push("·");
+                        formattedItems.push(pad(rawData[i].toString(16).toUpperCase(), 2) + ' ');
                     }
                 }
             }
@@ -312,17 +312,12 @@ Check your Browserslist config to be sure that your targets are set up correctly
             if (cols > 0) {
                 let rows = [];
                 for (let i = 0; i < formattedItems.length; i += cols) {
-                    const chunk = formattedItems.slice(i, i + cols);
-                    
-                    const joinChar = (format === 'ascii') ? '' : ' ';
-                    let rowStr = chunk.join(joinChar);
-                    
-                    rows.push(rowStr);
+                    const chunk = formattedItems.slice(i, i + cols);                   
+                    rows.push(chunk.join(' '));
                 }
                 resultText = rows.join("\n");
             } else {
-                const joinChar = (format === 'ascii') ? '' : ' ';
-                resultText = formattedItems.join(joinChar);
+                resultText = formattedItems.join(' ');
             }
 
             if (searchVal && searchVal.length > 0) {
@@ -423,4 +418,5 @@ Check your Browserslist config to be sure that your targets are set up correctly
         }
     </script>
 </body>
+
 </html>
