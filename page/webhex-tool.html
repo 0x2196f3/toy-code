@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WebHex Tool</title>
-	<script>
+    <script>
         (function() {
             if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
@@ -78,7 +78,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
   https://github.com/browserslist/browserslist#readme
 
 `))}gv.exports=Dr;function Dr(...r){let e;if(r.length===1&&V5(r[0])?(e=r[0],r=void 0):r.length===0||r.length===1&&!r[0]?r=void 0:r.length<=2&&(Array.isArray(r[0])||!r[0])?(e=r[1],r=r[0]):typeof r[r.length-1]=="object"&&(e=r.pop()),e||(e={}),e.browser)throw new Error("Change `browser` option to `overrideBrowserslist` in Autoprefixer");if(e.browserslist)throw new Error("Change `browserslist` option to `overrideBrowserslist` in Autoprefixer");e.overrideBrowserslist?r=e.overrideBrowserslist:e.browsers&&(typeof console!="undefined"&&console.warn&&(of.red?console.warn(of.red(mv.replace(/`[^`]+`/g,n=>of.yellow(n.slice(1,-1))))):console.warn(mv)),r=e.browsers);let t={ignoreUnknownVersions:e.ignoreUnknownVersions,stats:e.stats,env:e.env};function i(n){let s=hv,a=new F5(s.browsers,r,n,t),o=a.selected.join(", ")+JSON.stringify(e);return lf.has(o)||lf.set(o,new j5(s.prefixes,a,e)),lf.get(o)}return{postcssPlugin:"autoprefixer",prepare(n){let s=i({from:n.opts.from,env:e.env});return{OnceExit(a){H5(n,s),e.remove!==!1&&s.processor.remove(a,n),e.add!==!1&&s.processor.add(a,n)}}},info(n){return n=n||{},n.from=n.from||m.cwd(),U5(i(n))},options:e,browsers:r}}Dr.postcss=!0;Dr.data=hv;Dr.defaults=N5.defaults;Dr.info=()=>Dr().info()});var bv={};Ge(bv,{default:()=>W5});var W5,wv=P(()=>{u();W5=[]});var xv={};Ge(xv,{default:()=>G5});var vv,G5,kv=P(()=>{u();Xi();vv=pe(rn()),G5=St(vv.default.theme)});var Av={};Ge(Av,{default:()=>Q5});var Sv,Q5,Cv=P(()=>{u();Xi();Sv=pe(rn()),Q5=St(Sv.default)});u();"use strict";var Y5=vt(_y()),K5=vt($e()),X5=vt(yv()),Z5=vt((wv(),bv)),J5=vt((kv(),xv)),eP=vt((Cv(),Av)),tP=vt((Vs(),_f)),rP=vt((al(),sl)),iP=vt((sa(),sc));function vt(r){return r&&r.__esModule?r:{default:r}}console.warn("cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation");var Ns="tailwind",uf="text/tailwindcss",_v="/template.html",Yt,Ev=!0,Ov=0,ff=new Set,cf,Tv="",Rv=(r=!1)=>({get(e,t){return(!r||t==="config")&&typeof e[t]=="object"&&e[t]!==null?new Proxy(e[t],Rv()):e[t]},set(e,t,i){return e[t]=i,(!r||t==="config")&&pf(!0),!0}});window[Ns]=new Proxy({config:{},defaultTheme:J5.default,defaultConfig:eP.default,colors:tP.default,plugin:rP.default,resolveConfig:iP.default},Rv(!0));function Pv(r){cf.observe(r,{attributes:!0,attributeFilter:["type"],characterData:!0,subtree:!0,childList:!0})}new MutationObserver(async r=>{let e=!1;if(!cf){cf=new MutationObserver(async()=>await pf(!0));for(let t of document.querySelectorAll(`style[type="${uf}"]`))Pv(t)}for(let t of r)for(let i of t.addedNodes)i.nodeType===1&&i.tagName==="STYLE"&&i.getAttribute("type")===uf&&(Pv(i),e=!0);await pf(e)}).observe(document.documentElement,{attributes:!0,attributeFilter:["class"],childList:!0,subtree:!0});async function pf(r=!1){r&&(Ov++,ff.clear());let e="";for(let i of document.querySelectorAll(`style[type="${uf}"]`))e+=i.textContent;let t=new Set;for(let i of document.querySelectorAll("[class]"))for(let n of i.classList)ff.has(n)||t.add(n);if(document.body&&(Ev||t.size>0||e!==Tv||!Yt||!Yt.isConnected)){for(let n of t)ff.add(n);Ev=!1,Tv=e,self[_v]=Array.from(t).join(" ");let{css:i}=await(0,K5.default)([(0,Y5.default)({...window[Ns].config,_hash:Ov,content:{files:[_v],extract:{html:n=>n.split(" ")}},plugins:[...Z5.default,...Array.isArray(window[Ns].config.plugins)?window[Ns].config.plugins:[]]}),(0,X5.default)({remove:!1})]).process(`@tailwind base;@tailwind components;@tailwind utilities;${e}`);(!Yt||!Yt.isConnected)&&(Yt=document.createElement("style"),document.head.append(Yt)),Yt.textContent=i}}})();
-	</script>
+    </script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -87,10 +87,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
                     colors: {
                         primary: '#3b82f6',
                         primaryDark: '#2563eb',
-                        gray: {
-                            850: '#1f2937',
-                            950: '#030712'
-                        }
+                        gray: { 850: '#1f2937', 950: '#030712' }
                     },
                     fontFamily: {
                         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
@@ -102,137 +99,168 @@ Check your Browserslist config to be sure that your targets are set up correctly
     </script>
     
     <style>
-        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; border: 2px solid transparent; background-clip: content-box; }
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #475569; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        mark { background-color: #facc15; color: black; border-radius: 2px; padding: 0 1px; }
+        mark { background-color: #facc15; color: black; border-radius: 2px; padding: 0; }
+        ::selection { background: #3b82f6; color: white; }
 
-        .icon-sm { width: 1.25rem; height: 1.25rem; }
-        .icon-md { width: 1.5rem; height: 1.5rem; }
-        .icon-lg { width: 3rem; height: 3rem; }
+        .loader-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-200 transition-colors duration-200 h-full w-full flex flex-col overflow-hidden font-sans">
+<body class="bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-200 transition-colors duration-200 h-screen w-full flex flex-col overflow-hidden font-sans">
+
+    <div id="loaderOverlay" class="hidden absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center">
+        <button id="cancelBtn" class="group flex flex-col items-center justify-center gap-3 transition-transform active:scale-95">
+            <div class="relative w-16 h-16 flex items-center justify-center bg-white dark:bg-gray-800 rounded-full shadow-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-4 border-transparent">
+                <div class="absolute inset-0 rounded-full border-4 border-red-500/30"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-red-600 border-t-transparent loader-spin"></div>
+                <svg class="w-6 h-6 text-red-600 font-bold group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </div>
+            <span class="text-xs font-bold text-white bg-red-600 px-2 py-1 rounded shadow">Click to Cancel</span>
+            <span id="loaderStatus" class="text-xs font-mono text-gray-700 dark:text-white bg-white/80 dark:bg-black/50 px-2 py-1 rounded">Processing...</span>
+        </button>
+    </div>
 
     <header class="bg-white dark:bg-gray-900 shadow-md z-20 p-2 md:p-3 shrink-0 transition-colors duration-200 border-b border-gray-200 dark:border-gray-800">
         <div class="flex flex-col md:flex-row gap-3 items-center justify-between w-full">
-            
             <div class="flex items-center justify-between w-full md:w-auto gap-4">
                 <div class="flex items-center gap-2">
-                    <svg class="text-primary icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                     <h1 class="text-lg font-bold tracking-tight">WebHex Tool</h1>
                 </div>
-                <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 focus:outline-none transition-colors" title="Toggle Dark Mode">
-                    <svg class="icon-sm hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <svg class="icon-sm dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 focus:outline-none transition-colors">
+                    <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                 </button>
             </div>
 
             <div class="flex flex-wrap md:flex-nowrap gap-2 w-full md:w-auto flex-1 md:justify-end items-end">
-                
                 <div class="w-1/2 md:w-40">
                     <label class="block text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 mb-1">Format</label>
-                    <select id="outputFormat" class="w-full h-9 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-xs rounded focus:ring-1 focus:ring-primary focus:border-primary block p-1.5 transition-colors">
+                    <select id="outputFormat" class="w-full h-9 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-xs rounded focus:ring-1 focus:ring-primary focus:border-primary block p-1.5">
                         <option value="hex">Hexadecimal</option>
                         <option value="bin">Binary</option>
                         <option value="oct">Octal</option>
                         <option value="dec">Decimal</option>
-                        <option value="ascii+hex">ASCII+Hexadecimal</option>
-						<option value="ascii+dec" selected>ASCII+Decimal</option>
+                        <option value="ascii+hex">ASCII+Hex</option>
+                        <option value="ascii+dec" selected>ASCII+Decimal</option>
                     </select>
                 </div>
 
                 <div class="w-1/3 md:w-32">
                     <label class="block text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 mb-1">Bytes / Row</label>
-                    <select id="colFormat" class="w-full h-9 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-xs rounded focus:ring-1 focus:ring-primary focus:border-primary block p-1.5 transition-colors">
-                  
+                    <select id="colFormat" class="w-full h-9 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-xs rounded focus:ring-1 focus:ring-primary focus:border-primary block p-1.5">
                         <option value="4">4 Columns</option>
-						<option value="5">5 Columns</option>
-						<option value="8">8 Columns</option>
-						<option value="10">10 Columns</option>
+                        <option value="5">5 Columns</option>
+                        <option value="8">8 Columns</option>
+                        <option value="10">10 Columns</option>
                         <option value="16" selected>16 Columns</option>
                         <option value="20">20 Columns</option>
-                        <option value="0">Continuous</option>
+                        <option value="32">32 Columns</option>
                     </select>
                 </div>
 
                 <div class="w-full md:w-56 mt-2 md:mt-0 relative">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
-                        <svg class="icon-sm text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <input type="text" id="searchInput" class="h-9 block w-full pl-9 p-2 text-xs text-gray-900 border border-gray-300 rounded bg-gray-50 focus:ring-1 focus:ring-primary focus:border-primary dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-500 dark:text-white" placeholder="Search result...">
+                    <input type="text" id="searchInput" class="h-9 block w-full pl-9 p-2 text-xs text-gray-900 border border-gray-300 rounded bg-gray-50 focus:ring-1 focus:ring-primary focus:border-primary dark:bg-gray-800 dark:border-gray-700 dark:text-white" placeholder="Search...">
+                    <div id="searchNav" class="hidden absolute inset-y-0 right-0 flex items-center pr-1 gap-1">
+                        <button id="prevMatch" class="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg></button>
+                        <button id="nextMatch" class="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
 
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden h-full">
-        
-        <section class="h-1/2 md:h-full w-full md:w-1/2 flex flex-col border-b md:border-b-0 md:border-r border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition-colors overflow-hidden">
+        <section class="h-1/3 md:h-full w-full md:w-1/2 flex flex-col border-b md:border-b-0 md:border-r border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
             <div class="flex border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
-                <button class="flex-1 py-2 text-xs font-bold uppercase tracking-wider text-center hover:bg-gray-100 dark:hover:bg-gray-800 border-b-2 border-transparent tab-btn active-tab transition-all" data-tab="file" onclick="switchTab('file')">File</button>
-                <button class="flex-1 py-2 text-xs font-bold uppercase tracking-wider text-center hover:bg-gray-100 dark:hover:bg-gray-800 border-b-2 border-transparent tab-btn transition-all" data-tab="base64" onclick="switchTab('base64')">Base64</button>
-                <button class="flex-1 py-2 text-xs font-bold uppercase tracking-wider text-center hover:bg-gray-100 dark:hover:bg-gray-800 border-b-2 border-transparent tab-btn transition-all" data-tab="text" onclick="switchTab('text')">Text</button>
+                <button class="flex-1 py-2 text-xs font-bold uppercase tracking-wider text-center hover:bg-gray-100 dark:hover:bg-gray-800 border-b-2 border-transparent tab-btn" data-tab="file" onclick="switchTab('file')">File</button>
+                <button class="flex-1 py-2 text-xs font-bold uppercase tracking-wider text-center hover:bg-gray-100 dark:hover:bg-gray-800 border-b-2 border-transparent tab-btn" data-tab="base64" onclick="switchTab('base64')">Base64</button>
+                <button class="flex-1 py-2 text-xs font-bold uppercase tracking-wider text-center hover:bg-gray-100 dark:hover:bg-gray-800 border-b-2 border-transparent tab-btn" data-tab="text" onclick="switchTab('text')">Text</button>
             </div>
 
             <div class="flex-1 p-3 overflow-hidden relative">
-                
-                <div id="fileInputSection" class="input-pane h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group">
-                    <svg class="icon-lg text-gray-400 group-hover:text-primary transition-colors mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <div id="fileInputSection" class="input-pane h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group relative">
+                    <svg class="w-12 h-12 text-gray-400 group-hover:text-primary transition-colors mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center font-medium">Click to upload or drag & drop</p>
-                    <input type="file" id="fileInput" class="block w-full text-xs text-gray-500
-                        file:mr-4 file:py-1.5 file:px-3
-                        file:rounded-md file:border-0
-                        file:text-xs file:font-semibold
-                        file:bg-primary file:text-white
-                        hover:file:bg-primaryDark
-                        cursor-pointer opacity-0 absolute inset-0 w-full h-full z-10" />
+                    <input type="file" id="fileInput" class="block w-full text-xs opacity-0 absolute inset-0 cursor-pointer z-10" />
                     <button class="px-3 py-1.5 bg-primary text-white text-xs rounded shadow-sm">Select File</button>
                     <p id="fileNameDisplay" class="mt-2 text-xxs font-mono text-gray-700 dark:text-gray-300 break-all text-center max-w-xs"></p>
                 </div>
-
                 <div id="base64InputSection" class="input-pane hidden h-full w-full">
-                    <textarea id="base64Input" placeholder="Paste Base64 string here..." class="w-full h-full p-3 font-mono text-xxs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary resize-none custom-scroll dark:text-white"></textarea>
+                    <textarea id="base64Input" placeholder="Paste Base64..." class="w-full h-full p-3 font-mono text-xxs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg resize-none custom-scroll dark:text-white"></textarea>
                 </div>
-
                 <div id="textInputSection" class="input-pane hidden h-full w-full">
-                    <textarea id="textInput" placeholder="Type plain text here..." class="w-full h-full p-3 font-mono text-xxs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary resize-none custom-scroll dark:text-white"></textarea>
+                    <textarea id="textInput" placeholder="Type plain text..." class="w-full h-full p-3 font-mono text-xxs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg resize-none custom-scroll dark:text-white"></textarea>
                 </div>
             </div>
         </section>
 
-        <section class="h-1/2 md:h-full w-full md:w-1/2 flex flex-col bg-white dark:bg-gray-900 transition-colors relative overflow-hidden">
+        <section class="h-2/3 md:h-full w-full md:w-1/2 flex flex-col bg-white dark:bg-gray-900 relative overflow-hidden">
             <div class="shrink-0 px-3 py-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center text-xs">
-                <span class="font-bold text-gray-500 dark:text-gray-500 uppercase tracking-wider">Output</span>
-                <button onclick="copyOutput()" id="copyBtn" class="text-primary hover:text-primaryDark font-semibold flex items-center gap-1 transition-colors">
-                    <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                    Copy
-                </button>
+                <span class="font-bold text-gray-500 uppercase tracking-wider">Output View</span>
+                <div class="flex gap-4">
+                     <span class="text-gray-400">Pos: <span id="scrollPos" class="font-mono text-gray-800 dark:text-gray-200">0</span></span>
+                    <button onclick="copyOutput()" id="copyBtn" class="text-primary hover:text-primaryDark font-semibold flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Copy
+                    </button>
+                </div>
             </div>
             
             <div class="flex-1 relative w-full h-full overflow-hidden">
-                <div id="outputDisplay" class="absolute inset-0 w-full h-full p-3 font-mono text-xxs overflow-auto whitespace-pre custom-scroll focus:outline-none selection:bg-blue-200 selection:text-blue-900 dark:selection:bg-blue-900 dark:selection:text-blue-100" tabindex="0">
-					<span class="text-gray-400 italic">No data...</span>
+                <div id="emptyState" class="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                    <span class="text-gray-400 italic font-mono">No data loaded...</span>
+                </div>
+
+                <div id="virtualContainer" class="absolute inset-0 w-full h-full overflow-y-auto overflow-x-hidden custom-scroll" tabindex="0">
+                    <div id="virtualSpacer" class="w-full h-0"></div>
+                    <div id="virtualContent" class="absolute top-0 left-0 w-full p-2 font-mono text-xs whitespace-pre leading-6"></div>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer class="bg-gray-200 dark:bg-gray-950 border-t border-gray-300 dark:border-gray-800 px-4 py-2 text-[10px] sm:text-xs flex gap-6 items-center shrink-0 transition-colors z-20">
+    <footer class="bg-gray-200 dark:bg-gray-950 border-t border-gray-300 dark:border-gray-800 px-4 py-2 text-[10px] sm:text-xs flex gap-6 items-center shrink-0 z-20 h-8">
         <span class="text-gray-600 dark:text-gray-400">Total Size: <strong id="sizeLabel" class="text-gray-900 dark:text-white">0 B</strong></span>
         <span class="text-gray-600 dark:text-gray-400">Matches: <strong id="matchLabel" class="text-gray-900 dark:text-white">0</strong></span>
     </footer>
 
     <script>
         let rawData = new Uint8Array(0);
-        
-        const themeToggle = document.getElementById('themeToggle');
+        let searchMatches = []; 
+        let currentMatchIndex = -1;
+        const ROW_HEIGHT = 24;
+        let totalRows = 0;
+        let currentTaskAbortCtrl = null;
+        let highlightedIndices = new Set();
+        let searchLen = 0;
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.dataset.tab === tabName) {
+                    btn.classList.add('border-primary', 'text-primary', 'dark:text-primary', 'border-b-2');
+                    btn.classList.remove('border-transparent');
+                } else {
+                    btn.classList.remove('border-primary', 'text-primary', 'dark:text-primary', 'border-b-2');
+                    btn.classList.add('border-transparent');
+                }
+            });
+            document.querySelectorAll('.input-pane').forEach(pane => pane.classList.add('hidden'));
+            if (tabName === 'file') document.getElementById('fileInputSection').classList.remove('hidden');
+            if (tabName === 'base64') document.getElementById('base64InputSection').classList.remove('hidden');
+            if (tabName === 'text') document.getElementById('textInputSection').classList.remove('hidden');
+        }
+
         const html = document.documentElement;
-        
-        themeToggle.addEventListener('click', () => {
+
+        document.getElementById('themeToggle').addEventListener('click', () => {
             if (html.classList.contains('dark')) {
                 html.classList.remove('dark');
                 localStorage.theme = 'light';
@@ -242,200 +270,312 @@ Check your Browserslist config to be sure that your targets are set up correctly
             }
         });
 
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                if (btn.dataset.tab === tabName) {
-                    btn.classList.add('border-primary', 'text-primary', 'dark:text-primary');
-                    btn.classList.remove('border-transparent');
-                } else {
-                    btn.classList.remove('border-primary', 'text-primary', 'dark:text-primary');
-                    btn.classList.add('border-transparent');
-                }
-            });
-
-            document.querySelectorAll('.input-pane').forEach(pane => pane.classList.add('hidden'));
-            if (tabName === 'file') document.getElementById('fileInputSection').classList.remove('hidden');
-            if (tabName === 'base64') document.getElementById('base64InputSection').classList.remove('hidden');
-            if (tabName === 'text') document.getElementById('textInputSection').classList.remove('hidden');
-        }
         switchTab('file');
 
-        function updateSummary(matchCount) {
-            const size = rawData.length;
-            let sizeText = `${size.toLocaleString()} Bytes`;
-            
-            if (size > 102400) {
-                const mb = (size / (1024 * 1024)).toFixed(2);
-                sizeText = `${sizeText} (${mb} MB)`;
-            }
-
-            document.getElementById('sizeLabel').textContent = sizeText;
-            document.getElementById('matchLabel').textContent = matchCount !== undefined ? matchCount : 0;
+        function showLoader(text = "Processing...") {
+            const overlay = document.getElementById('loaderOverlay');
+            document.getElementById('loaderStatus').textContent = text;
+            overlay.classList.remove('hidden');
+            if (currentTaskAbortCtrl) currentTaskAbortCtrl.abort();
+            currentTaskAbortCtrl = new AbortController();
+            return currentTaskAbortCtrl.signal;
         }
 
-        const pad = (n, width, z) => {
-            z = z || '0';
-            n = n + '';
-            return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+        function hideLoader() {
+            document.getElementById('loaderOverlay').classList.add('hidden');
+            currentTaskAbortCtrl = null;
         }
 
-        function renderOutput() {
-            const format = document.getElementById('outputFormat').value;
-            const cols = parseInt(document.getElementById('colFormat').value);
-            const outputDiv = document.getElementById('outputDisplay');
-            const searchVal = document.getElementById('searchInput').value;
-
-            if (rawData.length === 0) {
-                outputDiv.innerHTML = '<span class="text-gray-400 italic">No data...</span>';
-                updateSummary(0);
-                return;
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            if (currentTaskAbortCtrl) {
+                currentTaskAbortCtrl.abort();
+                hideLoader();
             }
-
-            const len = rawData.length;
-            let formattedItems = [];
-
-            if (format === 'hex') {
-                for(let i=0; i<len; i++) formattedItems.push(pad(rawData[i].toString(16).toUpperCase(), 2));
-            } 
-            else if (format === 'bin') {
-                for(let i=0; i<len; i++) formattedItems.push(pad(rawData[i].toString(2), 8));
-            }
-            else if (format === 'oct') {
-                for(let i=0; i<len; i++) formattedItems.push(pad(rawData[i].toString(8), 3));
-            }
-            else if (format === 'dec') {
-                for(let i=0; i<len; i++) formattedItems.push(pad(rawData[i].toString(10), 3));
-            }
-            else if (format === 'ascii+hex') {
-                for(let i=0; i<len; i++) {
-                    const byte = rawData[i];
-                    if (byte >= 32 && byte <= 126) {
-                        formattedItems.push(String.fromCharCode(byte) + ' ');
-                    } else {
-                        formattedItems.push(pad(byte.toString(16).toUpperCase(), 2));
-                    }
-                }
-            }
-			else if (format === 'ascii+dec') {
-                for(let i=0; i<len; i++) {
-                    const byte = rawData[i];
-                    if (byte >= 32 && byte <= 126) {
-                        formattedItems.push(' ' + String.fromCharCode(byte) + ' '); 
-                    } else {
-						formattedItems.push(pad(byte.toString(10).toUpperCase(), 3));
-                    }
-                }
-            }
-
-            let resultText = "";
-            
-            if (cols > 0) {
-                let rows = [];
-                for (let i = 0; i < formattedItems.length; i += cols) {
-                    const chunk = formattedItems.slice(i, i + cols);                   
-                    rows.push(chunk.join(' '));
-                }
-                resultText = rows.join("\n");
-            } else {
-                resultText = formattedItems.join(' ');
-            }
-
-            if (searchVal && searchVal.length > 0) {
-                try {
-                    const escapedSearch = searchVal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    const regex = new RegExp(`(${escapedSearch})`, 'gi');
-                    const matches = resultText.match(regex);
-                    const count = matches ? matches.length : 0;
-
-                    const safeText = resultText
-                        .replace(/&/g, "&amp;")
-                        .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;");
-
-                    const parts = safeText.split(regex);
-                    
-                    let htmlBuilder = "";
-                    parts.forEach(part => {
-                        if (part.toLowerCase() === searchVal.toLowerCase()) {
-                            htmlBuilder += `<mark>${part}</mark>`;
-                        } else {
-                            htmlBuilder += part;
-                        }
-                    });
-
-                    outputDiv.innerHTML = htmlBuilder;
-                    updateSummary(count);
-                } catch (e) {
-                    outputDiv.textContent = resultText;
-                    updateSummary(0);
-                }
-            } else {
-                outputDiv.textContent = resultText;
-                updateSummary(0);
-            }
-        }
+        });
 
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
             document.getElementById('fileNameDisplay').textContent = file.name;
+            const signal = showLoader(`Reading ${file.name}...`);
             const reader = new FileReader();
-            reader.onload = function(evt) {
-                rawData = new Uint8Array(evt.target.result);
-                renderOutput();
+            
+            reader.onprogress = (evt) => {
+                if (evt.lengthComputable) {
+                    const pct = Math.round((evt.loaded / evt.total) * 100);
+                    document.getElementById('loaderStatus').textContent = `Loading ${pct}%`;
+                }
             };
+            reader.onload = function(evt) {
+                if (signal.aborted) return;
+                rawData = new Uint8Array(evt.target.result);
+                hideLoader();
+                initVirtualScroll();
+                updateSummary();
+            };
+            reader.onerror = () => { hideLoader(); alert("Error reading file"); };
+            signal.addEventListener('abort', () => reader.abort());
             reader.readAsArrayBuffer(file);
         });
 
-        document.getElementById('base64Input').addEventListener('input', function(e) {
-            const val = e.target.value.trim();
-            if (val.length === 0) {
-                rawData = new Uint8Array(0);
-                renderOutput();
+        document.getElementById('textInput').addEventListener('input', (e) => {
+            rawData = new TextEncoder().encode(e.target.value);
+            initVirtualScroll();
+            updateSummary();
+        });
+
+        document.getElementById('base64Input').addEventListener('input', (e) => {
+            try {
+                const bin = atob(e.target.value.trim());
+                const bytes = new Uint8Array(bin.length);
+                for (let i=0; i<bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                rawData = bytes;
+            } catch(err) { rawData = new Uint8Array(0); }
+            initVirtualScroll();
+            updateSummary();
+        });
+
+        function updateSummary() {
+            const size = rawData.length;
+            let sizeText = `${size.toLocaleString()} Bytes`;
+            
+            if (size > 1073741824) {
+                sizeText += ` (${(size/1073741824).toFixed(2)} GB)`;
+            } else if (size > 1048576) {
+                sizeText += ` (${(size/1048576).toFixed(2)} MB)`;
+            } else if (size > 1024) {
+                sizeText += ` (${(size/1024).toFixed(2)} KB)`;
+            }
+
+            document.getElementById('sizeLabel').textContent = sizeText;
+        }
+
+        const container = document.getElementById('virtualContainer');
+        const spacer = document.getElementById('virtualSpacer');
+        const content = document.getElementById('virtualContent');
+        const emptyState = document.getElementById('emptyState');
+
+        function initVirtualScroll() {
+            const cols = parseInt(document.getElementById('colFormat').value);
+            totalRows = Math.ceil(rawData.length / cols);
+            spacer.style.height = `${totalRows * ROW_HEIGHT}px`;
+            container.scrollTop = 0;
+            renderVisibleChunk();
+            if(document.getElementById('searchInput').value) performSearch();
+        }
+
+        container.addEventListener('scroll', () => { requestAnimationFrame(renderVisibleChunk); });
+
+        function renderVisibleChunk() {
+            if (rawData.length === 0) {
+                emptyState.classList.remove('hidden');
+                content.innerHTML = '';
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            const scrollTop = container.scrollTop;
+            const containerHeight = container.clientHeight;
+            
+            let startRow = Math.floor(scrollTop / ROW_HEIGHT);
+            let endRow = startRow + Math.ceil(containerHeight / ROW_HEIGHT) + 1;
+            
+            if (startRow < 0) startRow = 0;
+            if (endRow > totalRows) endRow = totalRows;
+
+            content.style.transform = `translateY(${startRow * ROW_HEIGHT}px)`;
+            document.getElementById('scrollPos').textContent = startRow;
+
+            const cols = parseInt(document.getElementById('colFormat').value);
+            const format = document.getElementById('outputFormat').value;
+            let html = "";
+            
+            for (let r = startRow; r < endRow; r++) {
+                const startByte = r * cols;
+                const endByte = Math.min(startByte + cols, rawData.length);
+                
+                let rowHtml = `<div class="flex h-[${ROW_HEIGHT}px] hover:bg-gray-100 dark:hover:bg-gray-800">`;
+                rowHtml += `<span class="text-gray-400 w-16 shrink-0 select-none mr-4 text-right">${(startByte).toString(16).toUpperCase().padStart(6,'0')}</span>`;
+                
+                let dataPart = "";
+                for (let i = startByte; i < endByte; i++) {
+                    const byte = rawData[i];
+                    let valStr = "";
+                    
+                    if (format === 'hex') valStr = byte.toString(16).toUpperCase().padStart(2, '0');
+                    else if (format === 'bin') valStr = byte.toString(2).padStart(8, '0');
+                    else if (format === 'oct') valStr = byte.toString(8).padStart(3, '0');
+                    else if (format === 'dec') valStr = byte.toString(10).padStart(3, '0');
+                    else if (format === 'ascii+hex') {
+                        valStr = (byte >= 32 && byte <= 126) ? String.fromCharCode(byte) + " " : byte.toString(16).toUpperCase().padStart(2, '0');
+                    }
+                    else if (format === 'ascii+dec') {
+                        valStr = (byte >= 32 && byte <= 126) ? " " + String.fromCharCode(byte) + " " : byte.toString(10).padStart(3, '0');
+                    }
+
+                    if (highlightedIndices.has(i)) {
+                        dataPart += `<mark>${valStr}</mark> `;
+                    } else {
+                        dataPart += `${valStr} `;
+                    }
+                }
+                rowHtml += `<span class="break-all">${dataPart}</span></div>`;
+                html += rowHtml;
+            }
+            content.innerHTML = html;
+        }
+
+        document.getElementById('searchInput').addEventListener('keydown', (e) => { if(e.key === 'Enter') performSearch(); });
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(performSearch, 500);
+        });
+
+        function getFormattedByteStr(byte, format) {
+            if (format === 'hex') return byte.toString(16).toUpperCase().padStart(2, '0');
+            if (format === 'dec') return byte.toString(10).padStart(3, '0');
+            if (format === 'oct') return byte.toString(8).padStart(3, '0');
+            if (format === 'bin') return byte.toString(2).padStart(8, '0');
+            return "";
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value;
+            const format = document.getElementById('outputFormat').value;
+            
+            searchMatches = [];
+            highlightedIndices.clear();
+            searchLen = 0;
+
+            if (!query) {
+                renderVisibleChunk();
+                document.getElementById('matchLabel').textContent = "0";
+                document.getElementById('searchNav').classList.add('hidden');
                 return;
             }
-            try {
-                const binString = atob(val);
-                const len = binString.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) bytes[i] = binString.charCodeAt(i);
-                rawData = bytes;
-                renderOutput();
-            } catch (err) {}
-        });
 
-        document.getElementById('textInput').addEventListener('input', function(e) {
-            const val = e.target.value;
-            rawData = (val.length === 0) ? new Uint8Array(0) : new TextEncoder().encode(val);
-            renderOutput();
-        });
+            const signal = showLoader("Searching...");
+            
+            const isTextMode = format.includes('ascii');
+            
+            let searchBytes = null;
+            let searchTokens = null;
 
-        document.getElementById('outputFormat').addEventListener('change', renderOutput);
-        document.getElementById('colFormat').addEventListener('change', renderOutput);
+            if (isTextMode) {
+                searchBytes = new TextEncoder().encode(query);
+                searchLen = searchBytes.length;
+            } else {
+                searchTokens = query.trim().split(/\s+/).map(s => s.toUpperCase());
+                searchLen = searchTokens.length;
+            }
 
-        let searchTimeout;
-        document.getElementById('searchInput').addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(renderOutput, 250);
-        });
+            const CHUNK_SIZE = 200000;
+            let index = 0;
+            
+            function processChunk() {
+                if (signal.aborted) return;
+                
+                const end = Math.min(index + CHUNK_SIZE, rawData.length);
+                
+                for (let i = index; i < end; i++) {
+                    
+                    let match = true;
+
+                    if (isTextMode) {
+                        if (rawData[i] !== searchBytes[0]) {
+                            match = false;
+                        } else {
+                            for (let j = 1; j < searchLen; j++) {
+                                if (i + j >= rawData.length || rawData[i+j] !== searchBytes[j]) {
+                                    match = false;
+                                    break;
+                                }
+                            }
+                        }
+                    } 
+                    else {
+                        const firstByteStr = getFormattedByteStr(rawData[i], format);
+                        
+                        if (!firstByteStr.includes(searchTokens[0])) {
+                            match = false;
+                        } else {
+                            for (let j = 1; j < searchLen; j++) {
+                                if (i + j >= rawData.length) {
+                                    match = false;
+                                    break;
+                                }
+                                const nextByteStr = getFormattedByteStr(rawData[i+j], format);
+                                if (!nextByteStr.includes(searchTokens[j])) {
+                                    match = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (match) {
+                        searchMatches.push(i);
+                        for(let k=0; k < searchLen; k++) highlightedIndices.add(i+k);
+                    }
+                }
+                
+                index = end;
+                if (index < rawData.length) {
+                    const pct = Math.round((index / rawData.length) * 100);
+                    document.getElementById('loaderStatus').textContent = `Searching ${pct}%`;
+                    requestAnimationFrame(processChunk);
+                } else {
+                    finishSearch();
+                }
+            }
+            
+            processChunk();
+        }
+
+        function finishSearch() {
+            hideLoader();
+            document.getElementById('matchLabel').textContent = searchMatches.length;
+            renderVisibleChunk();
+            
+            if (searchMatches.length > 0) {
+                document.getElementById('searchNav').classList.remove('hidden');
+                if (currentMatchIndex === -1) jumpToMatch(0);
+            } else {
+                document.getElementById('searchNav').classList.add('hidden');
+                currentMatchIndex = -1;
+            }
+        }
+
+        let currentMatchPtr = 0;
+        function jumpToMatch(idx) {
+            if (searchMatches.length === 0) return;
+            currentMatchPtr = idx;
+            if (currentMatchPtr >= searchMatches.length) currentMatchPtr = 0;
+            if (currentMatchPtr < 0) currentMatchPtr = searchMatches.length - 1;
+            
+            const byteIndex = searchMatches[currentMatchPtr];
+            const cols = parseInt(document.getElementById('colFormat').value);
+            const row = Math.floor(byteIndex / cols);
+            container.scrollTop = row * ROW_HEIGHT;
+        }
+
+        document.getElementById('nextMatch').addEventListener('click', () => jumpToMatch(currentMatchPtr + 1));
+        document.getElementById('prevMatch').addEventListener('click', () => jumpToMatch(currentMatchPtr - 1));
+
+        document.getElementById('outputFormat').addEventListener('change', () => renderVisibleChunk());
+        document.getElementById('colFormat').addEventListener('change', initVirtualScroll);
 
         function copyOutput() {
-            const outputDiv = document.getElementById('outputDisplay');
             const range = document.createRange();
-            range.selectNode(outputDiv);
-            window.getSelection().removeAllRanges(); 
-            window.getSelection().addRange(range); 
+            range.selectNode(content);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
             document.execCommand('copy');
             window.getSelection().removeAllRanges();
-            
-            const btn = document.getElementById('copyBtn');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = `<svg class="icon-sm text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Copied!`;
-            setTimeout(() => {
-                btn.innerHTML = originalHTML;
-            }, 1500);
+            alert("Visible content copied!");
         }
     </script>
 </body>
-
 </html>
