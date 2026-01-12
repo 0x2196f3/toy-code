@@ -85,6 +85,27 @@
             color: var(--secondary-text-color);
         }
 
+        /* Group for controls in header */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.85rem;
+            color: var(--secondary-text-color);
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .checkbox-label input {
+            cursor: pointer;
+        }
+
         .action-btn {
             background-color: var(--accent-color);
             color: var(--accent-text-color);
@@ -96,6 +117,11 @@
             text-transform: uppercase;
             font-size: 0.8rem;
             transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* Specific style for Clear Button to be red */
+        #clear-btn {
+            background-color: var(--error-color);
             margin-left: 0.5rem;
         }
 
@@ -104,7 +130,7 @@
         }
 
         .action-btn:active {
-            background-color: #1976D2;
+            opacity: 0.9;
         }
         
         #editor {
@@ -182,7 +208,15 @@
         <div class="editor-pane">
             <div class="editor-header">
                 <h2>Javascript Engine</h2>
-                <button id="execute-btn" class="action-btn">Execute</button>
+                <div class="header-controls">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="auto-clear" checked> Auto Clear
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="auto-log" checked> Auto Log
+                    </label>
+                    <button id="execute-btn" class="action-btn">Execute</button>
+                </div>
             </div>
             <div id="editor"></div>
         </div>
@@ -284,6 +318,8 @@
         const executeBtn = document.getElementById('execute-btn');
         const copyBtn = document.getElementById('copy-btn');
         const clearBtn = document.getElementById('clear-btn');
+        const autoClearCb = document.getElementById('auto-clear');
+        const autoLogCb = document.getElementById('auto-log');
 
         ace.require("ace/ext/language_tools");
         const editor = ace.edit(editorEl);
@@ -296,7 +332,8 @@
             fontSize: "14px",
         });
         editor.session.setMode("ace/mode/javascript");
-        editor.setValue(`console.log("Welcome to the JS Executor! 🚀");\n\nconst user = {\n  name: "Alex",\n  id: 101,\n  roles: ["dev", "admin"]\n};\n\nconsole.log('User object:', user);\n\n// Trigger an error to see line highlighting\n// intentionalError();`);
+
+        editor.setValue(`console.log("Welcome to the JS Executor! 🚀");\n\nconst user = {\n  name: "Alex",\n  id: 101,\n  roles: ["dev", "admin"]\n};\n\n// With 'Auto Log' checked, the result of the last line\n// is printed automatically:\nnew Date();`);
         
         const lightTheme = "ace/theme/chrome";
         const darkTheme = "ace/theme/tomorrow_night";
@@ -377,14 +414,31 @@
             });
         });
 
-        executeBtn.addEventListener('click', () => {
+        editor.commands.addCommand({
+            name: 'executeCode',
+            bindKey: {win: 'Ctrl-Enter', mac: 'Command-Enter'},
+            exec: function(editor) {
+                runCode();
+            }
+        });
+
+        function runCode() {
             editor.session.clearAnnotations();
+            
+            if (autoClearCb.checked) {
+                outputEl.innerHTML = '';
+            }
+
             const code = editor.getValue();
             try {
-                new Function(code)();
+                const result = window.eval(code);
+
+                if (autoLogCb.checked && result !== undefined) {
+                    console.log(result);
+                }
             } catch (err) {
                 console.error(err);
-                const stackLine = err.stack.split('\n')[1];
+                const stackLine = err.stack ? err.stack.split('\n')[1] : '';
                 const match = stackLine ? stackLine.match(/<anonymous>:(\d+):(\d+)/) : null;
                 if (match) {
                     const line = parseInt(match[1], 10) - 1;
@@ -397,7 +451,9 @@
                     editor.gotoLine(line + 1);
                 }
             }
-        });
+        }
+
+        executeBtn.addEventListener('click', runCode);
     </script>
 </body>
 </html>
