@@ -1,225 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Base64 Encoder/Decoder</title>
+  <title>Base64 Tool</title>
   <style>
     :root {
       --bg-color: #f0f2f5;
-      --card-bg-color: #ffffff;
-      --text-color: #1c1e21;
-      --subtle-text-color: #606770;
-      --border-color: #dce1e6;
-      --primary-bg: #1b74e4;
-      --primary-text: #ffffff;
-      --secondary-bg: #e4e6eb;
-      --secondary-text: #1c1e21;
-      --font-family: sans-serif;
+      --card-bg: #ffffff;
+      --text-main: #1c1e21;
+      --text-sub: #606770;
+      --border: #dce1e6;
+      --primary: #1b74e4;
+      --primary-fg: #ffffff;
+      --secondary: #e4e6eb;
+      --secondary-fg: #1c1e21;
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
         --bg-color: #18191a;
-        --card-bg-color: #242526;
-        --text-color: #e4e6eb;
-        --subtle-text-color: #b0b3b8;
-        --border-color: #3e4042;
-        --primary-bg: #2d88ff;
-        --primary-text: #ffffff;
-        --secondary-bg: #3a3b3c;
-        --secondary-text: #e4e6eb;
+        --card-bg: #242526;
+        --text-main: #e4e6eb;
+        --text-sub: #b0b3b8;
+        --border: #3e4042;
+        --primary: #2d88ff;
+        --secondary: #3a3b3c;
+        --secondary-fg: #e4e6eb;
       }
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html,
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
-      height: 100%;
-    }
-
-    body {
-      font-family: var(--font-family);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg-color);
-      color: var(--text-color);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      padding: 2rem 1rem;
-      line-height: 1.5;
-      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    .container {
+    main {
       width: 100%;
-      max-width: 680px;
+      max-width: 800px;
+      height: 100%;
+      background-color: var(--card-bg);
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
+      padding: 1.5rem;
+      gap: 0.5rem;
     }
 
-    h1 {
-      text-align: center;
-      font-size: 2rem;
-      font-weight: 600;
-      color: var(--text-color);
+    header { text-align: center; margin-bottom: 0.5rem; }
+    h1 { font-size: 1.5rem; font-weight: 600; }
+
+    .area-group {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
 
     label {
-      font-weight: 500;
-      color: var(--subtle-text-color);
-      margin-bottom: 0.5rem;
-      display: block;
-    }
-
-    .io-card {
-      background-color: var(--card-bg-color);
-      border-radius: 0.75rem;
-      padding: 1.25rem;
-      border: 1px solid var(--border-color);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-      transition: background-color 0.3s ease, border-color 0.3s ease;
-    }
-
-    .output-wrapper {
-      position: relative;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     textarea {
+      flex: 1;
       width: 100%;
-      height: 300px;
-      padding: 0.75rem;
-      border: 1px solid var(--border-color);
+      padding: 1rem;
+      border: 1px solid var(--border);
       border-radius: 0.5rem;
       background-color: var(--bg-color);
-      color: var(--text-color);
-      font-family: var(--font-family);
+      color: var(--text-main);
       font-size: 1rem;
-      resize: vertical;
-      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+      font-family: monospace;
+      resize: none;
     }
+    textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
 
-    textarea:focus {
-      outline: none;
-      border-color: var(--primary-bg);
-      box-shadow: 0 0 0 2px rgba(27, 116, 228, 0.3);
-    }
-
-    .button-group {
+    .controls {
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-top: 1rem;
       justify-content: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0 0 0;
+      flex-shrink: 0;
     }
 
     button {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 0.5rem;
-      padding: 0.75rem 1.25rem;
+      padding: 0.6rem 1.2rem;
       border: none;
-      border-radius: 0.5rem;
-      font-family: var(--font-family);
-      font-size: 1rem;
-      font-weight: 500;
+      border-radius: 2rem;
+      font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.2s ease, transform 0.1s ease;
-      -webkit-tap-highlight-color: transparent;
+      transition: filter 0.2s;
     }
+    button:hover { filter: brightness(0.9); }
+    button:active { transform: scale(0.98); }
 
-    button:active {
-      transform: scale(0.97);
-    }
+    .btn-primary { background-color: var(--primary); color: var(--primary-fg); }
+    .btn-secondary { background-color: var(--secondary); color: var(--secondary-fg); }
 
-    button:hover {
-      filter: brightness(0.8);
-    }
-
-    .btn-primary {
-      background-color: var(--primary-bg);
-      color: var(--primary-text);
-    }
-
-    .btn-secondary {
-      background-color: var(--secondary-bg);
-      color: var(--secondary-text);
-    }
-
-    #copy-btn {
+    .copy-btn {
       position: absolute;
-      top: 0.75rem;
+      top: 2rem;
       right: 0.75rem;
-      padding: 0.25rem 0.6rem;
-      font-size: 0.875rem;
-      background-color: var(--secondary-bg);
-      color: var(--secondary-text);
-      z-index: 1;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+      background: var(--secondary);
+      color: var(--secondary-fg);
+      border-radius: 6px;
+      opacity: 0.8;
     }
+    .copy-btn:hover { opacity: 1; }
 
-    #copy-btn:hover {
-      background-color: var(--secondary-hover-bg);
+    svg { width: 20px; height: 20px; fill: currentColor; }
+
+    @media (max-width: 768px) {
+      body {
+        align-items: stretch;
+      }
+      main {
+        max-width: 100%;
+        border-radius: 0;
+        padding: 0.75rem;
+      }
+      header { display: none; }
+      
+      .area-group { gap: 0; }
+      textarea { border-radius: 8px; font-size: 16px;}
+      
+      .controls { gap: 0.5rem; }
+      button { padding: 0.75rem 1rem; flex: 1; justify-content: center; }
+      button span { display: none; }
     }
   </style>
 </head>
-
 <body>
 
-  <main class="container">
-    <h1>Base64 Encoder/Decoder</h1>
+  <main>
+    <header>
+      <h1>Base64 Converter</h1>
+    </header>
 
-    <div class="io-card">
+    <div class="area-group">
       <label for="input">Input</label>
-      <textarea id="input" placeholder="Enter text or Base64 string here..."></textarea>
+      <textarea id="input" placeholder="Type or paste here..."></textarea>
+    </div>
 
-      <div class="button-group">
-        <button class="btn-primary" onclick="encode()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd"
-              d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z" />
-          </svg>
-          Encode
-        </button>
-        <button class="btn-primary" onclick="decode()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd"
-              d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z" />
-          </svg>
-          Decode
-        </button>
-        <button class="btn-secondary" onclick="swapContent()" title="Swap Input and Output">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd"
-              d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5zm14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5z" />
-          </svg>
-          Swap
-        </button>
-      </div>
+    <div class="controls">
+      <button class="btn-primary" onclick="encode()" title="Encode">
+        <svg viewBox="0 0 24 24"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg>
+        <span>Encode</span>
+      </button>
+      
+      <button class="btn-primary" onclick="decode()" title="Decode">
+        <svg viewBox="0 0 24 24"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>
+        <span>Decode</span>
+      </button>
 
+      <button class="btn-secondary" onclick="swapContent()" title="Swap">
+        <svg viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
+        <span>Swap</span>
+      </button>
+    </div>
+
+    <div class="area-group">
       <label for="output">Output</label>
-      <div class="output-wrapper">
-        <textarea id="output" placeholder="Output will appear here..." readonly></textarea>
-        <button id="copy-btn" onclick="copyOutput()">Copy</button>
-      </div>
+      <textarea id="output" placeholder="Result..." readonly></textarea>
+      <button class="copy-btn" id="copy-btn" onclick="copyOutput()">Copy</button>
     </div>
   </main>
 
   <script>
+    const inputEl = document.getElementById('input');
+    const outputEl = document.getElementById('output');
+
     function encode() {
-      const input = document.getElementById('input').value;
       try {
-        const output = btoa(unescape(encodeURIComponent(input)));
-        document.getElementById('output').value = output;
+        outputEl.value = btoa(unescape(encodeURIComponent(inputEl.value)));
       } catch (e) {
-        document.getElementById('output').value = 'Error: Could not encode input.';
-        console.error(e);
+        outputEl.value = 'Error: Unable to encode input.';
       }
     }
 
@@ -232,64 +205,58 @@
         for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
         return bytes;
       }
-
+      
       function uint8ArrayToBinaryString(bytes) {
         const CHUNK = 0x8000;
         let result = '';
         for (let i = 0; i < bytes.length; i += CHUNK) {
-          const slice = bytes.subarray(i, i + CHUNK);
-          result += String.fromCharCode.apply(null, slice);
+          result += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
         }
         return result;
       }
 
-      const input = document.getElementById('input').value;
-      const outEl = document.getElementById('output');
-
       try {
-        outEl.value = decodeURIComponent(escape(atob(input)));
+        outputEl.value = decodeURIComponent(escape(atob(inputEl.value)));
       } catch (e) {
         try {
-          const bytes = base64ToUint8Array(input);
-          outEl.value = uint8ArrayToBinaryString(bytes);
+          const bytes = base64ToUint8Array(inputEl.value);
+          outputEl.value = uint8ArrayToBinaryString(bytes);
         } catch (e2) {
-          outEl.value = 'Error: Invalid Base64 string.';
-          console.error(e2);
+          outputEl.value = 'Error: Invalid Base64 string.';
         }
-      }
-    }
-
-    function copyOutput() {
-      const output = document.getElementById('output');
-      const copyBtn = document.getElementById('copy-btn');
-      const originalText = copyBtn.textContent;
-
-      if (output.value) {
-        output.select();
-        output.setSelectionRange(0, 99999);
-
-        try {
-          document.execCommand('copy');
-          copyBtn.textContent = 'Copied!';
-        } catch (err) {
-          copyBtn.textContent = 'Failed!';
-          console.error('Failed to copy: ', err);
-        }
-
-        setTimeout(() => {
-          copyBtn.textContent = originalText;
-        }, 2000);
       }
     }
 
     function swapContent() {
-      const input = document.getElementById('input');
-      const output = document.getElementById('output');
-      const temp = input.value;
-      input.value = output.value;
-      output.value = temp;
+      const temp = inputEl.value;
+      inputEl.value = outputEl.value;
+      outputEl.value = temp;
+    }
+
+    function copyOutput() {
+      if (!outputEl.value) return;
+      
+      outputEl.select();
+      outputEl.setSelectionRange(0, 99999);
+
+      try {
+        navigator.clipboard.writeText(outputEl.value).then(() => {
+           showCopyStatus('Copied!');
+        }, () => {
+           document.execCommand('copy');
+           showCopyStatus('Copied!');
+        });
+      } catch (err) {
+        showCopyStatus('Failed');
+      }
+    }
+
+    function showCopyStatus(msg) {
+      const btn = document.getElementById('copy-btn');
+      const original = btn.textContent;
+      btn.textContent = msg;
+      setTimeout(() => btn.textContent = 'Copy', 2000);
     }
   </script>
 </body>
-
 </html>
