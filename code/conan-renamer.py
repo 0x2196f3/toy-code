@@ -5,6 +5,8 @@ import sys
 import urllib.request
 from datetime import datetime
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_dir)
 URL = "https://cloud.sbsub.com/data/data.json"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -74,21 +76,14 @@ def format_date_to_6digits(date_str):
     return digits.zfill(6)
     
 def sanitize_chars(s: str, replacement: str = "") -> str:
-    """
-    Remove or replace characters that are not allowed in Windows or Linux filenames.
-    - Removes NUL (\\x00) and slash '/' (Linux path separator).
-    - Removes Windows forbidden characters: <>:\"/\\|?*
-    - Also removes ASCII control characters (U+0000..U+001F).
-    - `replacement` is inserted in place of each forbidden character (default: remove).
-    """
+
     if not isinstance(s, str):
         raise TypeError("s must be a str")
 
-    forbidden = set('<>:"/\\|?*\x00')  # union of Windows forbidden + NUL; include '/' and '\\'
+    forbidden = set('<>:"/\\|?*\x00')
     out_chars = []
     for ch in s:
-        if ord(ch) <= 0x1F:  # control characters U+0000..U+001F
-            # treat as forbidden
+        if ord(ch) <= 0x1F:
             rep = replacement
         elif ch in forbidden:
             rep = replacement
@@ -108,7 +103,7 @@ for entry in os.listdir(DIR):
         continue
 
     lower = entry.lower()
-    if not (lower.endswith(".mp4") or lower.endswith(".mkv")):
+    if not (lower.endswith(".mp4") or lower.endswith(".mkv") or lower.endswith(".ass")):
         continue
 
     name = os.path.splitext(entry)[0]
