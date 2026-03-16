@@ -1,90 +1,137 @@
 import os
 import re
-import shutil
 import json
+import shutil
+import sys
 import subprocess
 
-def sanitize_filename(filename):
-    return re.sub(r'[<>:"/\\|?* ]', ' ', filename)
-       
-def cmd(command):
-    print(f"Running command: {command}")
-    return subprocess.run(command, shell=True)
+def get_ffmpeg_path():
+    ext = ".exe" if os.name == "nt" else ""
+    local_path = os.path.abspath(f"ffmpeg{ext}")
+    if os.path.isfile(local_path):
+        return local_path
+    return "ffmpeg"
 
-def delete(path):
-    print(f"Deleting: {path}")
-    if os.path.isdir(path):
-        shutil.rmtree(path)
-    else:
-        os.remove(path)
+def sanitize_name(text):
+    if not text:
+        return ""
+    return re.sub(r'[<>:"/\\|?*]', ' ', str(text)).strip()
 
-def rename(old, new):
-    print(f"Renaming: {old} to {new}")
-    os.rename(old, new)
+def get_unique_path(path):
+    if not os.path.exists(path):
+        return path
+    base, ext = os.path.splitext(path)
+    counter = 1
+    while os.path.exists(f"{base}({counter}){ext}"):
+        counter += 1
+    return f"{base}({counter}){ext}"
 
-def merge_video_and_audio(video, audio, output=None, delete_origin=False):
-    """Merge video and audio files into a single output file."""
-    output = output or f"{remove_suffix(video)}.mp4"
-    command = f"ffmpeg -i \"{video}\" -i \"{audio}\" -c:v copy -c:a copy -strict experimental \"{output}\""
-    cmd(command)
-    if delete_origin:
-        delete(video)
-        delete(audio)
-
-def remove_suffix(text):
-    return os.path.splitext(text)[0]
-
-def get_suffix(text):
-    return os.path.splitext(text)[1]
-
-def convert(root):
-    files = sorted(os.listdir(root))
-    if not files:
+def merge_media(ffmpeg_cmd, video_path, audio_path, output_path):
+    output_path = get_unique_path(output_path)
+    command = [
+        ffmpeg_cmd, "-y",
+        "-i", video_path,
+        "-i", audio_path,
+        "-c:v", "copy",
+        "-c:a", "copy",
+        output_path
+    ]
+    try:
+        subprocess.run(command, check=True, capture_output=True)
+        return output_path
+    except (subprocess.CalledProcessError, OSError):
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except OSError:
+                pass
         return None
 
-    name = None
-    for file in files:
-        dir_path = os.path.join(root, file)
-        if not os.path.isdir(dir_path):
+def process_directory(root_dir, ffmpeg_cmd):
+    if not os.path.isdir(root_dir):
+        return None
+    
+    main_title = None
+    
+    try:
+        subdirectories = sorted([d for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d))])
+    except OSError:
+        return None
+
+    for sub in subdirectories:
+        episode_dir = os.path.join(root_dir, sub)
+        entry_file = os.path.join(episode_dir, "entry.json")
+        
+        if not os.path.isfile(entry_file):
+            continue
+            
+        try:
+            with open(entry_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, OSError):
             continue
 
-        info_path = os.path.join(dir_path, "entry.json")
-        if not os.path.exists(info_path):
-            continue
-        dir_name = None
-        strid = None
-        subtitle = None
+        if main_title is None:
+            main_title = sanitize_name(data.get("title", ""))
+            
+        type_tag = sanitize_name(data.get("type_tag", ""))
         
-        with open(info_path, "r", encoding="utf-8") as info:
-            data = json.load(info)
-            if name is None:
-                name = sanitize_filename(data["title"])
-            dir_name = sanitize_filename(data["type_tag"])
-            try:
-                strid = sanitize_filename(str(data.get("ep", {}).get("index", "")))
-                subtitle = sanitize_filename(str(data.get("ep", {}).get("index_title", "")))
-            except BaseException as e:
+        strid = ""
+        subtitle = ""
+        
+        if "ep" in data:
+            strid = sanitize_name(data["ep"].get("index", ""))
+            subtitle = sanitize_name(data["ep"].get("index_title", ""))
+        elif "page_data" in data:
+            strid = sanitize_name(data["page_data"].get("page", ""))
+            subtitle = sanitize_name(data["page_data"].get("part", ""))
+            
+        out_filename = f"{strid}_{subtitle}.mp4" if strid else f"{main_title}.mp4"
+        out_filepath = os.path.join(root_dir, out_filename)
+        
+        video_file = os.path.join(episode_dir, type_tag, "video.m4s")
+        audio_file = os.path.join(episode_dir, type_tag, "audio.m4s")
+        
+        if os.path.isfile(video_file) and os.path.isfile(audio_file):
+            success_path = merge_media(ffmpeg_cmd, video_file, audio_file, out_filepath)
+            if success_path:
                 try:
-                    strid = sanitize_filename(str(data.get("page_data", {}).get("page", "")))
-                    subtitle = sanitize_filename(str(data.get("page_data", {}).get("part", "")))
-                except BaseException as e:
+                    shutil.rmtree(episode_dir)
+                except OSError:
                     pass
-                
-        file_name = os.path.join(root, f"{strid}_{subtitle}.mp4" if strid else f"{name}.mp4")
-        audio = os.path.join(dir_path, dir_name, "audio.m4s")
-        video = os.path.join(dir_path, dir_name, "video.m4s")
-        
-        merge_video_and_audio(video, audio, file_name, False)
-        delete(dir_path)
 
-    return name
+    return main_title
+
+def main():
+    try:
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    except OSError:
+        pass
+
+    ffmpeg_bin = get_ffmpeg_path()
+    
+    try:
+        subprocess.run([ffmpeg_bin, "-version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except (subprocess.CalledProcessError, OSError):
+        print("Error: FFmpeg not found or not executable.")
+        return
+
+    base_path = "."
+    try:
+        root_items = os.listdir(base_path)
+    except OSError:
+        return
+
+    for item in root_items:
+        item_full_path = os.path.join(base_path, item)
+        if os.path.isdir(item_full_path):
+            resolved_title = process_directory(item_full_path, ffmpeg_bin)
+            if resolved_title and resolved_title != item:
+                new_folder_path = get_unique_path(os.path.join(base_path, resolved_title))
+                try:
+                    os.rename(item_full_path, new_folder_path)
+                except OSError:
+                    pass
 
 if __name__ == "__main__":
-    cmd("ffmpeg -version")
-    root_path = "./"
-    for file in os.listdir(root_path):
-        path = os.path.join(root_path, file)
-        if os.path.isdir(path):
-            name = convert(path)
-            if name:
-                rename(path, os.path.join(root_path, name))
+    main()
