@@ -37,7 +37,7 @@ def merge_media(ffmpeg_cmd, video_path, audio_path, output_path):
         output_path
     ]
     try:
-        subprocess.run(command, check=True, capture_output=True)
+        subprocess.run(command, shell=True)
         return output_path
     except (subprocess.CalledProcessError, OSError):
         if os.path.exists(output_path):
@@ -79,10 +79,10 @@ def process_directory(root_dir, ffmpeg_cmd):
         strid = ""
         subtitle = ""
         
-        if "ep" in data:
+        if "ep" in data and data["ep"] is not None:
             strid = sanitize_name(data["ep"].get("index", ""))
             subtitle = sanitize_name(data["ep"].get("index_title", ""))
-        elif "page_data" in data:
+        elif "page_data" in data and data["page_data"] is not None:
             strid = sanitize_name(data["page_data"].get("page", ""))
             subtitle = sanitize_name(data["page_data"].get("part", ""))
             
