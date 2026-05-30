@@ -36,7 +36,6 @@ def compress_folder(sevenz, folder_path, results):
         results['failed'].append((folder_path, "archive_exists"))
         return
 
-    # Estimate original size by summing files inside folder
     orig_size = 0
     for root, _, files in os.walk(folder_path):
         for f in files:
@@ -58,11 +57,9 @@ def compress_folder(sevenz, folder_path, results):
         verify_cmd = [sevenz, 'l', dest_path]
         try:
             vproc = subprocess.run(verify_cmd, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            # verify that base folder name appears in the archive listing
             if vproc.returncode == 0 and base in vproc.stdout:
                 comp_size = sizeof_bytes(dest_path)
                 try:
-                    # remove folder tree
                     for root, dirs, files in os.walk(folder_path, topdown=False):
                         for fname in files:
                             try:
@@ -128,7 +125,6 @@ def main():
     results = {'succeeded': [], 'failed': []}
 
     start_dir = os.path.abspath('.')
-    # iterate immediate subdirectories only
     for entry in os.listdir(start_dir):
         path = os.path.join(start_dir, entry)
         if os.path.isdir(path):

@@ -1,32 +1,30 @@
 import os
 
-# Define the root directory
+script_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_dir)
+
+
 root_directory = './'
 
 wrapper = ["(", ")"]
 
-# Walk through the directory and its subdirectories
 for dirpath, dirnames, filenames in os.walk(root_directory):
     for filename in filenames:
-        # Initialize a new filename
         new_filename = ''
-        skip = False  # Flag to indicate if we are inside brackets
+        skip = False
 
         for char in filename:
             if char == wrapper[0]:
-                skip = True  # Start skipping characters
+                skip = True
             elif char == wrapper[1]:
-                skip = False  # Stop skipping characters
+                skip = False
             elif not skip:
-                new_filename += char  # Add character to new filename if not skipping
+                new_filename += char
 
-        # If the new filename is different, rename the file
         if new_filename != filename:
-            # Get the full path for the old and new filenames
             old_file = os.path.join(dirpath, filename)
             new_file = os.path.join(dirpath, new_filename)
             
-            # Rename the file
             os.rename(old_file, new_file)
             print(f'Renamed: "{old_file}" to "{new_file}"')
             
