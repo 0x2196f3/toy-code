@@ -16,6 +16,19 @@ ENV CC=gcc-14 CXX=g++-14
 WORKDIR /app
 
 RUN if [ -n "${VERSION}" ]; then \
+      TAG="${VERSION}"; \
+    else \
+      TAG=$(curl -s "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" | jq -r .tag_name); \
+    fi && \
+
+    git clone --depth 1 --branch "$TAG" https://github.com/ggml-org/llama.cpp.git . || ( \
+      rm -rf ./* ./.git && \
+      git clone https://github.com/ggml-org/llama.cpp.git . && \
+      git fetch --tags && \
+      git checkout "tags/${TAG}" -b "build-${TAG}" \
+    )
+
+RUN if [ -n "${VERSION}" ]; then \
         SRC_URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/${VERSION}.tar.gz"; \
     else \
         SRC_URL=$(curl -s "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" | jq -r .tarball_url); \
