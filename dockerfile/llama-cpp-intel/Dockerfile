@@ -51,8 +51,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
             -DCMAKE_BUILD_TYPE=Release \
             -DGGML_NATIVE=OFF \
             -DLLAMA_BUILD_TESTS=OFF \
-            -DGGML_BACKEND_DL=ON; \
-            -DGGML_CPU_ALL_VARIANTS=OFF \
+            -DGGML_BACKEND_DL=ON \
+            -DGGML_CPU_ALL_VARIANTS=OFF; \
     else \
         echo "Unsupported architecture"; \
         exit 1; \
