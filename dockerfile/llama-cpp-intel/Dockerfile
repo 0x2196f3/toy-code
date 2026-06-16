@@ -2,7 +2,7 @@ ARG TARGETARCH=amd64
 ARG MARCH=alderlake
 ARG VERSION=b9592
 
-FROM intel/oneapi-toolkit:2026.0.0-devel-ubuntu24.04 AS build
+FROM docker.io/intel/oneapi-toolkit:2026.0.0-devel-ubuntu24.04 AS build
 
 ARG TARGETARCH
 ARG MARCH
@@ -20,8 +20,7 @@ RUN if [ -n "${VERSION}" ]; then \
     else \
       TAG=$(curl -s "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" | jq -r .tag_name); \
     fi && \
-
-    git clone --depth 1 --branch "$TAG" https://github.com/ggml-org/llama.cpp.git . || ( \
+    git clone --branch "$TAG" https://github.com/ggml-org/llama.cpp.git . || ( \
       rm -rf ./* ./.git && \
       git clone https://github.com/ggml-org/llama.cpp.git . && \
       git fetch --tags && \
@@ -73,7 +72,7 @@ RUN mkdir -p /app/full \
     && cp requirements.txt /app/full \
     && cp .devops/tools.sh /app/full/tools.sh
 
-FROM intel/oneapi-runtime:2026.0.0-devel-ubuntu24.04 AS final
+FROM docker.io/intel/oneapi-runtime:2026.0.0-devel-ubuntu24.04 AS final
 
 RUN apt-get update \
     && apt-get install -y libgomp1 curl ffmpeg \
