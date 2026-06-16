@@ -1,15 +1,17 @@
 ARG TARGETARCH=amd64
 ARG MARCH=alderlake
-ARG VERSION=b7406
+ARG VERSION=b9592
 
-FROM intel/oneapi-basekit:2025.3.0-0-devel-ubuntu22.04 AS build
+FROM intel/oneapi-toolkit:2026.0.0-devel-ubuntu24.04 AS build
 
 ARG TARGETARCH
 ARG MARCH
 ARG VERSION
 
 RUN apt-get update && \
-    apt-get install -y build-essential git cmake libcurl4-openssl-dev jq wget curl
+    apt-get install -y gcc-14 g++-14 build-essential git cmake libssl-dev jq wget curl
+
+ENV CC=gcc-14 CXX=g++-14
 
 WORKDIR /app
 
@@ -26,18 +28,18 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
             -DCMAKE_CXX_COMPILER=icpx \
             -DGGML_BLAS=ON \
             -DGGML_BLAS_VENDOR=Intel10_64lp \
-            -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
             -DCMAKE_CXX_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
-            -DGGML_NATIVE=OFF \
-            -DGGML_CPU_ALL_VARIANTS=OFF \
             -DGGML_AVX=ON \
             -DGGML_AVX2=ON \
             -DGGML_AVX512=OFF \
             -DGGML_F16C=ON \
             -DGGML_FMA=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DGGML_NATIVE=OFF \
             -DLLAMA_BUILD_TESTS=OFF \
             -DGGML_BACKEND_DL=ON; \
+            -DGGML_CPU_ALL_VARIANTS=OFF \
     else \
         echo "Unsupported architecture"; \
         exit 1; \
@@ -52,15 +54,16 @@ RUN mkdir -p /app/lib && \
 RUN mkdir -p /app/full \
     && cp build/bin/* /app/full \
     && cp *.py /app/full \
+    && cp -r conversion /app/full \
     && cp -r gguf-py /app/full \
     && cp -r requirements /app/full \
     && cp requirements.txt /app/full \
     && cp .devops/tools.sh /app/full/tools.sh
 
-FROM intel/oneapi-runtime:2025.3.0-0-devel-ubuntu22.04 AS final
+FROM intel/oneapi-runtime:2026.0.0-devel-ubuntu24.04 AS final
 
 RUN apt-get update \
-    && apt-get install -y libgomp1 curl \
+    && apt-get install -y libgomp1 curl ffmpeg \
     && apt autoremove -y \
     && apt clean -y \
     && rm -rf /tmp/* /var/tmp/* \
