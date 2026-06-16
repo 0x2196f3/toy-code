@@ -30,8 +30,10 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
             -DCMAKE_CXX_COMPILER=icpx \
             -DGGML_BLAS=ON \
             -DGGML_BLAS_VENDOR=Intel10_64lp \
-            -DCMAKE_C_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
-            -DCMAKE_CXX_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
+#            -DCMAKE_C_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
+#            -DCMAKE_CXX_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
+            -DCMAKE_C_FLAGS="-O3 -mtune=${MARCH}" \
+            -DCMAKE_CXX_FLAGS="-O3 -mtune=${MARCH}" \
             -DGGML_AVX=ON \
             -DGGML_AVX2=ON \
             -DGGML_AVX512=OFF \
