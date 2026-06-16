@@ -27,13 +27,6 @@ RUN if [ -n "${VERSION}" ]; then \
       git checkout "tags/${TAG}" -b "build-${TAG}" \
     )
 
-RUN if [ -n "${VERSION}" ]; then \
-        SRC_URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/${VERSION}.tar.gz"; \
-    else \
-        SRC_URL=$(curl -s "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" | jq -r .tarball_url); \
-    fi && \
-    wget -O- "$SRC_URL" | tar -xz --strip-components=1
-
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
         cmake -S . -B build \
             -DCMAKE_C_COMPILER=icx \
