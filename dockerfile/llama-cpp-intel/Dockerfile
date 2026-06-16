@@ -20,12 +20,9 @@ RUN if [ -n "${VERSION}" ]; then \
     else \
       TAG=$(curl -s "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" | jq -r .tag_name); \
     fi && \
-    git clone --branch "$TAG" https://github.com/ggml-org/llama.cpp.git . || ( \
-      rm -rf ./* ./.git && \
-      git clone https://github.com/ggml-org/llama.cpp.git . && \
-      git fetch --tags && \
-      git checkout "tags/${TAG}" -b "build-${TAG}" \
-    )
+    git clone https://github.com/ggml-org/llama.cpp.git . && \
+        git fetch --tags && \
+        git checkout "tags/${TAG}"
 
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
         cmake -S . -B build \
