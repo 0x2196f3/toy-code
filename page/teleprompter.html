@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Teleprompter</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --btn-bg: #e0e0e0;
+            --btn-text: #000000;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --text-color: #ffffff;
+                --btn-bg: #2a2a2a;
+                --btn-text: #ffffff;
+            }
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: sans-serif;
+        }
+        #container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        textarea {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            color: var(--text-color);
+            border: none;
+            outline: none;
+            resize: none;
+            overflow: hidden;
+            padding: 20px 140px 20px 20px;
+            font-family: sans-serif;
+            line-height: 1.1;
+            display: block;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        button {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--btn-bg);
+            color: var(--btn-text);
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            opacity: 0.8;
+        }
+        button:active {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <button id="clearBtn">CLEAR</button>
+        <textarea id="pad" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+    </div>
+    <script>
+        const pad = document.getElementById('pad');
+        const btn = document.getElementById('clearBtn');
+        function adjustFont() {
+            let low = 1;
+            let high = Math.max(window.innerWidth, window.innerHeight);
+            let optimal = 1;
+            while (low <= high) {
+                let mid = Math.floor((low + high) / 2);
+                pad.style.fontSize = mid + 'px';
+                if (pad.scrollHeight > pad.clientHeight || pad.scrollWidth > pad.clientWidth) {
+                    high = mid - 1;
+                } else {
+                    optimal = mid;
+                    low = mid + 1;
+                }
+            }
+            pad.style.fontSize = optimal + 'px';
+        }
+        pad.addEventListener('input', adjustFont);
+        window.addEventListener('resize', adjustFont);
+        window.addEventListener('orientationchange', adjustFont);
+        btn.addEventListener('click', () => {
+            pad.value = '';
+            adjustFont();
+            pad.focus();
+        });
+        window.addEventListener('load', adjustFont);
+    </script>
+</body>
+</html>
