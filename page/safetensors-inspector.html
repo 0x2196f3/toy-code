@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safetensors Inspector</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #f8fafc;
+  --txt: #0f172a;
+  --card-bg: #ffffff;
+  --border: #e2e8f0;
+  --primary: #3b82f6;
+  --hover: #2563eb;
+  --pre-bg: #f1f5f9;
+  --drop-hover: rgba(59, 130, 246, 0.05);
+  --table-head: #f8fafc;
+  --table-row-hover: #f1f5f9;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f172a;
+    --txt: #f8fafc;
+    --card-bg: #1e293b;
+    --border: #334155;
+    --primary: #60a5fa;
+    --hover: #3b82f6;
+    --pre-bg: #0f172a;
+    --drop-hover: rgba(96, 165, 250, 0.1);
+    --table-head: #1e293b;
+    --table-row-hover: #334155;
+  }
+}
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--txt);
+  margin: 0;
+  padding: 20px;
+  line-height: 1.6;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--card-bg);
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+.dropzone:hover, .dropzone.dragover {
+  border-color: var(--primary);
+  background: var(--drop-hover);
+}
+input[type="file"] {
+  display: none;
+}
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+.header-row h2 {
+  margin: 0;
+  word-break: break-all;
+  font-size: 24px;
+}
+.btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.btn:hover {
+  background: var(--hover);
+}
+#result-container {
+  display: none;
+}
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.card-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 16px;
+  margin: 0;
+  background: var(--card-bg);
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  padding: 20px;
+}
+.stat-box {
+  background: var(--pre-bg);
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.stat-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-bottom: 5px;
+}
+.stat-value {
+  font-size: 18px;
+  font-weight: bold;
+  word-break: break-word;
+}
+details.card {
+  transition: all 0.2s ease;
+}
+details.card summary {
+  padding: 15px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+details.card summary::-webkit-details-marker {
+  display: none;
+}
+details.card summary::after {
+  content: "▼";
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+details.card[open] summary::after {
+  transform: rotate(180deg);
+}
+pre {
+  background: var(--pre-bg);
+  padding: 15px;
+  margin: 0 20px 20px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.kv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.kv-table th, .kv-table td {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.kv-table th {
+  width: 30%;
+  font-weight: 500;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+.kv-table tr:last-child th, .kv-table tr:last-child td {
+  border-bottom: none;
+}
+.data-table-container {
+  overflow-x: auto;
+  max-height: 600px;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+.data-table th {
+  position: sticky;
+  top: 0;
+  background: var(--table-head);
+  padding: 12px 20px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  z-index: 10;
+}
+.data-table td {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.data-table tbody tr:hover {
+  background: var(--table-row-hover);
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--pre-bg);
+  font-size: 12px;
+  margin: 2px;
+  border: 1px solid var(--border);
+}
+#loading {
+  display: none;
+  text-align: center;
+  margin: 30px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--primary);
+}
+.parsed-section {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+@media (min-width: 768px) {
+  .parsed-section { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="dropzone" class="dropzone">
+    <h3 style="margin-top:0">Safetensors Inspector</h3>
+    <p>Drag and drop a .safetensors file here, or click to upload</p>
+    <input type="file" id="file-input" accept=".safetensors">
+  </div>
+  <div id="loading">Parsing file content...</div>
+  <div id="result-container">
+    <div class="header-row">
+      <h2 id="filename-display"></h2>
+      <button id="export-btn" class="btn">Export as JSON</button>
+    </div>
+    <div class="card" id="basic-info-card">
+      <div class="stats-grid" id="stats-grid"></div>
+    </div>
+    <details class="card" id="raw-metadata-card">
+      <summary>Raw Metadata</summary>
+      <pre id="raw-metadata-content"></pre>
+    </details>
+    <div class="parsed-section" id="parsed-metadata-container"></div>
+    <div class="card" id="tensors-card">
+      <div class="card-header">Tensors (<span id="tensor-count">0</span>)</div>
+      <div class="data-table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Shape</th>
+              <th>Size</th>
+              <th>Offsets</th>
+              <th>Parameters</th>
+            </tr>
+          </thead>
+          <tbody id="tensors-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+window.SafetensorsParser = (function() {
+  const HEADER_SIZE_BYTES = 8;
+  const MAX_HEADER_SIZE = 100 * 1024 * 1024;
+
+  function detectModelType(tensorNames, metadata) {
+    if (metadata && metadata["modelspec.architecture"]) {
+      const arch = metadata["modelspec.architecture"].toLowerCase();
+      if (arch.includes("/lora")) return "lora";
+      if (arch.includes("vae")) return "vae";
+      if (arch.includes("controlnet")) return "controlnet";
+      if (arch.includes("text_encoder") || arch.includes("clip")) return "text_encoder";
+    }
+    const hasLora = tensorNames.some(name => name.includes("lora_") && (name.includes(".alpha") || name.includes(".lora_down") || name.includes(".lora_up")));
+    if (hasLora) return "lora";
+    const hasVAE = tensorNames.some(name => name.startsWith("decoder.") || name.startsWith("encoder."));
+    const hasUNet = tensorNames.some(name => name.includes("diffusion_model") || name.includes("unet"));
+    if (hasVAE && !hasUNet) return "vae";
+    const hasControlNet = tensorNames.some(name => name.includes("control_") || (name.includes("input_blocks") && name.includes("zero_convs")));
+    if (hasControlNet) return "controlnet";
+    const hasTextModel = tensorNames.some(name => name.includes("text_model") || name.includes("text_encoder"));
+    if (hasTextModel && !hasUNet) return "text_encoder";
+    const hasCondStage = tensorNames.some(name => name.includes("cond_stage_model"));
+    const hasFirstStage = tensorNames.some(name => name.includes("first_stage_model"));
+    if (hasUNet && (hasCondStage || hasFirstStage || hasTextModel)) return "checkpoint";
+    const hasEmbedding = tensorNames.length <= 5 && tensorNames.some(name => name.includes("emb") || name === "weight");
+    if (hasEmbedding) return "embedding";
+    if (hasUNet) return "diffusion_model";
+    return "unknown";
+  }
+
+  function extractLoRATargets(tensorNames) {
+    const targets = new Set();
+    for (const name of tensorNames) {
+      if (name.startsWith("lora_te1_")) targets.add("CLIP-L");
+      else if (name.startsWith("lora_te2_")) targets.add("CLIP-G");
+      else if (name.startsWith("lora_unet_")) targets.add("UNet");
+    }
+    return Array.from(targets);
+  }
+
+  function extractTriggerWords(tagFrequency, maxWords) {
+    if (!tagFrequency) return [];
+    try {
+      const parsed = JSON.parse(tagFrequency);
+      const allTags = {};
+      for (const category of Object.values(parsed)) {
+        if (typeof category === "object" && category !== null) {
+          Object.assign(allTags, category);
+        }
+      }
+      return Object.entries(allTags).sort((a, b) => b[1] - a[1]).slice(0, maxWords || Infinity).map(x => x[0]);
+    } catch {
+      return [];
+    }
+  }
+
+  function parseMetadata(raw) {
+    const modelSpec = {};
+    const training = {};
+    const hashes = {};
+    for (const [key, value] of Object.entries(raw)) {
+      if (key.startsWith("modelspec.")) {
+        const field = key.substring(10);
+        if (["sai_model_spec", "architecture", "implementation", "title", "description", "author", "date", "resolution", "prediction_type", "encoder_layer"].includes(field)) {
+          modelSpec[field] = value;
+        }
+      } else if (key === "sshs_model_hash") {
+        hashes.model_hash = value;
+      } else if (key === "sshs_legacy_hash") {
+        hashes.legacy_hash = value;
+      } else if (key === "ss_sd_model_hash") {
+        hashes.sd_model_hash = value;
+      } else if (key === "ss_new_sd_model_hash") {
+        hashes.new_sd_model_hash = value;
+      } else if (key.startsWith("ss_")) {
+        const field = key.substring(3);
+        if (["base_model_version", "optimizer", "lr_scheduler", "training_started_at", "training_finished_at", "mixed_precision"].includes(field)) {
+          training[field] = value;
+        } else if (["num_train_images", "num_epochs", "network_dim", "network_alpha", "clip_skip"].includes(field)) {
+          const v = parseInt(value);
+          if (!isNaN(v)) training[field] = v;
+        } else if (["learning_rate", "noise_offset", "caption_dropout_rate"].includes(field)) {
+          const v = parseFloat(value);
+          if (!isNaN(v)) training[field] = v;
+        } else if (field === "gradient_checkpointing") {
+          training.gradient_checkpointing = value === "True";
+        } else if (field === "dataset_dirs" || field === "tag_frequency") {
+          try { training[field] = JSON.parse(value); } catch {}
+        }
+      }
+    }
+    return { modelSpec, training, hashes };
+  }
+
+  function calculateTensorStats(tensors) {
+    const dataTypes = new Set();
+    const dtypeDistribution = {};
+    let totalParameters = 0;
+    for (const tensor of tensors) {
+      dataTypes.add(tensor.dtype);
+      dtypeDistribution[tensor.dtype] = (dtypeDistribution[tensor.dtype] || 0) + 1;
+      totalParameters += tensor.shape.reduce((a, b) => a * b, 1);
+    }
+    const sortedDataTypes = Array.from(dataTypes).sort((a, b) => (dtypeDistribution[b] || 0) - (dtypeDistribution[a] || 0));
+    return {
+      tensor_count: tensors.length,
+      total_parameters: totalParameters,
+      data_types: sortedDataTypes,
+      dtype_distribution: dtypeDistribution
+    };
+  }
+
+  function analyzeSafetensors(header, fileSize, options = {}) {
+    const warnings = [];
+    const metadata = header.data.__metadata__ || {};
+    const tensors = [];
+    for (const [key, value] of Object.entries(header.data)) {
+      if (key !== "__metadata__" && typeof value === "object" && value && "dtype" in value) {
+        tensors.push({ name: key, ...value });
+      }
+    }
+    const tensorNames = tensors.map(t => t.name);
+    const modelType = detectModelType(tensorNames, metadata);
+    const { modelSpec, training, hashes } = parseMetadata(metadata);
+    const tensorStats = calculateTensorStats(tensors);
+    let tensorInfos = [];
+    if (options.include_tensors !== false) {
+      const limit = options.max_tensors || tensors.length;
+      tensorInfos = tensors.slice(0, limit).map(tensor => {
+        const params = tensor.shape.reduce((a, b) => a * b, 1);
+        const size = tensor.data_offsets[1] - tensor.data_offsets[0];
+        return { name: tensor.name, dtype: tensor.dtype, shape: tensor.shape, data_offsets: tensor.data_offsets, size, parameters: params };
+      });
+      if (tensors.length > limit) warnings.push(`Tensor list truncated to ${limit} items`);
+    }
+    let loraInfo = undefined;
+    if (modelType === "lora") {
+      const triggerWords = options.extract_trigger_words !== false ? extractTriggerWords(training.tag_frequency ? JSON.stringify(training.tag_frequency) : undefined, options.max_trigger_words) : [];
+      loraInfo = {
+        base_model: training.base_model_version || null,
+        target_components: extractLoRATargets(tensorNames),
+        rank: training.network_dim || null,
+        alpha: training.network_alpha || null,
+        trigger_words: triggerWords,
+        module: metadata.ss_network_module
+      };
+    }
+    const compatibility = {
+      pytorch: metadata.format === "pt" || tensorNames.some(n => n.includes("weight")),
+      tensorflow: metadata.format === "tf",
+      jax: metadata.format === "jax",
+      numpy: metadata.format === "numpy"
+    };
+    return {
+      model_type: modelType,
+      file_stats: { file_size: fileSize, header_size: header.size, ...tensorStats },
+      raw_metadata: metadata,
+      model_spec: modelSpec,
+      training: training,
+      hashes: hashes,
+      lora_info: loraInfo,
+      tensors: tensorInfos,
+      compatibility: compatibility,
+      warnings: warnings
+    };
+  }
+
+  async function parseFile(file, options = {}) {
+    const headerSizeBuf = await file.slice(0, HEADER_SIZE_BYTES).arrayBuffer();
+    const view = new DataView(headerSizeBuf);
+    const low = view.getUint32(0, true);
+    const high = view.getUint32(4, true);
+    const headerSize = low + high * 0x100000000;
+    if (headerSize > MAX_HEADER_SIZE) throw new Error(`Header size ${headerSize} exceeds max ${MAX_HEADER_SIZE}`);
+    const headerBuf = await file.slice(HEADER_SIZE_BYTES, HEADER_SIZE_BYTES + headerSize).arrayBuffer();
+    const headerJson = new TextDecoder().decode(headerBuf);
+    let data;
+    try {
+      data = JSON.parse(headerJson);
+    } catch(e) {
+      throw new Error(`Invalid header JSON: ${e}`);
+    }
+    return analyzeSafetensors({ size: headerSize, data }, file.size, options);
+  }
+
+  return { parseFile, analyzeSafetensors };
+})();
+</script>
+<script>
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+  const loading = document.getElementById('loading');
+  const resultContainer = document.getElementById('result-container');
+  const filenameDisplay = document.getElementById('filename-display');
+  const exportBtn = document.getElementById('export-btn');
+  const statsGrid = document.getElementById('stats-grid');
+  const rawMetadataContent = document.getElementById('raw-metadata-content');
+  const parsedMetadataContainer = document.getElementById('parsed-metadata-container');
+  const tensorCount = document.getElementById('tensor-count');
+  const tensorsBody = document.getElementById('tensors-body');
+  let currentData = null;
+  let currentFilename = '';
+
+  function formatBytes(bytes, decimals = 2) {
+    if (!+bytes) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  }
+
+  function formatNumber(num) {
+    return new Intl.NumberFormat().format(num);
+  }
+
+  function formatValue(val) {
+    if (Array.isArray(val)) {
+      if (val.length === 0) return '-';
+      return val.map(v => `<span class="badge">${v}</span>`).join('');
+    }
+    if (typeof val === 'object' && val !== null) {
+      return `<pre style="margin:0;padding:8px">${JSON.stringify(val, null, 2)}</pre>`;
+    }
+    return val !== null && val !== undefined && val !== '' ? val : '-';
+  }
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+    dropzone.addEventListener(e, preventDefaults, false);
+  });
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  ['dragenter', 'dragover'].forEach(e => {
+    dropzone.addEventListener(e, () => dropzone.classList.add('dragover'), false);
+  });
+  ['dragleave', 'drop'].forEach(e => {
+    dropzone.addEventListener(e, () => dropzone.classList.remove('dragover'), false);
+  });
+  dropzone.addEventListener('drop', (e) => {
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }, false);
+  dropzone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) handleFile(e.target.files[0]);
+  });
+
+  async function handleFile(file) {
+    if (!window.SafetensorsParser) return alert("safetensors-parser.js not found or failed to load.");
+    loading.style.display = 'block';
+    resultContainer.style.display = 'none';
+    currentFilename = file.name;
+    filenameDisplay.textContent = file.name;
+    statsGrid.innerHTML = '';
+    rawMetadataContent.textContent = '';
+    parsedMetadataContainer.innerHTML = '';
+    tensorsBody.innerHTML = '';
+    try {
+      const result = await window.SafetensorsParser.parseFile(file, { include_tensors: true });
+      currentData = result;
+      renderBasicInfo(result);
+      renderRawMetadata(result);
+      renderParsedMetadata(result);
+      renderTensors(result);
+      resultContainer.style.display = 'block';
+    } catch (err) {
+      alert("Error parsing file: " + err.message);
+    } finally {
+      loading.style.display = 'none';
+      fileInput.value = '';
+    }
+  }
+
+  function renderBasicInfo(data) {
+    const stats = [
+      { label: 'Model Type', value: data.model_type.toUpperCase() },
+      { label: 'File Size', value: formatBytes(data.file_stats.file_size) },
+      { label: 'Total Parameters', value: formatNumber(data.file_stats.total_parameters) },
+      { label: 'Tensor Count', value: formatNumber(data.file_stats.tensor_count) },
+      { label: 'Data Types', value: formatValue(data.file_stats.data_types) }
+    ];
+    let frameworks = [];
+    for (const [k, v] of Object.entries(data.compatibility)) {
+      if (v) frameworks.push(k);
+    }
+    stats.push({ label: 'Compatibility', value: formatValue(frameworks) });
+    statsGrid.innerHTML = stats.map(s => `
+      <div class="stat-box">
+        <div class="stat-label">${s.label}</div>
+        <div class="stat-value">${s.value}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderRawMetadata(data) {
+    rawMetadataContent.textContent = Object.keys(data.raw_metadata).length ? JSON.stringify(data.raw_metadata, null, 2) : '{}';
+  }
+
+  function renderParsedMetadata(data) {
+    const sections = [
+      { key: 'model_spec', title: 'Model Specification' },
+      { key: 'training', title: 'Training Info' },
+      { key: 'lora_info', title: 'LoRA Info' },
+      { key: 'hashes', title: 'Hashes' }
+    ];
+    sections.forEach(sec => {
+      const obj = data[sec.key];
+      if (!obj || Object.keys(obj).length === 0) return;
+      let rows = '';
+      for (const [k, v] of Object.entries(obj)) {
+        if (v === undefined || v === null || (Array.isArray(v) && v.length === 0)) continue;
+        rows += `<tr><th>${k.replace(/_/g, ' ')}</th><td>${formatValue(v)}</td></tr>`;
+      }
+      if (!rows) return;
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-header">${sec.title}</div>
+        <table class="kv-table"><tbody>${rows}</tbody></table>
+      `;
+      parsedMetadataContainer.appendChild(card);
+    });
+  }
+
+  function renderTensors(data) {
+    const tensors = data.tensors || [];
+    tensorCount.textContent = formatNumber(tensors.length);
+    const frag = document.createDocumentFragment();
+    tensors.forEach(t => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="word-break:break-all; max-width:300px;">${t.name}</td>
+        <td><span class="badge">${t.dtype}</span></td>
+        <td>[${t.shape.join(', ')}]</td>
+        <td>${formatBytes(t.size)}</td>
+        <td>[${t.data_offsets.join(', ')}]</td>
+        <td>${formatNumber(t.parameters)}</td>
+      `;
+      frag.appendChild(tr);
+    });
+    tensorsBody.appendChild(frag);
+  }
+
+  exportBtn.addEventListener('click', () => {
+    if (!currentData) return;
+    const blob = new Blob([JSON.stringify(currentData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = currentFilename.replace('.safetensors', '') + '_info.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+</script>
+</body>
+</html>

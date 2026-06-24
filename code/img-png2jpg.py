@@ -1,25 +1,26 @@
 import os
-import sys
 import shutil
 import subprocess
 from pathlib import Path
 from multiprocessing import Pool, cpu_count
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import logging
 
 SRC_ROOT = Path("./png")
 DST_ROOT = Path("./jpg")
 MAGICK = Path("./ImageMagick-full/magick.exe")
-QUALITY = "90"  
+QUALITY = "90"
 
 WORKERS = max(1, cpu_count() - 1)
 MAX_FILES_PER_JOB = 200
+COPY_THREADS = max(4, cpu_count())
 
 EXCLUDE_FILENAMES = {
     ".ds_store",
     "thumbs.db",
     "desktop.ini",
-    "ehthumbs.db"
+    "ehthumbs.db",
 }
 
 EXCLUDE_EXTENSIONS = {
@@ -58,197 +59,167 @@ summary = {
     "delete_errors": 0,
 }
 
-def is_excluded(p: Path) -> bool:
-    if p.name.lower() in EXCLUDE_FILENAMES:
-        return True
-    if p.suffix.lower() in EXCLUDE_EXTENSIONS:
-        return True
-    return False
+def is_excluded(name):
+    nl = name.lower()
+    return nl in EXCLUDE_FILENAMES or os.path.splitext(nl)[1] in EXCLUDE_EXTENSIONS
 
-def ensure_dir(p: Path):
-    if not p.exists():
+def get_index(root_dir):
+    idx, dirs = {}, set()
+    if not os.path.exists(root_dir): return idx, dirs
+    stack = [("", root_dir)]
+    while stack:
+        rel_dir, current_dir = stack.pop()
         try:
-            p.mkdir(parents=True, exist_ok=True)
-            summary["dirs_created"] += 1
-            logging.info(f"Created directory: {p}")
-        except Exception as e:
-            logging.error(f"Failed to create directory {p}: {e}")
-
-def gather_tasks(src_root: Path, dst_root: Path):
-    mogrify_tasks = [] 
-    copy_tasks = []    
-
-    for src_dir, _, files in os.walk(src_root):
-        src_dir = Path(src_dir)
-        rel = src_dir.relative_to(src_root)
-        dst_dir = dst_root.joinpath(rel)
-        
-        ensure_dir(dst_dir)
-
-        current_dir_pngs_to_convert = []
-
-        for fname in files:
-            src_file = src_dir / fname
-            
-            if is_excluded(src_file):
-                summary["files_ignored_src"] += 1
-                continue
-
-            if src_file.suffix.lower() == ".png":
-                summary["png_found"] += 1
-                dst_jpg = dst_dir / (src_file.stem + ".jpg")
-                
-                should_convert = False
-                if not dst_jpg.exists():
-                    should_convert = True
-                else:
+            with os.scandir(current_dir) as it:
+                for entry in it:
                     try:
-                        if dst_jpg.stat().st_mtime < src_file.stat().st_mtime:
-                            should_convert = True
+                        rel_path = f"{rel_dir}/{entry.name}" if rel_dir else entry.name
+                        if entry.is_dir(follow_symlinks=False):
+                            dirs.add(rel_path)
+                            stack.append((rel_path, entry.path))
                         else:
-                            summary["jpg_skipped_exists"] += 1
-                    except OSError:
-                        should_convert = True
+                            idx[rel_path] = entry.stat(follow_symlinks=False).st_mtime
+                    except OSError: pass
+        except OSError: pass
+    return idx, dirs
 
-                if should_convert:
-                    current_dir_pngs_to_convert.append(fname)
-
-            else:
-                summary["non_png_found"] += 1
-                dst_file = dst_dir / fname
-                
-                should_copy = False
-                if not dst_file.exists():
-                    should_copy = True
-                else:
-                    try:
-                        if dst_file.stat().st_mtime < src_file.stat().st_mtime:
-                            should_copy = True
-                        else:
-                            summary["non_png_skipped"] += 1
-                    except OSError:
-                        should_copy = True
-                
-                if should_copy:
-                    copy_tasks.append((src_file, dst_file))
-
-        if current_dir_pngs_to_convert:
-            mogrify_tasks.append((str(src_dir), str(dst_dir), current_dir_pngs_to_convert))
-
-    return mogrify_tasks, copy_tasks
-
-def run_mogrify_task(task):
-    src_dir, dst_dir, filenames = task
-    cmd = [str(MAGICK), "mogrify", "-path", dst_dir, "-format", "jpg", "-quality", QUALITY]
-    cmd += [str(Path(src_dir) / fn) for fn in filenames]
-    
+def run_mogrify(args):
+    src_dir, dst_dir, files = args
+    cmd = [MAGICK, "mogrify", "-path", dst_dir, "-format", "jpg", "-quality", QUALITY]
+    cmd.extend([os.path.join(src_dir, f) for f in files])
     try:
         subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        converted = len(filenames)
-        logging.info(f"Converted {converted} files in {src_dir}")
-        return ("ok", converted, None)
+        return "ok", len(files), src_dir
     except subprocess.CalledProcessError as e:
-        err = e.stderr.decode(errors="ignore")
-        logging.error(f"Error converting in {src_dir}: {err.strip()}")
-        return ("err", 0, err)
+        return "err", 0, e.stderr.decode(errors="ignore").strip()
 
-def convert_parallel(tasks):
-    if not tasks:
-        return
-    
-    expanded = []
-    for src_dir, dst_dir, filenames in tasks:
-        for i in range(0, len(filenames), MAX_FILES_PER_JOB):
-            chunk = filenames[i:i + MAX_FILES_PER_JOB]
-            expanded.append((src_dir, dst_dir, chunk))
+def copy_file(rel):
+    src, dst = os.path.join(SRC_ROOT, os.path.normpath(rel)), os.path.join(DST_ROOT, os.path.normpath(rel))
+    try:
+        shutil.copy2(src, dst)
+        return "ok_copy", rel
+    except Exception as e:
+        return "err_copy", f"Failed to copy {src} to {dst}: {e}"
 
-    workers = min(WORKERS, len(expanded))
-    logging.info(f"Starting conversion pool with {workers} workers for {len(expanded)} batches...")
-    
-    with Pool(processes=workers) as pool:
-        for status, count, err in pool.imap_unordered(run_mogrify_task, expanded):
-            if status == "ok":
-                summary["jpg_converted"] += count
-            else:
-                summary["convert_errors"] += 1
-
-def process_file_copies(copy_tasks):
-    if not copy_tasks:
-        return
-
-    logging.info(f"Syncing {len(copy_tasks)} non-PNG files...")
-    for src, dst in copy_tasks:
-        try:
-            shutil.copy2(src, dst)
-            summary["non_png_synced"] += 1
-            logging.info(f"Synced: {src.name}")
-        except Exception as e:
-            summary["copy_errors"] += 1
-            logging.error(f"Failed to copy {src} to {dst}: {e}")
-
-def mirror_delete_extras(src_root: Path, dst_root: Path):
-    logging.info("Starting cleanup of extra files in destination...")
-    
-    for dst_dir, dirs, files in os.walk(dst_root, topdown=False):
-        dst_dir_path = Path(dst_dir)
-        try:
-            rel = dst_dir_path.relative_to(dst_root)
-            src_dir_path = src_root.joinpath(rel)
-        except ValueError:
-            continue
-
-        for fname in files:
-            dst_file = dst_dir_path.joinpath(fname)
-            should_delete = False
-
-            if is_excluded(dst_file):
-                should_delete = True
-                logging.info(f"Deleting excluded file found in dest: {dst_file.name}")
-
-            elif not should_delete:
-                if dst_file.suffix.lower() == ".jpg":
-                    src_png = src_dir_path.joinpath(dst_file.stem + ".png")
-                    src_exact_jpg = src_dir_path.joinpath(dst_file.name)
-                    
-                    if not src_png.exists() and not src_exact_jpg.exists():
-                        should_delete = True
-                else:
-                    src_equiv = src_dir_path.joinpath(fname)
-                    if not src_equiv.exists():
-                        should_delete = True
-
-            if should_delete:
-                try:
-                    dst_file.unlink()
-                    summary["files_deleted"] += 1
-                    logging.info(f"Deleted extra file: {dst_file}")
-                except Exception as e:
-                    summary["delete_errors"] += 1
-                    logging.error(f"Failed to delete file {dst_file}: {e}")
-
-        if not any(dst_dir_path.iterdir()):
-            if not src_dir_path.exists():
-                try:
-                    dst_dir_path.rmdir()
-                    summary["dirs_deleted"] += 1
-                    logging.info(f"Deleted empty directory: {dst_dir_path}")
-                except Exception as e:
-                    summary["delete_errors"] += 1
-                    logging.error(f"Failed to delete directory {dst_dir_path}: {e}")
+def delete_file(rel):
+    p = os.path.join(DST_ROOT, os.path.normpath(rel))
+    try:
+        os.remove(p)
+        return "ok_del", p
+    except Exception as e:
+        return "err_del", f"Delete failed: {p}: {e}"
 
 def main():
     start = datetime.now()
     logging.info("=== Sync started ===")
     
-    convert_tasks, copy_tasks = gather_tasks(SRC_ROOT, DST_ROOT)
+    logging.info("Indexing source tree into memory...")
+    src_idx, src_dirs = get_index(SRC_ROOT)
+    logging.info(f"Source entries: {len(src_idx)}")
     
-    logging.info(f"Tasks gathered: {len(convert_tasks)} conversion batches, {len(copy_tasks)} file copies.")
+    logging.info("Indexing destination tree into memory...")
+    dst_idx, dst_dirs = get_index(DST_ROOT)
+    logging.info(f"Destination entries: {len(dst_idx)}")
 
-    convert_parallel(convert_tasks)
+    if not os.path.exists(DST_ROOT):
+        os.makedirs(DST_ROOT, exist_ok=True)
+        summary["dirs_created"] += 1
+        logging.info(f"Created directory: {DST_ROOT}")
 
-    process_file_copies(copy_tasks)
+    for d in src_dirs:
+        p = os.path.join(DST_ROOT, os.path.normpath(d))
+        if not os.path.exists(p):
+            os.makedirs(p, exist_ok=True)
+            summary["dirs_created"] += 1
+            logging.info(f"Created directory: {p}")
 
-    mirror_delete_extras(SRC_ROOT, DST_ROOT)
+    mogrify_tasks, copy_tasks, delete_targets, mogrify_jobs = {}, [], [], []
+    
+    for rel, mtime in src_idx.items():
+        name = os.path.basename(rel)
+        if is_excluded(name):
+            summary["files_ignored_src"] += 1
+            continue
+        ext = os.path.splitext(name)[1].lower()
+        if ext == ".png":
+            summary["png_found"] += 1
+            dst_rel = os.path.splitext(rel)[0] + ".jpg"
+            if dst_rel not in dst_idx or dst_idx[dst_rel] < mtime:
+                mogrify_tasks.setdefault(os.path.dirname(rel), []).append(name)
+            else:
+                summary["jpg_skipped_exists"] += 1
+        else:
+            summary["non_png_found"] += 1
+            if rel not in dst_idx or dst_idx[rel] < mtime:
+                copy_tasks.append(rel)
+            else:
+                summary["non_png_skipped"] += 1
+
+    for rel in dst_idx:
+        name = os.path.basename(rel)
+        if is_excluded(name):
+            delete_targets.append(rel)
+            continue
+        ext = os.path.splitext(name)[1].lower()
+        if ext == ".jpg":
+            if os.path.splitext(rel)[0] + ".png" not in src_idx and rel not in src_idx:
+                delete_targets.append(rel)
+        elif rel not in src_idx:
+            delete_targets.append(rel)
+
+    for d, files in mogrify_tasks.items():
+        src_d = os.path.join(SRC_ROOT, os.path.normpath(d)) if d else SRC_ROOT
+        dst_d = os.path.join(DST_ROOT, os.path.normpath(d)) if d else DST_ROOT
+        for i in range(0, len(files), MAX_FILES_PER_JOB):
+            mogrify_jobs.append((src_d, dst_d, files[i:i+MAX_FILES_PER_JOB]))
+
+    logging.info(f"Tasks gathered: {len(mogrify_jobs)} conversion batches, {len(copy_tasks)} file copies.")
+
+    if mogrify_jobs:
+        workers = min(WORKERS, len(mogrify_jobs))
+        logging.info(f"Starting conversion pool with {workers} workers for {len(mogrify_jobs)} batches...")
+        with Pool(processes=workers) as pool:
+            for status, count, msg in pool.imap_unordered(run_mogrify, mogrify_jobs):
+                if status == "ok":
+                    summary["jpg_converted"] += count
+                    logging.info(f"Converted {count} files in {msg}")
+                else:
+                    summary["convert_errors"] += 1
+                    logging.error(f"Error converting: {msg}")
+
+    if copy_tasks:
+        logging.info(f"Syncing {len(copy_tasks)} non-PNG files with {COPY_THREADS} threads...")
+        with ThreadPoolExecutor(max_workers=COPY_THREADS) as ex:
+            for status, msg in ex.map(copy_file, copy_tasks):
+                if status == "ok_copy":
+                    summary["non_png_synced"] += 1
+                    logging.info(f"Synced: {os.path.basename(msg)}")
+                else:
+                    summary["copy_errors"] += 1
+                    logging.error(msg)
+
+    if delete_targets:
+        logging.info(f"Deleting {len(delete_targets)} extra files from destination...")
+        with ThreadPoolExecutor(max_workers=COPY_THREADS) as ex:
+            for status, msg in ex.map(delete_file, delete_targets):
+                if status == "ok_del":
+                    summary["files_deleted"] += 1
+                    logging.info(f"Deleted extra file: {msg}")
+                else:
+                    summary["delete_errors"] += 1
+                    logging.error(msg)
+
+    for d in sorted(list(dst_dirs), key=lambda x: x.count("/"), reverse=True):
+        if d not in src_dirs:
+            p = os.path.join(DST_ROOT, os.path.normpath(d))
+            try:
+                if not os.listdir(p):
+                    os.rmdir(p)
+                    summary["dirs_deleted"] += 1
+                    logging.info(f"Deleted empty directory: {p}")
+            except Exception as e:
+                summary["delete_errors"] += 1
+                logging.error(f"Failed to delete directory {p}: {e}")
 
     end = datetime.now()
     duration = (end - start).total_seconds()
@@ -282,7 +253,6 @@ def main():
     print("\n".join(summary_lines))
 
 if __name__ == "__main__":
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(script_dir)
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     main()
     input("Press any key to exit")
