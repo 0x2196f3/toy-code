@@ -2,7 +2,7 @@ ARG TARGETARCH=amd64
 ARG MARCH=alderlake
 ARG VERSION=b9592
 
-FROM docker.io/intel/oneapi-toolkit:2026.0.0-devel-ubuntu24.04 AS build
+FROM docker.io/intel/oneapi-toolkit:2026.1.0-devel-ubuntu24.04 AS build
 
 ARG TARGETARCH
 ARG MARCH
@@ -30,17 +30,19 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
             -DCMAKE_CXX_COMPILER=icpx \
             -DGGML_BLAS=ON \
             -DGGML_BLAS_VENDOR=Intel10_64lp \
-#            -DCMAKE_C_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
-#            -DCMAKE_CXX_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
-            -DCMAKE_C_FLAGS="-O3 -mtune=${MARCH}" \
-            -DCMAKE_CXX_FLAGS="-O3 -mtune=${MARCH}" \
+            -DCMAKE_C_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
+            -DCMAKE_CXX_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
+#            -DCMAKE_C_FLAGS="-O3 -mtune=${MARCH}" \
+#            -DCMAKE_CXX_FLAGS="-O3 -mtune=${MARCH}" \
             -DGGML_AVX=ON \
             -DGGML_AVX2=ON \
+            -DGGML_AVX_VNNI=ON \
             -DGGML_AVX512=OFF \
             -DGGML_F16C=ON \
             -DGGML_FMA=ON \
             -DCMAKE_BUILD_TYPE=Release \
             -DGGML_NATIVE=OFF \
+            -DGGML_LTO=ON \
             -DLLAMA_BUILD_TESTS=OFF \
             -DGGML_BACKEND_DL=ON \
             -DGGML_CPU_ALL_VARIANTS=OFF; \
@@ -64,7 +66,7 @@ RUN mkdir -p /app/full \
     && cp requirements.txt /app/full \
     && cp .devops/tools.sh /app/full/tools.sh
 
-FROM docker.io/intel/oneapi-runtime:2026.0.0-devel-ubuntu24.04 AS final
+FROM docker.io/intel/oneapi-toolkit:2026.1.0-devel-ubuntu24.04 AS final
 
 RUN apt-get update \
     && apt-get install -y libgomp1 curl ffmpeg \
