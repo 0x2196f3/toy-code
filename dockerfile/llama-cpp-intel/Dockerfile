@@ -1,6 +1,6 @@
 ARG TARGETARCH=amd64
 ARG MARCH=alderlake
-ARG VERSION=b9592
+ARG VERSION=b10156
 
 FROM docker.io/intel/oneapi-toolkit:2026.1.0-devel-ubuntu24.04 AS build
 
@@ -30,8 +30,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
             -DCMAKE_CXX_COMPILER=icpx \
             -DGGML_BLAS=ON \
             -DGGML_BLAS_VENDOR=Intel10_64lp \
-            -DCMAKE_C_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
-            -DCMAKE_CXX_FLAGS="-O3 -x${MARCH} -mtune=${MARCH}" \
+            -DCMAKE_C_FLAGS="-O3 -march=${MARCH} -mtune=${MARCH}" \
+            -DCMAKE_CXX_FLAGS="-O3 -march=${MARCH} -mtune=${MARCH}" \
 #            -DCMAKE_C_FLAGS="-O3 -mtune=${MARCH}" \
 #            -DCMAKE_CXX_FLAGS="-O3 -mtune=${MARCH}" \
             -DGGML_AVX=ON \
