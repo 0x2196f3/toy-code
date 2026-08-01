@@ -1,12 +1,11 @@
-ARG TARGETARCH=amd64
+ARG UBUNTU_VERSION=24.04
 ARG MARCH=alderlake
-ARG VERSION=b10156
+ARG APP_VERSION=b10156
 
-FROM docker.io/intel/oneapi-toolkit:2026.1.0-devel-ubuntu24.04 AS build
+FROM docker.io/intel/oneapi-toolkit:2026.1.0-devel-ubuntu$UBUNTU_VERSION AS build
 
-ARG TARGETARCH
 ARG MARCH
-ARG VERSION
+ARG APP_VERSION
 
 RUN apt-get update && \
     apt-get install -y gcc-14 g++-14 build-essential git cmake libssl-dev jq wget curl
@@ -15,8 +14,8 @@ ENV CC=gcc-14 CXX=g++-14
 
 WORKDIR /app
 
-RUN if [ -n "${VERSION}" ]; then \
-      TAG="${VERSION}"; \
+RUN if [ -n "${APP_VERSION}" ]; then \
+      TAG="${APP_VERSION}"; \
     else \
       TAG=$(curl -s "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" | jq -r .tag_name); \
     fi && \
@@ -24,32 +23,17 @@ RUN if [ -n "${VERSION}" ]; then \
         git fetch --tags && \
         git checkout "tags/${TAG}"
 
-RUN if [ "$TARGETARCH" = "amd64" ]; then \
-        cmake -S . -B build \
+RUN cmake -S . -B build \
             -DCMAKE_C_COMPILER=icx \
             -DCMAKE_CXX_COMPILER=icpx \
-            -DGGML_BLAS=ON \
-            -DGGML_BLAS_VENDOR=Intel10_64lp \
-            -DCMAKE_C_FLAGS="-O3 -march=${MARCH} -mtune=${MARCH}" \
-            -DCMAKE_CXX_FLAGS="-O3 -march=${MARCH} -mtune=${MARCH}" \
-#            -DCMAKE_C_FLAGS="-O3 -mtune=${MARCH}" \
-#            -DCMAKE_CXX_FLAGS="-O3 -mtune=${MARCH}" \
-            -DGGML_AVX=ON \
-            -DGGML_AVX2=ON \
-            -DGGML_AVX_VNNI=ON \
-            -DGGML_AVX512=OFF \
-            -DGGML_F16C=ON \
-            -DGGML_FMA=ON \
+            -DCMAKE_C_FLAGS="-O3 -march=${MARCH}" \
+            -DCMAKE_CXX_FLAGS="-O3 -march=${MARCH}" \
             -DCMAKE_BUILD_TYPE=Release \
             -DGGML_NATIVE=OFF \
             -DGGML_LTO=ON \
             -DLLAMA_BUILD_TESTS=OFF \
             -DGGML_BACKEND_DL=ON \
-            -DGGML_CPU_ALL_VARIANTS=OFF; \
-    else \
-        echo "Unsupported architecture"; \
-        exit 1; \
-    fi && \
+            -DGGML_CPU_ALL_VARIANTS=OFF && \
     cmake --build build -j $(nproc)
 
 RUN find /app -type f -name "*.so*" -exec strip --strip-unneeded {} \; 2>/dev/null || true
@@ -66,7 +50,7 @@ RUN mkdir -p /app/full \
     && cp requirements.txt /app/full \
     && cp .devops/tools.sh /app/full/tools.sh
 
-FROM docker.io/intel/oneapi-toolkit:2026.1.0-devel-ubuntu24.04 AS final
+FROM docker.io/intel/oneapi-toolkit:2026.1.0-devel-ubuntu$UBUNTU_VERSION AS final
 
 RUN apt-get update \
     && apt-get install -y libgomp1 curl ffmpeg \
@@ -79,8 +63,10 @@ RUN apt-get update \
 ENV LLAMA_ARG_HOST=0.0.0.0
 
 COPY --from=build /app/lib/ /app
-COPY --from=build /app/full/llama-server /app
+COPY --from=build /app/full/llama /app/full/llama-server /app
 
 WORKDIR /app
+
 HEALTHCHECK CMD [ "curl", "-f", "http://localhost:8080/health" ]
+
 ENTRYPOINT [ "/app/llama-server" ]

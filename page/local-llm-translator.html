@@ -54,7 +54,7 @@
             border-radius: 8px;
             box-shadow: 0 1px 6px var(--shadow-color);
             overflow: hidden;
-            transition: background-color 0.3s, height 0.3s, border-radius 0.3s;
+            transition: background-color 0.3s, border-radius 0.3s;
             display: flex;
             flex-direction: column;
         }
@@ -130,15 +130,14 @@
         }
         .icon-btn:hover { background-color: var(--hover-bg); }
         .icon-btn:disabled { cursor: not-allowed; opacity: 0.5; }
-		
-		#switch-lang-btn {
-			align-items: center;
-			justify-content: center;
-			vertical-align: middle;
-			width: 40px;
-			height: 40px;
-			padding: 0;
-		}
+        #switch-lang-btn {
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+        }
         #translate-btn {
             padding: 10px 24px;
             font-size: 14px;
@@ -147,8 +146,8 @@
             color: var(--primary-text);
             border: none;
             border-radius: 4px;
-            /*cursor: pointer;*/
-			width: 96px;
+            cursor: pointer;
+            width: 96px;
             transition: opacity 0.2s, background-color 0.2s;
             position: relative;
             display: inline-flex;
@@ -163,11 +162,10 @@
         #translate-btn.abort-btn { background-color: var(--error-color); }
         .char-count { position: absolute; bottom: 8px; right: 15px; font-size: 12px; color: var(--secondary-text-color); }
         .copy-container { position: absolute; top: 15px; right: 15px; display: flex; align-items: center; }
-		
         #translate-btn .loader {
             display: none;
-            width: 8x;
-            height: 8px;
+            width: 14px;
+            height: 14px;
             border-width: 2px;
             border-style: solid;
             border-color: transparent;
@@ -182,7 +180,6 @@
         #translate-btn.loading > svg {
             opacity: 0.5;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -322,15 +319,15 @@
                 border-top-color: var(--primary-color);
                 border-radius: 50%;
             }
-			#switch-lang-btn {
-				position: absolute;
-				bottom: 32px;
-				right: calc(24px + 56px + 12px);
-				transform: translateY(0);
-				display: flex;
-				align-items: center;
-				justify-content: center;
-			}
+            #switch-lang-btn {
+                position: absolute;
+                bottom: 32px;
+                right: calc(24px + 56px + 12px);
+                transform: translateY(0);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -355,7 +352,7 @@
             <div class="language-selector"><select id="source-lang"></select></div>
             <div class="textarea-wrapper">
                 <textarea id="source-text" placeholder="Enter text..."></textarea>
-				<div class="copy-container">
+                <div class="copy-container">
                      <button id="clear-btn" class="icon-btn" title="Clear text">
                         <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor">
                             <path d="M0 0h24v24H0V0z" fill="none"/>
@@ -366,9 +363,9 @@
                 <div id="source-char-count" class="char-count">0</div>
             </div>
             <div class="panel-footer">
-				<button id="switch-lang-btn" class="icon-btn" title="Switch languages">
-					<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
-				</button>
+                <button id="switch-lang-btn" class="icon-btn" title="Switch languages">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+                </button>
                 <button id="translate-btn">
                     <div class="loader" id="loader"></div>
                     <span class="desktop-text">Translate</span>
@@ -381,7 +378,6 @@
                         <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
                     </svg>
                 </button>
-
             </div>
         </div>
         <div class="panel result-panel">
@@ -406,7 +402,6 @@
     <div class="modal-content">
         <h2>Settings</h2>
         <p>Configure your LLM API connection. Settings are saved in your browser's local storage.</p>
-
         <div class="form-group">
             <label for="api-type">API Type</label>
             <select id="api-type">
@@ -418,9 +413,8 @@
             <label for="server-url">Server Base URL</label>
             <input type="text" id="server-url">
             <small id="ollama-url-hint">Enter the base URL. E.g., `http://localhost:11434`</small>
-            <small id="ollama-cors-hint" style="display: none;">⚠️ Your Ollama server may need to be configured to accept requests from this page (CORS). See documentation on setting OLLAMA_ORIGINS.</small>
-            <small id="openai-url-hint" style="display: none;">Enter the base URL. E.g.,
-                `http://localhost:8080`</small>
+            <small id="ollama-cors-hint" style="display: none;">Warning: Your Ollama server may need to be configured to accept requests from this page (CORS). See documentation on setting OLLAMA_ORIGINS.</small>
+            <small id="openai-url-hint" style="display: none;">Enter the base URL. E.g., `http://localhost:8080`</small>
         </div>
         <div class="form-group">
             <label for="api-key">API Key (Optional)</label>
@@ -453,7 +447,6 @@
                 <span class="slider"></span>
             </label>
         </div>
-
         <div class="modal-actions">
             <button id="cancel-settings-btn">Cancel</button>
             <button id="save-settings-btn">Save</button>
@@ -516,15 +509,9 @@
         let isTranslating = false;
         let abortController = null;
 
-        class APIHandler {
-            async getModels(settings) { throw new Error("getModels() must be implemented by subclasses"); }
-            async generate(systemPrompt, userPrompt, settings, signal) { throw new Error("generate() must be implemented by subclasses"); }
-            async* generateStream(systemPrompt, userPrompt, settings, signal) { throw new Error("generateStream() must be implemented by subclasses"); }
-        }
-
-        class OllamaAPI extends APIHandler {
-             async getModels({ serverUrl, apiKey }) {
-                const endpoint = `${serverUrl.replace(/\/$/, '')}/api/tags`;
+        class OllamaAPI {
+            async getModels({ serverUrl, apiKey }) {
+                const endpoint = `${serverUrl.replace(/\/+$/, '')}/api/tags`;
                 const response = await fetch(endpoint, {
                     method: 'GET',
                     headers: { ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
@@ -538,7 +525,7 @@
             }
 
             async generate(systemPrompt, userPrompt, { serverUrl, model, apiKey }, signal) {
-                const endpoint = `${serverUrl.replace(/\/$/, '')}/api/generate`;
+                const endpoint = `${serverUrl.replace(/\/+$/, '')}/api/generate`;
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
@@ -554,7 +541,7 @@
             }
 
             async* generateStream(systemPrompt, userPrompt, { serverUrl, model, apiKey }, signal) {
-                const endpoint = `${serverUrl.replace(/\/$/, '')}/api/generate`;
+                const endpoint = `${serverUrl.replace(/\/+$/, '')}/api/generate`;
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
@@ -573,32 +560,38 @@
 
                 while (true) {
                     const { done, value } = await reader.read();
-                    if (done) break;
-
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop();
-
-                    for (const line of lines) {
-                        if (line.trim()) {
-                            const data = JSON.parse(line);
-                            if (data.response) {
-                                yield data.response;
+                    if (value) {
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+                        for (const line of lines) {
+                            if (line.trim()) {
+                                const data = JSON.parse(line);
+                                if (data.response !== undefined) yield data.response;
                             }
                         }
+                    }
+                    if (done) {
+                        if (buffer.trim()) {
+                            try {
+                                const data = JSON.parse(buffer);
+                                if (data.response !== undefined) yield data.response;
+                            } catch (e) {}
+                        }
+                        break;
                     }
                 }
             }
         }
 
-        class OpenAICompatibleAPI extends APIHandler {
-             async getModels({ serverUrl, apiKey }) {
-                const endpoint = `${serverUrl.replace(/\/$/, '')}/v1/models`;
-                 const response = await fetch(endpoint, {
+        class OpenAICompatibleAPI {
+            async getModels({ serverUrl, apiKey }) {
+                const endpoint = `${serverUrl.replace(/\/+$/, '')}/v1/models`;
+                const response = await fetch(endpoint, {
                     method: 'GET',
                     headers: { ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
                 });
-                 if (!response.ok) {
+                if (!response.ok) {
                     const err = await response.json().catch(() => ({ error: response.statusText }));
                     throw new Error(err.message || err.error?.message || err.error || "Failed to fetch models");
                 }
@@ -607,7 +600,7 @@
             }
 
             async generate(systemPrompt, userPrompt, { serverUrl, model, apiKey }, signal) {
-                const endpoint = `${serverUrl.replace(/\/$/, '')}/v1/chat/completions`;
+                const endpoint = `${serverUrl.replace(/\/+$/, '')}/v1/chat/completions`;
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
@@ -629,8 +622,8 @@
                 return data.choices[0].message.content.trim();
             }
 
-             async* generateStream(systemPrompt, userPrompt, { serverUrl, model, apiKey }, signal) {
-                const endpoint = `${serverUrl.replace(/\/$/, '')}/v1/chat/completions`;
+            async* generateStream(systemPrompt, userPrompt, { serverUrl, model, apiKey }, signal) {
+                const endpoint = `${serverUrl.replace(/\/+$/, '')}/v1/chat/completions`;
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
@@ -656,36 +649,41 @@
 
                 while (true) {
                     const { done, value } = await reader.read();
-                    if (done) break;
-
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop();
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const content = line.substring(6);
-                            if (content.trim() === '[DONE]') {
-                                return;
-                            }
-                            try {
-                                const data = JSON.parse(content);
-                                const text = data.choices[0]?.delta?.content;
-                                if (text) {
-                                    yield text;
-                                }
-                            } catch (e) {
-                                console.error('Error parsing stream JSON:', e);
+                    if (value) {
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const content = line.substring(6);
+                                if (content.trim() === '[DONE]') return;
+                                try {
+                                    const data = JSON.parse(content);
+                                    const text = data.choices[0]?.delta?.content;
+                                    if (text) yield text;
+                                } catch (e) {}
                             }
                         }
+                    }
+                    if (done) {
+                        if (buffer.trim() && buffer.startsWith('data: ')) {
+                            const content = buffer.substring(6);
+                            if (content.trim() !== '[DONE]') {
+                                try {
+                                    const data = JSON.parse(content);
+                                    const text = data.choices[0]?.delta?.content;
+                                    if (text) yield text;
+                                } catch (e) {}
+                            }
+                        }
+                        break;
                     }
                 }
             }
         }
 
         const getApiHandler = (apiType) => {
-            if (apiType === 'openai_compatible') return new OpenAICompatibleAPI();
-            return new OllamaAPI();
+            return apiType === 'openai_compatible' ? new OpenAICompatibleAPI() : new OllamaAPI();
         };
 
         const showToast = (message, isError = false) => {
@@ -704,34 +702,28 @@
                 try {
                     const textArea = document.createElement('textarea');
                     textArea.value = textToCopy;
-    
                     textArea.style.position = 'fixed';
                     textArea.style.top = '-9999px';
                     textArea.style.left = '-9999px';
-                    
                     document.body.appendChild(textArea);
                     textArea.select();
                     document.execCommand('copy');
                     document.body.removeChild(textArea);
-                    
                     showToast('Copied to clipboard!');
                     return;
                 } catch (err) {
-                    console.error('Failed to copy text with legacy method: ', err);
                     showToast('Failed to copy!', true);
                 }
             }
-
             try {
                 await navigator.clipboard.writeText(textToCopy);
                 showToast('Copied to clipboard!');
             } catch (err) {
-                console.error('Failed to copy text: ', err);
                 showToast('Failed to copy!', true);
             }
         };
-		
-		const clearInput = () => {
+        
+        const clearInput = () => {
             dom.sourceText.value = '';
             updateCharCount(dom.sourceText, dom.sourceCharCount);
         };
@@ -752,14 +744,12 @@
         const updateCharCount = (textarea, countElement) => {
             countElement.textContent = textarea.value.length;
         };
-		
-		const switchLanguages = () => {
+        
+        const switchLanguages = () => {
             const source = dom.sourceLang.value;
             const dest = dom.destLang.value;
 
-            if (source === 'auto') {
-                return;
-            }
+            if (source === 'auto') return;
 
             dom.sourceLang.value = dest;
             dom.destLang.value = source;
@@ -779,7 +769,12 @@
         };
 
         const loadSettings = () => {
-            const settings = {
+            const storedStream = localStorage.getItem('stream_response');
+            const params = new URLSearchParams(window.location.search);
+            const src = params.get('src');
+            const dst = params.get('dst');
+            
+            currentSettings = {
                 apiType: localStorage.getItem('api_type') || DEFAULTS.apiType,
                 serverUrl: localStorage.getItem('server_url') || DEFAULTS.serverUrl,
                 apiKey: localStorage.getItem('api_key') || DEFAULTS.apiKey,
@@ -788,22 +783,11 @@
                 userPrompt: localStorage.getItem('user_prompt_template') || DEFAULTS.userPrompt,
                 sourceLang: localStorage.getItem('translator_src') || DEFAULTS.sourceLang,
                 destLang: localStorage.getItem('translator_dst') || DEFAULTS.destLang,
-                stream: localStorage.getItem('stream_response') === 'true' || DEFAULTS.stream,
+                stream: storedStream !== null ? storedStream === 'true' : DEFAULTS.stream,
             };
 
-            const params = new URLSearchParams(window.location.search);
-            const src = params.get('src');
-            const dst = params.get('dst');
-            
-            if (typeof src === 'string' && src.trim() !== '') {
-              settings.sourceLang = src;
-            }
-
-            if (typeof dst === 'string' && dst.trim() !== '') {
-              settings.destLang = dst;
-            }
-                        
-            currentSettings = settings;
+            if (src && src.trim() !== '') currentSettings.sourceLang = src;
+            if (dst && dst.trim() !== '') currentSettings.destLang = dst;
 
             dom.apiType.value = currentSettings.apiType;
             dom.serverUrl.value = currentSettings.serverUrl;
@@ -890,11 +874,7 @@
                 const models = await apiHandler.getModels({ serverUrl, apiKey });
                 availableModels = models;
                 renderSuggestions(availableModels);
-                if (models.length > 0) {
-                    showToast(`Found ${models.length} models.`);
-                } else {
-                    showToast(`No models found.`);
-                }
+                showToast(models.length ? `Found ${models.length} models.` : 'No models found.');
             } catch (error) {
                 showToast(`Error fetching models: ${error.message}`, true);
             } finally {
@@ -904,9 +884,7 @@
 
         const translate = async () => {
             if (isTranslating) {
-                if (abortController) {
-                    abortController.abort();
-                }
+                if (abortController) abortController.abort();
                 return;
             }
 
@@ -926,9 +904,9 @@
             updateCharCount(dom.resultText, dom.resultCharCount);
 
             const finalUserPrompt = currentSettings.userPrompt
-                .replace('{{text}}', text.replace(/"/g, '\\"'))
-                .replace('{{source_language}}', dom.sourceLang.value)
-                .replace('{{destination_language}}', dom.destLang.value);
+                .replaceAll('{{text}}', text)
+                .replaceAll('{{source_language}}', dom.sourceLang.value)
+                .replaceAll('{{destination_language}}', dom.destLang.value);
 
             try {
                 const apiHandler = getApiHandler(currentSettings.apiType);
@@ -960,7 +938,7 @@
             dom.settingsBtn.addEventListener('click', () => toggleSettingsModal(true));
             dom.translateBtn.addEventListener('click', translate);
             dom.copyBtn.addEventListener('click', copyOutput);
-			dom.clearBtn.addEventListener('click', clearInput);
+            dom.clearBtn.addEventListener('click', clearInput);
             dom.switchLangBtn.addEventListener('click', switchLanguages);
             dom.cancelSettingsBtn.addEventListener('click', () => toggleSettingsModal(false));
             dom.settingsModal.addEventListener('click', (e) => {
@@ -1006,20 +984,12 @@
             window.addEventListener('keydown', (e) => {
               if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
-                translate().catch(console.error);
+                translate().catch(() => {});
               }
             });
         };
 
-        const setupThemeListener = () => {
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-                const newTheme = event.matches ? "dark" : "light";
-                document.documentElement.setAttribute('data-theme', newTheme);
-            });
-        };
-
         const init = () => {
-            setupThemeListener();
             populateLanguages();
             loadSettings();
             addEventListeners();
