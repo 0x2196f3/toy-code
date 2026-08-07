@@ -1,0 +1,86 @@
+name: Build and Push ComfyUI Docker Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      cuda_version:
+        description: 'CUDA Version'
+        required: false
+        default: '13.3.1'
+      ubuntu_version:
+        description: 'Ubuntu Version'
+        required: false
+        default: '26.04'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/comfyui
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+      - name: Maximize Build Space
+        run: |
+          set -eux
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Get Latest ComfyUI Version and Define Args
+        id: prep
+        run: |
+          echo "Fetching latest ComfyUI release tag..."
+          LATEST_TAG=$(curl -sL https://api.github.com/repos/comfyanonymous/ComfyUI/releases/latest | jq -r .tag_name)
+          echo "COMFYUI_VERSION=$LATEST_TAG" >> $GITHUB_ENV
+          
+          CUDA_VER="${{ github.event.inputs.cuda_version || '13.3.1' }}"
+          echo "CUDA_VERSION=$CUDA_VER" >> $GITHUB_ENV
+          
+          UBUNTU_VER="${{ github.event.inputs.ubuntu_version || '26.04' }}"
+          echo "UBUNTU_VERSION=$UBUNTU_VER" >> $GITHUB_ENV
+          
+          echo "LOWER_IMAGE_NAME=$(echo ${{ env.IMAGE_NAME }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.LOWER_IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ env.COMFYUI_VERSION }}-cu${{ env.CUDA_VERSION }}
+
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./dockerfile
+          file: ./dockerfile/comfyui/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            COMFYUI_VERSION=${{ env.COMFYUI_VERSION }}
+            CUDA_VERSION=${{ env.CUDA_VERSION }}
+            UBUNTU_VERSION=${{ env.UBUNTU_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
