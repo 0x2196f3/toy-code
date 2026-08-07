@@ -1,4 +1,4 @@
-name: Build and Push ComfyUI Docker Image
+name: comfyui Build and Push 
 
 on:
   workflow_dispatch:
@@ -68,7 +68,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.LOWER_IMAGE_NAME }}
           tags: |
             type=raw,value=${{ env.COMFYUI_VERSION }}-cu${{ env.CUDA_VERSION }}
-
+            type=raw,value=latest-cu${{ env.CUDA_VERSION }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
