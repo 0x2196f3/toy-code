@@ -11,6 +11,8 @@ on:
         description: 'Ubuntu Version'
         required: false
         default: '26.04'
+  schedule:
+    - cron: '0 0 * * 0'
 
 env:
   REGISTRY: ghcr.io
