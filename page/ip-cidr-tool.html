@@ -2,8 +2,12 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IP Subnet Calculator / Checker</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
     :root {
       --bg: #f0f2f5;
       --card-bg: #ffffff;
@@ -14,26 +18,29 @@
     }
     @media (prefers-color-scheme: dark) {
       :root {
-  		--bg:#121212;          
-  		--card-bg: #1E1E1E;  
-  		--text: #E0E0E0;       
-  		--border:#333333;    
-  		--btn-bg: #4A90E2;        
-  		--btn-hover:#6AB0FF;     
-	  }
+        --bg:#121212;          
+        --card-bg: #1E1E1E;  
+        --text: #E0E0E0;       
+        --border:#333333;    
+        --btn-bg: #4A90E2;        
+        --btn-hover:#6AB0FF;     
+      }
     }
     body {
       margin: 0;
-      padding: 20px;
+      padding: 16px;
       font-family: Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
     }
     h1 {
       text-align: center;
+      font-size: 1.5rem;
+      margin-top: 10px;
     }
     .container {
       max-width: 480px;
+      width: 100%;
       margin: 0 auto;
       background: var(--card-bg);
       padding: 20px;
@@ -51,9 +58,8 @@
     }
     input, select, button {
       width: 100%;
-  	  margin-top: 6px;
-      padding: 8px;
-      box-sizing: border-box;
+      margin-top: 6px;
+      padding: 10px 8px;
       border: 1px solid var(--border);
       border-radius: 4px;
       background: var(--card-bg);
@@ -75,6 +81,7 @@
       background: var(--bg);
       border-radius: 4px;
       border: 1px solid var(--border);
+      word-break: break-all;
     }
     .results div {
       margin-bottom: 8px;
@@ -121,17 +128,14 @@
   <button id="checkBtn">Check Membership</button>
 
   <div id="checkResult">
-    <p id="checkText"></p>
+    <p id="checkText" style="word-break: break-all;"></p>
   </div>
   
   <hr>
   <button id="genBtn">Generate Random IP in Subnet</button>
-  <p>Your random IP: <span id="genResult" style="font-weight:bold"></span></p>
-
-
+  <p>Your random IP: <span id="genResult" style="font-weight:bold; word-break: break-all;"></span></p>
 
   <script>
-  // Populate CIDR dropdown based on IPv4/IPv6 selection
   function populateCidrOptions() {
     const mode = document.getElementById('mode').value;
     const max = mode === 'ipv4' ? 32 : 128;
@@ -151,8 +155,6 @@
   });
   populateCidrOptions();
 
-
-  // --- IPv4 Helpers ---
   function ipv4ToUInt32(ip) {
     return ip.split('.')
              .map(octet => parseInt(octet,10))
@@ -169,26 +171,22 @@
   }
 
   function maskFromCidr4(cidr) {
-    // if cidr=0, mask = 0.  otherwise top cidr bits =1
     return cidr === 0 ? 0 : (0xFFFFFFFF << (32 - cidr)) >>> 0;
   }
 
-
-  // --- IPv6 Helpers ---
-  // Expand a compressed IPv6 to exactly 8 hextets
   function expandIPv6(addr) {
-    // split on "::"
-    let [left, right] = addr.split('::');
-    let leftParts  = left  ? left.split(':')  : [];
-    let rightParts = right ? right.split(':') : [];
-    // how many zeros we need to insert
-    let zerosToInsert = 8 - (leftParts.length + rightParts.length);
-    let zeros = Array(zerosToInsert).fill('0');
-    let fullParts = [...leftParts, ...zeros, ...rightParts];
-    if (fullParts.length !== 8) {
-      throw new Error('Invalid IPv6 format');
-    }
-    return fullParts.map(h => h.padStart(4, '0')).join(':');
+    let str = addr.trim();
+    if (str === '::') return Array(8).fill('0000').join(':');
+    let parts = str.split('::');
+    if (parts.length > 2) throw new Error('Invalid IPv6 format');
+    let left = parts[0] ? parts[0].split(':') : [];
+    let right = parts[1] ? parts[1].split(':') : [];
+    let missing = 8 - (left.length + right.length);
+    if (missing < 0) throw new Error('Invalid IPv6 format');
+    let zeros = Array(missing).fill('0000');
+    let full = [...left, ...zeros, ...right];
+    if (full.length !== 8) throw new Error('Invalid IPv6 format');
+    return full.map(h => h.padStart(4, '0')).join(':');
   }
 
   function ipv6ToBigInt(ip) {
@@ -204,20 +202,15 @@
       parts.unshift((tmp & 0xFFFFn).toString(16));
       tmp = tmp >> 16n;
     }
-    // now compress the longest run of zeros
     let str = parts.join(':');
-    // regex to compress the longest zero run
     return str.replace(/(^|:)(0(?:\:0)+)(:|$)/, '$1::$3');
   }
 
   function maskFromCidr6(cidr) {
-    // top cidr bits 1, rest 0, in a 128-bit BigInt
     if (cidr === 0) return 0n;
     return ((~0n << BigInt(128 - cidr)) & ((1n << 128n) - 1n));
   }
 
-
-  // parse "IP[/CIDR]" from a single input
   function parseIpAndCidr(str) {
     let [ip, c] = str.trim().split('/');
     if (c !== undefined && /^\d+$/.test(c)) {
@@ -226,8 +219,6 @@
     return { ip: str.trim(), cidr: null };
   }
 
-
-  // --- Calculate Subnet Button ---
   document.getElementById('calcBtn').addEventListener('click', () => {
     let { ip: rawIp, cidr: embeddedCidr } =
         parseIpAndCidr(document.getElementById('ipBase').value);
@@ -236,7 +227,6 @@
     const sel   = document.getElementById('cidr');
     const max   = mode === 'ipv4' ? 32 : 128;
 
-    // if the user typed a /C in the IP field, override the dropdown
     if (embeddedCidr !== null && embeddedCidr >= 0 && embeddedCidr <= max) {
       sel.value = embeddedCidr;
     }
@@ -252,13 +242,11 @@
         network   = ip32 & mask32;
         broadcast = network | (~mask32 >>> 0);
         netmask   = mask32;
-        // host counts
         if (cidr < 31) {
           totalHosts = 2**(32 - cidr) - 2;
           first      = network + 1;
           last       = broadcast - 1;
         } else {
-          // /31 => two usable addresses, /32 => 1 host only
           totalHosts = (cidr === 31 ? 2 : 1);
           first      = network;
           last       = broadcast;
@@ -271,7 +259,7 @@
         document.getElementById('lastHost').textContent  = uint32ToIpv4(last);
         document.getElementById('hosts').textContent     = totalHosts;
 
-      } else { // IPv6
+      } else {
         let ipBig   = ipv6ToBigInt(rawIp);
         let maskBig = maskFromCidr6(cidr);
         network   = ipBig & maskBig;
@@ -299,10 +287,7 @@
     }
   });
 
-
-  // --- Check Membership Button ---
   document.getElementById('checkBtn').addEventListener('click', () => {
-    // re‐parse base field (in case user typed in a new /CIDR)
     let { ip: rawIp, cidr: embeddedCidr } =
         parseIpAndCidr(document.getElementById('ipBase').value);
 
@@ -346,16 +331,11 @@
     document.getElementById('checkText').textContent = msg;
     document.getElementById('checkResult').style.display = 'block';
   });
-  
-  // ----------------------------------------------------------
-  // Random‐IP‐in‐Subnet Generators
 
-  // 1) IPv4: network32 = uint32, cidr = 0–32
   function randomIpv4InSubnet(network32, cidr) {
     const mask32 = maskFromCidr4(cidr);
     const broadcast = (network32 | (~mask32 >>> 0)) >>> 0;
 
-    // decide first/last usable:
     let first = network32;
     let last  = broadcast;
     if (cidr < 31) {
@@ -363,55 +343,41 @@
       last  = broadcast - 1;
     }
 
-    // random integer in [first, last]
     const span = last - first + 1;
     const randOffset = Math.floor(Math.random() * span);
     return uint32ToIpv4((first + randOffset) >>> 0);
   }
-  
-  // --- New: Always‐full IPv6 formatter ---
+
   function bigIntToFullIpv6(num) {
     let parts = new Array(8);
-	let tmp   = num;
-	for (let i = 7; i >= 0; i--) {
-	  parts[i] = (tmp & 0xFFFFn).toString(16).padStart(4, '0');
-	  tmp = tmp >> 16n;
-	}
-	return parts.join(':');
+    let tmp   = num;
+    for (let i = 7; i >= 0; i--) {
+      parts[i] = (tmp & 0xFFFFn).toString(16).padStart(4, '0');
+      tmp = tmp >> 16n;
+    }
+    return parts.join(':');
   }
 
-
-  // 2) IPv6: networkBig = BigInt, cidr = 0–128
   function randomIpv6InSubnetBig(networkBig, cidr) {
-  const maskBig   = maskFromCidr6(cidr);
-  const broadcast = networkBig | (~maskBig & ((1n << 128n) - 1n));
+    const maskBig   = maskFromCidr6(cidr);
+    const broadcast = networkBig | (~maskBig & ((1n << 128n) - 1n));
 
-  const first = networkBig;
-  const last  = broadcast;
-  const span  = last - first + 1n;
+    const first = networkBig;
+    const last  = broadcast;
+    const span  = last - first + 1n;
 
-  // How many random bits we need to cover [0, span)
-  const bitsNeeded = span.toString(2).length;
-  const rounds     = Math.ceil(bitsNeeded / 32);
+    const bitsNeeded = span.toString(2).length;
+    const rounds     = Math.ceil(bitsNeeded / 32);
 
-  // Build a big random number by concatenating 32-bit chunks
-  let rand = 0n;
-  for (let i = 0; i < rounds; i++) {
-    // r32 in [0, 2^32)
-    const r32 = BigInt(Math.floor(Math.random() * 0x1_0000_0000));
-    rand = (rand << 32n) | r32;
+    let rand = 0n;
+    for (let i = 0; i < rounds; i++) {
+      const r32 = BigInt(Math.floor(Math.random() * 0x1_0000_0000));
+      rand = (rand << 32n) | r32;
+    }
+
+    rand = rand % span;
+    return first + rand;
   }
-
-  // Reduce into [0, span)
-  rand = rand % span;
-
-  // Shift into the subnet range
-  return first + rand;
-}
-
-
-  // ----------------------------------------------------------
-  // Hook up the UI button:
 
   document.getElementById('genBtn').addEventListener('click', () => {
     const mode    = document.getElementById('mode').value;
@@ -429,9 +395,8 @@
         randomIp = randomIpv4InSubnet(net32, cidr);
       } else {
         const netBig = ipv6ToBigInt(netAddr);
-		const randBig = randomIpv6InSubnetBig(netBig, cidr);
-		console.log(randBig);
-		randomIp = bigIntToFullIpv6(randBig);
+        const randBig = randomIpv6InSubnetBig(netBig, cidr);
+        randomIp = bigIntToFullIpv6(randBig);
       }
       document.getElementById('genResult').textContent = randomIp;
     }

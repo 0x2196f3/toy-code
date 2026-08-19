@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP & Network Tool</title>
+    <style>
+        :root {
+            --bg-color: #fafafa;
+            --surface-color: #ffffff;
+            --primary-color: #6200ee;
+            --primary-variant: #3700b3;
+            --secondary-color: #03dac6;
+            --text-primary: rgba(0, 0, 0, 0.87);
+            --text-secondary: rgba(0, 0, 0, 0.60);
+            --border-color: #e0e0e0;
+            --shadow-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --shadow-2: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+            --radius: 8px;
+            --transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --surface-color: #1e1e1e;
+                --primary-color: #bb86fc;
+                --primary-variant: #3700b3;
+                --secondary-color: #03dac6;
+                --text-primary: rgba(255, 255, 255, 0.87);
+                --text-secondary: rgba(255, 255, 255, 0.60);
+                --border-color: #333333;
+                --shadow-1: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.5);
+                --shadow-2: 0 3px 6px rgba(0,0,0,0.7), 0 3px 6px rgba(0,0,0,0.7);
+            }
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+            transition: background-color var(--transition), color var(--transition);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-top: 20px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .search-box {
+            display: flex;
+            background-color: var(--surface-color);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-1);
+            padding: 10px 20px;
+            margin-bottom: 30px;
+            transition: box-shadow var(--transition);
+        }
+        
+        .search-box:focus-within {
+            box-shadow: var(--shadow-2);
+        }
+
+        .search-box input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            outline: none;
+            padding: 10px;
+        }
+
+        .search-box button {
+            background: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            padding: 10px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: background var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-box button:hover { background: var(--primary-variant); }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--surface-color);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-1);
+            padding: 24px;
+            transition: box-shadow var(--transition);
+        }
+
+        .card:hover { box-shadow: var(--shadow-2); }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .data-row {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 12px;
+        }
+
+        .data-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .data-value {
+            font-size: 1rem;
+            word-break: break-all;
+        }
+
+        svg { fill: currentColor; width: 24px; height: 24px; }
+        .btn-icon { width: 18px; height: 18px; fill: #fff; }
+
+        .loader {
+            display: none;
+            text-align: center;
+            color: var(--text-secondary);
+            margin: 20px 0;
+        }
+
+        @media (max-width: 600px) {
+            .search-box { flex-direction: column; gap: 10px; padding: 15px; }
+            .search-box button { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Network Diagnostic Tool</h1>
+        <p style="color: var(--text-secondary)">Lookup any IP, IPv6, or domain name (DNS/WHOIS)</p>
+    </header>
+
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Enter IP or domain (leave blank for local IP)..." autocomplete="off">
+        <button id="searchBtn">
+            <svg class="btn-icon" viewBox="0 0 24 24">
+                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            Search
+        </button>
+    </div>
+
+    <div id="loader" class="loader">Loading...</div>
+
+    <div class="grid" id="resultsGrid" style="display: none;">
+        <div class="card" id="ipCard">
+            <div class="card-title">
+                <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                IP Location
+            </div>
+            <div id="ipData"></div>
+        </div>
+
+        <div class="card" id="dnsCard">
+            <div class="card-title">
+                <svg viewBox="0 0 24 24"><path d="M20 13H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zm-2 5H6v-2h12v2zm2-15H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zm-2 5H6V6h12v2z"/></svg>
+                DNS Lookup
+            </div>
+            <div id="dnsData"></div>
+        </div>
+
+        <div class="card" id="whoisCard">
+            <div class="card-title">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                Domain WHOIS
+            </div>
+            <div id="whoisData"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    class DataProvider {
+        async getIpInfo(ip = '') { throw new Error("Method not implemented."); }
+        async getDnsInfo(domain) { throw new Error("Method not implemented."); }
+        async getWhoisInfo(domain) { throw new Error("Method not implemented."); }
+    }
+
+    class PublicApiProvider extends DataProvider {
+        async getIpInfo(ip = '') {
+            const response = await fetch(`https://ipwho.is/${ip}`);
+            const data = await response.json();
+            if (!data.success) throw new Error(data.message || "IP lookup failed");
+            return {
+                ip: data.ip,
+                country: data.country,
+                region: data.region,
+                city: data.city,
+                isp: data.connection.isp,
+                asn: data.connection.asn
+            };
+        }
+
+        async getDnsInfo(domain) {
+            const response = await fetch(`https://dns.google/resolve?name=${domain}&type=A`);
+            const data = await response.json();
+            if (data.Status !== 0 || !data.Answer) throw new Error("No DNS records or lookup failed");
+            return data.Answer.map(record => ({
+                data: record.data,
+                type: record.type === 1 ? 'A' : (record.type === 28 ? 'AAAA' : record.type)
+            }));
+        }
+
+        async getWhoisInfo(domain) {
+            const response = await fetch(`https://rdap.org/domain/${domain}`);
+            if (!response.ok) throw new Error("No WHOIS information or domain does not support RDAP");
+            const data = await response.json();
+            let registrar = "Unknown";
+            if (data.entities) {
+                const regEntity = data.entities.find(e => e.roles && e.roles.includes("registrar"));
+                if (regEntity && regEntity.vcardArray) {
+                    registrar = regEntity.vcardArray[1].find(v => v[0] === "fn")?.[3] || "Unknown";
+                }
+            }
+            const events = data.events || [];
+            const regDate = events.find(e => e.eventAction === "registration")?.eventDate || "Unknown";
+            const expDate = events.find(e => e.eventAction === "expiration")?.eventDate || "Unknown";
+
+            return { registrar, regDate, expDate };
+        }
+    }
+
+    class CustomApiProvider extends DataProvider {
+        async getIpInfo(ip = '') {
+        }
+        async getDnsInfo(domain) { }
+        async getWhoisInfo(domain) { }
+    }
+
+    class AppController {
+        constructor(dataProvider) {
+            this.api = dataProvider;
+            this.initElements();
+            this.bindEvents();
+        }
+
+        initElements() {
+            this.searchInput = document.getElementById('searchInput');
+            this.searchBtn = document.getElementById('searchBtn');
+            this.loader = document.getElementById('loader');
+            this.resultsGrid = document.getElementById('resultsGrid');
+            
+            this.ipCard = document.getElementById('ipCard');
+            this.dnsCard = document.getElementById('dnsCard');
+            this.whoisCard = document.getElementById('whoisCard');
+            this.ipData = document.getElementById('ipData');
+            this.dnsData = document.getElementById('dnsData');
+            this.whoisData = document.getElementById('whoisData');
+        }
+
+        bindEvents() {
+            this.searchBtn.addEventListener('click', () => this.handleSearch());
+            this.searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleSearch();
+            });
+        }
+
+        isDomain(input) {
+            return /[a-zA-Z]/.test(input) && input.includes('.');
+        }
+
+        renderRow(label, value) {
+            return `
+                <div class="data-row">
+                    <span class="data-label">${label}</span>
+                    <span class="data-value">${value || '-'}</span>
+                </div>
+            `;
+        }
+
+        async handleSearch() {
+            const query = this.searchInput.value.trim();
+            const isDomainQuery = this.isDomain(query);
+
+            this.loader.style.display = 'block';
+            this.resultsGrid.style.display = 'none';
+            this.ipData.innerHTML = '';
+            this.dnsData.innerHTML = '';
+            this.whoisData.innerHTML = '';
+
+            try {
+                if (isDomainQuery) {
+                    this.dnsCard.style.display = 'block';
+                    this.whoisCard.style.display = 'block';
+
+                    const [dnsRes, whoisRes] = await Promise.allSettled([
+                        this.api.getDnsInfo(query),
+                        this.api.getWhoisInfo(query)
+                    ]);
+
+                    if (dnsRes.status === 'fulfilled') {
+                        const records = dnsRes.value.map(r => r.data).join('<br>');
+                        this.dnsData.innerHTML = this.renderRow('A/AAAA Record', records);
+                        
+                        const firstIp = dnsRes.value[0]?.data;
+                        if (firstIp) await this.fetchAndRenderIp(firstIp);
+                    } else {
+                        this.dnsData.innerHTML = this.renderRow('Error', dnsRes.reason.message);
+                    }
+
+                    if (whoisRes.status === 'fulfilled') {
+                        const w = whoisRes.value;
+                        this.whoisData.innerHTML = 
+                            this.renderRow('Registrar', w.registrar) +
+                            this.renderRow('Registration Date', new Date(w.regDate).toLocaleDateString()) +
+                            this.renderRow('Expiration Date', new Date(w.expDate).toLocaleDateString());
+                    } else {
+                        this.whoisData.innerHTML = this.renderRow('Error', whoisRes.reason.message);
+                    }
+
+                } else {
+                    this.dnsCard.style.display = 'none';
+                    this.whoisCard.style.display = 'none';
+                    await this.fetchAndRenderIp(query);
+                }
+
+            } catch (error) {
+                alert("Query error: " + error.message);
+            } finally {
+                this.loader.style.display = 'none';
+                this.resultsGrid.style.display = 'grid';
+            }
+        }
+
+        async fetchAndRenderIp(ip) {
+            try {
+                const data = await this.api.getIpInfo(ip);
+                this.ipData.innerHTML = 
+                    this.renderRow('IP Address', data.ip) +
+                    this.renderRow('Country / Region', `${data.country} / ${data.region}`) +
+                    this.renderRow('City', data.city) +
+                    this.renderRow('ISP', data.isp) +
+                    this.renderRow('ASN', `AS${data.asn}`);
+            } catch (err) {
+                this.ipData.innerHTML = this.renderRow('Error', err.message);
+            }
+        }
+    }
+
+    const currentProvider = new PublicApiProvider();
+    const app = new AppController(currentProvider);
+</script>
+</body>
+</html>

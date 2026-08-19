@@ -103,7 +103,7 @@ for entry in os.listdir(DIR):
         continue
 
     lower = entry.lower()
-    if not (lower.endswith(".mp4") or lower.endswith(".mkv") or lower.endswith(".ass")):
+    if not (lower.endswith(".mp4") or lower.endswith(".mkv") or lower.endswith(".ass") or lower.endswith(".srt")):
         continue
 
     name = os.path.splitext(entry)[0]
@@ -133,20 +133,20 @@ for entry in os.listdir(DIR):
                 break
                 
     if original_key is None:
-        if len(name) >= 3:
-            first3 = name[:3]
-            try:
-                val = int(first3)
-            except ValueError as e:
-                print(e)
-                continue
-            if 0 < val < 1000:
-                name = ""
-                original_key = str(val)
-            else:
-                continue
+        i = 0
+        while i < len(name) and name[i].isdigit() and i < 4:
+            i += 1
+
+        if i == 0:
+            continue
+
+        val = int(name[:i])
+        if 1 <= val <= 1600:
+            name = ""
+            original_key = str(val)
         else:
             continue
+
 
     if original_key not in data:
         continue
@@ -225,8 +225,11 @@ for entry in os.listdir(DIR):
     except Exception as e:
         conflicts.append(f"Failed to rename {entry} -> {new_filename}: {e}")
 
+rc = 0
 if conflicts:
     print("\nWarnings/Errors encountered:")
     for c in conflicts:
         print("-", c)
-    sys.exit(1)
+    rc = 1
+input("Done!")
+sys.exit(rc)

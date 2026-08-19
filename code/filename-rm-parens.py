@@ -28,4 +28,4 @@ for dirpath, dirnames, filenames in os.walk(root_directory):
             os.rename(old_file, new_file)
             print(f'Renamed: "{old_file}" to "{new_file}"')
             
-input()
+input("Done!")

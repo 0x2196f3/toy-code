@@ -30,3 +30,5 @@ for dirpath, dirnames, filenames in os.walk(root_directory):
                 print(f'Renamed file: "{old_file}" to "{new_file}"')
             except Exception as e:
                 print(f'Error renaming file "{old_file}" to "{new_file}": {e}')
+
+input("Done!")
