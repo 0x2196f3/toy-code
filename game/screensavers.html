@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screensavers</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            cursor: default;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        /* HUD 控制列 */
+        #hud {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(15, 15, 25, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+            border-radius: 30px;
+            padding: 10px 20px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            opacity: 1;
+            font-size: 13px;
+            max-width: 95vw;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        #hud.hidden {
+            opacity: 0;
+            transform: translate(-50%, 20px);
+            pointer-events: none;
+        }
+        .title-badge {
+            font-weight: 600;
+            color: #61afef;
+            background: rgba(97, 175, 239, 0.15);
+            padding: 4px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(97, 175, 239, 0.3);
+            white-space: nowrap;
+        }
+        .controls-hint {
+            color: #abb2bf;
+            font-size: 12px;
+            display: flex;
+            gap: 10px;
+        }
+        .kbd {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-family: monospace;
+            color: #e5c07b;
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        .selector {
+            display: flex;
+            gap: 4px;
+        }
+        .num-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        .num-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+        .num-btn.active {
+            background: #98c379;
+            color: #1e1e1e;
+            border-color: #98c379;
+            box-shadow: 0 0 10px rgba(152, 195, 121, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="hud">
+        <div class="title-badge" id="saver-title">1. DVD 彈跳圖標</div>
+        <div class="selector" id="num-selector"></div>
+        <div class="controls-hint">
+            <span><span class="kbd">←</span><span class="kbd">→</span> 切換</span>
+            <span><span class="kbd">1-0</span> 指定</span>
+            <span><span class="kbd">點擊</span> 下一個</span>
+        </div>
+        <button class="btn" id="fs-btn">⛶ 全螢幕</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const hud = document.getElementById('hud');
+        const titleEl = document.getElementById('saver-title');
+        const numSelectorEl = document.getElementById('num-selector');
+        const fsBtn = document.getElementById('fs-btn');
+
+        let width = 0, height = 0;
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let hudTimeout;
+        function showHUD() {
+            hud.classList.remove('hidden');
+            clearTimeout(hudTimeout);
+            hudTimeout = setTimeout(() => {
+                hud.classList.add('hidden');
+            }, 3500);
+        }
+        window.addEventListener('mousemove', showHUD);
+        showHUD();
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => console.log(e));
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+        fsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleFullscreen();
+        });
+
+        // ==========================================
+        // 1. DVD BOUNCE
+        // ==========================================
+        class DVDBounce {
+            constructor() {
+                this.name = "1. DVD 彈跳圖標";
+                this.w = 130; this.h = 65;
+                this.x = Math.random() * (width - this.w);
+                this.y = Math.random() * (height - this.h);
+                this.vx = (Math.random() > 0.5 ? 1 : -1) * (2.5 + Math.random() * 1.5);
+                this.vy = (Math.random() > 0.5 ? 1 : -1) * (2.5 + Math.random() * 1.5);
+                this.hue = Math.floor(Math.random() * 360);
+            }
+            init() { ctx.clearRect(0, 0, width, height); }
+            changeColor() { this.hue = (this.hue + 60 + Math.floor(Math.random() * 180)) % 360; }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                let hit = false;
+                if (this.x <= 0 || this.x + this.w >= width) { this.vx *= -1; this.x = Math.max(0, Math.min(width - this.w, this.x)); hit = true; }
+                if (this.y <= 0 || this.y + this.h >= height) { this.vy *= -1; this.y = Math.max(0, Math.min(height - this.h, this.y)); hit = true; }
+                if (hit) this.changeColor();
+            }
+            draw() {
+                ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, width, height);
+                ctx.save(); ctx.translate(this.x, this.y);
+                const col = `hsl(${this.hue}, 100%, 50%)`;
+                ctx.fillStyle = col; ctx.strokeStyle = col;
+                ctx.beginPath(); ctx.ellipse(this.w / 2, this.h * 0.72, this.w * 0.45, this.h * 0.2, 0, 0, Math.PI * 2); ctx.lineWidth = 3; ctx.stroke();
+                ctx.beginPath(); ctx.ellipse(this.w / 2, this.h * 0.72, this.w * 0.15, this.h * 0.07, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(this.w / 2, this.h * 0.72, this.w * 0.08, this.h * 0.03, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = col; ctx.font = 'italic bold 34px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('DVD', this.w / 2, this.h * 0.32);
+                ctx.font = 'bold 9px Arial'; ctx.fillText('VIDEO', this.w / 2, this.h * 0.72);
+                ctx.restore();
+            }
+        }
+
+        // ==========================================
+        // 2. STARFIELD
+        // ==========================================
+        class Starfield {
+            constructor() {
+                this.name = "2. 像素星空穿梭";
+                this.numStars = 800; this.speed = 12;
+                this.stars = Array.from({length: this.numStars}, () => this.resetStar({}));
+            }
+            resetStar(star) {
+                star.x = (Math.random() - 0.5) * width * 2;
+                star.y = (Math.random() - 0.5) * height * 2;
+                star.z = Math.random() * width; star.pz = star.z;
+                return star;
+            }
+            init() { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, width, height); }
+            update() {
+                for (let star of this.stars) {
+                    star.pz = star.z; star.z -= this.speed;
+                    if (star.z <= 0) { this.resetStar(star); star.z = width; star.pz = star.z; }
+                }
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; ctx.fillRect(0, 0, width, height);
+                const cx = width / 2, cy = height / 2;
+                for (let star of this.stars) {
+                    const x = (star.x / star.z) * width + cx;
+                    const y = (star.y / star.z) * height + cy;
+                    const px = (star.x / star.pz) * width + cx;
+                    const py = (star.y / star.pz) * height + cy;
+                    if (x >= 0 && x < width && y >= 0 && y < height) {
+                        const alpha = Math.min(1, (1 - star.z / width) * 1.5);
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                        ctx.lineWidth = Math.max(1, (1 - star.z / width) * 3.5);
+                        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // 3. BEZIER (MYSTIFY)
+        // ==========================================
+        class MystifyBezier {
+            constructor() {
+                this.name = "3. 貝茲曲線飄動";
+                this.shapes = Array.from({length: 2}, (_, s) => ({
+                    points: Array.from({length: 4}, () => ({
+                        x: Math.random() * width, y: Math.random() * height,
+                        vx: (Math.random() - 0.5) * 7, vy: (Math.random() - 0.5) * 7
+                    })),
+                    history: [], hue: s * 180
+                }));
+                this.trail = 14;
+            }
+            init() { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, width, height); }
+            update() {
+                for (let shape of this.shapes) {
+                    shape.hue = (shape.hue + 0.5) % 360;
+                    shape.history.unshift(shape.points.map(pt => ({x: pt.x, y: pt.y})));
+                    if (shape.history.length > this.trail) shape.history.pop();
+                    for (let pt of shape.points) {
+                        pt.x += pt.vx; pt.y += pt.vy;
+                        if (pt.x <= 0 || pt.x >= width) pt.vx *= -1;
+                        if (pt.y <= 0 || pt.y >= height) pt.vy *= -1;
+                    }
+                }
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.25)'; ctx.fillRect(0, 0, width, height);
+                for (let shape of this.shapes) {
+                    for (let h = 0; h < shape.history.length; h++) {
+                        const pts = shape.history[h];
+                        const alpha = 1 - h / this.trail;
+                        ctx.strokeStyle = `hsla(${shape.hue}, 100%, 60%, ${alpha})`;
+                        ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+                        ctx.bezierCurveTo(pts[1].x, pts[1].y, pts[2].x, pts[2].y, pts[3].x, pts[3].y);
+                        ctx.closePath(); ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // 4. 3D PIPES (側面透視 & 隨機方向 & 放慢速度)
+        // ==========================================
+        class Pipes3D {
+            constructor() {
+                this.name = "4. 側視角隨機 3D 水管";
+                this.grid = 32;
+                this.colors = ['#ff2a6d', '#05d9e8', '#00ff66', '#ffb000', '#d200ff', '#e0e0e0', '#ff0055'];
+                this.reset();
+            }
+            reset() {
+                ctx.fillStyle = '#030308'; ctx.fillRect(0, 0, width, height);
+                this.visited = new Set();
+                this.pipes = [];
+                this.angleY = Math.PI / 5; // 側面 3D 視角旋轉
+                this.angleX = Math.PI / 7;
+                this.tick = 0;
+                for (let i = 0; i < 4; i++) this.addPipe();
+            }
+            init() { this.reset(); }
+            addPipe() {
+                const range = 12;
+                this.pipes.push({
+                    x: Math.floor((Math.random() - 0.5) * range),
+                    y: Math.floor((Math.random() - 0.5) * range),
+                    z: Math.floor((Math.random() - 0.5) * range),
+                    dir: Math.floor(Math.random() * 6), // 0: +X, 1: -X, 2: +Y, 3: -Y, 4: +Z, 5: -Z
+                    color: this.colors[Math.floor(Math.random() * this.colors.length)],
+                    alive: true, r: 8
+                });
+            }
+            project(x, y, z) {
+                // 3D 空間旋轉矩陣 (側面視角)
+                let x1 = x * Math.cos(this.angleY) + z * Math.sin(this.angleY);
+                let z1 = -x * Math.sin(this.angleY) + z * Math.cos(this.angleY);
+                let y2 = y * Math.cos(this.angleX) - z1 * Math.sin(this.angleX);
+                let z2 = y * Math.sin(this.angleX) + z1 * Math.cos(this.angleX);
+
+                const dist = 550;
+                const scale = dist / (dist + z2 + 250);
+                return {
+                    x: width / 2 + x1 * this.grid * scale,
+                    y: height / 2 + y2 * this.grid * scale,
+                    scale: scale
+                };
+            }
+            update() {
+                this.tick++;
+                if (this.tick % 3 !== 0) return; // 降低生成速度
+
+                let aliveCount = 0;
+                for (let pipe of this.pipes) {
+                    if (!pipe.alive) continue;
+                    aliveCount++;
+                    this.visited.add(`${pipe.x},${pipe.y},${pipe.z}`);
+
+                    // 35% 概率轉向
+                    if (Math.random() < 0.35) {
+                        pipe.dir = Math.floor(Math.random() * 6);
+                    }
+
+                    let nx = pipe.x, ny = pipe.y, nz = pipe.z;
+                    if (pipe.dir === 0) nx++;
+                    else if (pipe.dir === 1) nx--;
+                    else if (pipe.dir === 2) ny++;
+                    else if (pipe.dir === 3) ny--;
+                    else if (pipe.dir === 4) nz++;
+                    else if (pipe.dir === 5) nz--;
+
+                    const bound = 14;
+                    if (Math.abs(nx) > bound || Math.abs(ny) > bound || Math.abs(nz) > bound || this.visited.has(`${nx},${ny},${nz}`)) {
+                        pipe.alive = false;
+                        if (this.visited.size < 500) this.addPipe();
+                    } else {
+                        this.drawSegment(pipe.x, pipe.y, pipe.z, nx, ny, nz, pipe.color, pipe.r);
+                        pipe.x = nx; pipe.y = ny; pipe.z = nz;
+                    }
+                }
+                if (aliveCount === 0 && this.visited.size > 80) {
+                    setTimeout(() => this.reset(), 1200);
+                }
+            }
+            drawSegment(x1, y1, z1, x2, y2, z2, color, r) {
+                const p1 = this.project(x1, y1, z1);
+                const p2 = this.project(x2, y2, z2);
+
+                ctx.save();
+                ctx.lineCap = 'round';
+                ctx.lineWidth = r * 2 * p1.scale;
+
+                const grad = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
+                grad.addColorStop(0, color);
+                grad.addColorStop(0.5, '#ffffff');
+                grad.addColorStop(1, color);
+
+                ctx.strokeStyle = grad;
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 8;
+
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+
+                // 管道轉角球體
+                ctx.fillStyle = color;
+                ctx.beginPath(); ctx.arc(p2.x, p2.y, r * p2.scale, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
+            draw() {}
+        }
+
+        // ==========================================
+        // 5. 3D FLOWER BOX
+        // ==========================================
+        class FlowerBox3D {
+            constructor() {
+                this.name = "5. 3D 變形花盒";
+                this.angleX = 0; this.angleY = 0; this.morph = 0;
+            }
+            init() { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, width, height); }
+            update() { this.angleX += 0.015; this.angleY += 0.02; this.morph += 0.025; }
+            draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; ctx.fillRect(0, 0, width, height);
+                const cx = width / 2, cy = height / 2;
+                const scale = Math.min(width, height) * 0.25;
+                const baseVertices = [
+                    [-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],
+                    [-1,-1, 1],[1,-1, 1],[1,1, 1],[-1,1, 1]
+                ];
+                const edges = [
+                    [0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]
+                ];
+                const morphFactor = Math.sin(this.morph) * 0.6 + 1.0;
+                const transformed = baseVertices.map(v => {
+                    let x = v[0] * scale * (Math.abs(v[1]) > 0 ? morphFactor : 1);
+                    let y = v[1] * scale * (Math.abs(v[2]) > 0 ? morphFactor : 1);
+                    let z = v[2] * scale * (Math.abs(v[0]) > 0 ? morphFactor : 1);
+                    let x1 = x * Math.cos(this.angleY) + z * Math.sin(this.angleY);
+                    let z1 = -x * Math.sin(this.angleY) + z * Math.cos(this.angleY);
+                    let y2 = y * Math.cos(this.angleX) - z1 * Math.sin(this.angleX);
+                    let z2 = y * Math.sin(this.angleX) + z1 * Math.cos(this.angleX);
+                    const pz = 600 / (600 + z2 + 300);
+                    return { x: cx + x1 * pz, y: cy + y2 * pz };
+                });
+
+                ctx.lineWidth = 4;
+                edges.forEach((edge, idx) => {
+                    const p1 = transformed[edge[0]], p2 = transformed[edge[1]];
+                    const hue = (this.morph * 50 + idx * 30) % 360;
+                    ctx.strokeStyle = `hsl(${hue}, 100%, 65%)`;
+                    ctx.shadowColor = `hsl(${hue}, 100%, 50%)`; ctx.shadowBlur = 10;
+                    ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+                });
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // ==========================================
+        // 6. MATRIX RAIN
+        // ==========================================
+        class MatrixRain {
+            constructor() {
+                this.name = "6. 黑客帝國矩陣雨";
+                this.fontSize = 16;
+                this.chars = "ｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%&*";
+                this.initCols();
+            }
+            initCols() {
+                this.cols = Math.floor(width / this.fontSize);
+                this.drops = Array.from({length: this.cols}, () => Math.random() * -100);
+            }
+            init() { this.initCols(); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, width, height); }
+            update() {}
+            draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'; ctx.fillRect(0, 0, width, height);
+                ctx.font = `${this.fontSize}px monospace`;
+                for (let i = 0; i < this.drops.length; i++) {
+                    const char = this.chars[Math.floor(Math.random() * this.chars.length)];
+                    const x = i * this.fontSize, y = this.drops[i] * this.fontSize;
+                    ctx.fillStyle = '#fff'; ctx.fillText(char, x, y);
+                    ctx.fillStyle = '#0f0'; ctx.fillText(this.chars[Math.floor(Math.random() * this.chars.length)], x, y - this.fontSize);
+                    if (y > height && Math.random() > 0.975) this.drops[i] = 0;
+                    this.drops[i]++;
+                }
+            }
+        }
+
+        // ==========================================
+        // 7. SYNTHWAVE GRID
+        // ==========================================
+        class SynthwaveGrid {
+            constructor() {
+                this.name = "7. 復古賽博霓虹網格";
+                this.offsetY = 0;
+            }
+            init() { ctx.fillStyle = '#05021a'; ctx.fillRect(0, 0, width, height); }
+            update() { this.offsetY = (this.offsetY + 2.5) % 40; }
+            draw() {
+                const horizon = height * 0.55;
+                const skyGrad = ctx.createLinearGradient(0, 0, 0, horizon);
+                skyGrad.addColorStop(0, '#03001e'); skyGrad.addColorStop(1, '#731364');
+                ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, width, horizon);
+
+                const sunR = Math.min(width, height) * 0.18, sunCx = width / 2, sunCy = horizon - sunR * 0.3;
+                const sunGrad = ctx.createLinearGradient(0, sunCy - sunR, 0, sunCy + sunR);
+                sunGrad.addColorStop(0, '#ffe600'); sunGrad.addColorStop(1, '#731364');
+                ctx.save(); ctx.fillStyle = sunGrad; ctx.shadowColor = '#ff0055'; ctx.shadowBlur = 30;
+                ctx.beginPath(); ctx.arc(sunCx, sunCy, sunR, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#05021a';
+                for (let i = 0; i < 8; i++) {
+                    const sliceY = sunCy + (i * 12) - 10;
+                    if (sliceY > sunCy - sunR && sliceY < sunCy + sunR) ctx.fillRect(sunCx - sunR - 10, sliceY, sunR * 2 + 20, 2 + i * 1.5);
+                }
+                ctx.restore();
+
+                ctx.fillStyle = '#0d0221'; ctx.fillRect(0, horizon, width, height - horizon);
+                ctx.save(); ctx.strokeStyle = '#ff007f'; ctx.shadowColor = '#ff007f'; ctx.shadowBlur = 8; ctx.lineWidth = 1.5;
+                for (let i = -32; i <= 32; i++) {
+                    ctx.beginPath(); ctx.moveTo(width / 2 + i * 12, horizon); ctx.lineTo(width / 2 + i * (width / 8), height); ctx.stroke();
+                }
+                for (let y = 0; y < height - horizon; y += 40) {
+                    const actualY = horizon + Math.pow((y + this.offsetY) / (height - horizon), 2) * (height - horizon);
+                    if (actualY >= horizon) { ctx.beginPath(); ctx.moveTo(0, actualY); ctx.lineTo(width, actualY); ctx.stroke(); }
+                }
+                ctx.restore();
+            }
+        }
+
+        // ==========================================
+        // 8. 混沌系統：3D 雙星三體萬有引力 (2 Stars + 3 Planets)
+        // ==========================================
+        class GravitationalChaos {
+            constructor() {
+                this.name = "8. 3D 雙星三體萬有引力系統";
+                this.reset();
+            }
+            reset() {
+                this.G = 0.8; // 引力常數
+                this.camAngle = 0;
+                this.bodies = [];
+
+                // 恆星 1 (雙星系統中心之一)
+                const hue1 = Math.floor(Math.random() * 60 + 10);
+                this.bodies.push({
+                    x: -110, y: (Math.random() - 0.5) * 30, z: (Math.random() - 0.5) * 30,
+                    vx: 0, vy: 1.2, vz: (Math.random() - 0.5) * 0.4,
+                    mass: 1200, r: 18, color: `hsl(${hue1}, 100%, 60%)`, isStar: true, trail: []
+                });
+
+                // 恆星 2
+                const hue2 = Math.floor(Math.random() * 60 + 180);
+                this.bodies.push({
+                    x: 110, y: (Math.random() - 0.5) * 30, z: (Math.random() - 0.5) * 30,
+                    vx: 0, vy: -1.2, vz: (Math.random() - 0.5) * 0.4,
+                    mass: 1200, r: 18, color: `hsl(${hue2}, 100%, 60%)`, isStar: true, trail: []
+                });
+
+                // 3 顆行星 (位置與速度微小隨機化)
+                const pColors = ['#00ffcc', '#ff00aa', '#ffff00', '#0099ff', '#ff8800'];
+                for (let i = 0; i < 3; i++) {
+                    const angle = (i * Math.PI * 2 / 3) + Math.random() * 0.5;
+                    const dist = 210 + Math.random() * 120;
+                    const speed = Math.sqrt((this.G * 2400) / dist) * (0.8 + Math.random() * 0.4);
+                    this.bodies.push({
+                        x: Math.cos(angle) * dist,
+                        y: (Math.random() - 0.5) * 60,
+                        z: Math.sin(angle) * dist,
+                        vx: -Math.sin(angle) * speed,
+                        vy: (Math.random() - 0.5) * 1.2,
+                        vz: Math.cos(angle) * speed,
+                        mass: 1, r: 6,
+                        color: pColors[i % pColors.length],
+                        isStar: false, trail: []
+                    });
+                }
+            }
+            init() {
+                this.reset();
+                ctx.fillStyle = '#020205'; ctx.fillRect(0, 0, width, height);
+            }
+            update() {
+                this.camAngle += 0.005; // 3D 相機緩慢旋轉
+                const dt = 0.6; // 數值積分微小步長 (高幀率穩定性)
+
+                // N-body 萬有引力計算 (F = G * m1 * m2 / r^2)
+                for (let i = 0; i < this.bodies.length; i++) {
+                    let b1 = this.bodies[i];
+                    let fx = 0, fy = 0, fz = 0;
+
+                    for (let j = 0; j < this.bodies.length; j++) {
+                        if (i === j) continue;
+                        let b2 = this.bodies[j];
+                        let dx = b2.x - b1.x, dy = b2.y - b1.y, dz = b2.z - b1.z;
+                        let distSq = dx*dx + dy*dy + dz*dz + 180; // 軟化因子避免奇異值
+                        let dist = Math.sqrt(distSq);
+                        let force = (this.G * b1.mass * b2.mass) / distSq;
+
+                        fx += force * (dx / dist);
+                        fy += force * (dy / dist);
+                        fz += force * (dz / dist);
+                    }
+
+                    b1.vx += (fx / b1.mass) * dt;
+                    b1.vy += (fy / b1.mass) * dt;
+                    b1.vz += (fz / b1.mass) * dt;
+                }
+
+                // 更新位置與記錄軌跡
+                for (let b of this.bodies) {
+                    b.x += b.vx * dt;
+                    b.y += b.vy * dt;
+                    b.z += b.vz * dt;
+
+                    b.trail.push({x: b.x, y: b.y, z: b.z});
+                    const maxTrail = b.isStar ? 60 : 180;
+                    if (b.trail.length > maxTrail) b.trail.shift();
+                }
+            }
+            project(x, y, z) {
+                // 側面 3D 視角投影
+                const pitch = 0.35;
+                let x1 = x * Math.cos(this.camAngle) + z * Math.sin(this.camAngle);
+                let z1 = -x * Math.sin(this.camAngle) + z * Math.cos(this.camAngle);
+                let y2 = y * Math.cos(pitch) - z1 * Math.sin(pitch);
+                let z2 = y * Math.sin(pitch) + z1 * Math.cos(pitch);
+
+                const fov = 700;
+                const scale = fov / (fov + z2 + 400);
+                return {
+                    x: width / 2 + x1 * scale,
+                    y: height / 2 + y2 * scale,
+                    scale: scale,
+                    zDepth: z2
+                };
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(2, 2, 8, 0.25)';
+                ctx.fillRect(0, 0, width, height);
+
+                // 繪製運行軌跡
+                for (let b of this.bodies) {
+                    if (b.trail.length < 2) continue;
+                    ctx.beginPath();
+                    for (let i = 0; i < b.trail.length; i++) {
+                        let pt = this.project(b.trail[i].x, b.trail[i].y, b.trail[i].z);
+                        if (i === 0) ctx.moveTo(pt.x, pt.y);
+                        else ctx.lineTo(pt.x, pt.y);
+                    }
+                    ctx.strokeStyle = b.color;
+                    ctx.lineWidth = b.isStar ? 2 : 1.2;
+                    ctx.globalAlpha = b.isStar ? 0.4 : 0.6;
+                    ctx.stroke();
+                    ctx.globalAlpha = 1.0;
+                }
+
+                // 按 Z 軸排序遮擋 (Painter's Algorithm)
+                const rendered = this.bodies.map(b => ({
+                    body: b,
+                    proj: this.project(b.x, b.y, b.z)
+                })).sort((a, b) => b.proj.zDepth - a.proj.zDepth);
+
+                // 渲染恆星與行星發光體
+                for (let item of rendered) {
+                    let b = item.body;
+                    let p = item.proj;
+                    let r = Math.max(1, b.r * p.scale);
+
+                    ctx.save();
+                    if (b.isStar) {
+                        ctx.shadowColor = b.color;
+                        ctx.shadowBlur = 25 * p.scale;
+                    }
+                    const grad = ctx.createRadialGradient(p.x, p.y, r * 0.1, p.x, p.y, r);
+                    grad.addColorStop(0, '#ffffff');
+                    grad.addColorStop(0.4, b.color);
+                    grad.addColorStop(1, 'rgba(0,0,0,0.8)');
+
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+        }
+
+        // ==========================================
+        // 9. 物理實驗 1：雙擺混沌模型 (Double Pendulum)
+        // ==========================================
+        class DoublePendulum {
+            constructor() {
+                this.name = "9. 雙擺混沌模型";
+                this.reset();
+            }
+            reset() {
+                this.r1 = 140; this.r2 = 130;
+                this.m1 = 20;  this.m2 = 20;
+                this.g = 1.0;
+
+                // 5 組雙擺，起始角度僅相差 0.0002 弧度，演示蝴蝶效應
+                const baseA1 = Math.PI / 2 + Math.random();
+                const baseA2 = Math.PI / 2 + Math.random();
+                const colors = ['#ff2a6d', '#05d9e8', '#00ff66', '#ffb000', '#d200ff'];
+
+                this.pendulums = Array.from({length: 5}, (_, i) => ({
+                    a1: baseA1 + i * 0.0002,
+                    a2: baseA2,
+                    a1_v: 0, a2_v: 0,
+                    color: colors[i],
+                    trail: []
+                }));
+            }
+            init() {
+                this.reset();
+                ctx.fillStyle = '#050508'; ctx.fillRect(0, 0, width, height);
+            }
+            update() {
+                const cx = width / 2, cy = height * 0.35;
+
+                for (let p of this.pendulums) {
+                    // 拉格朗日力學下的雙擺運動方程
+                    let num1 = -this.g * (2 * this.m1 + this.m2) * Math.sin(p.a1) - this.m2 * this.g * Math.sin(p.a1 - 2 * p.a2);
+                    let num2 = -2 * Math.sin(p.a1 - p.a2) * this.m2 * (p.a2_v * p.a2_v * this.r2 + p.a1_v * p.a1_v * this.r1 * Math.cos(p.a1 - p.a2));
+                    let den = this.r1 * (2 * this.m1 + this.m2 - this.m2 * Math.cos(2 * p.a1 - 2 * p.a2));
+                    let a1_a = (num1 + num2) / den;
+
+                    let num3 = 2 * Math.sin(p.a1 - p.a2);
+                    let num4 = (p.a1_v * p.a1_v * this.r1 * (this.m1 + this.m2)) + this.g * (this.m1 + this.m2) * Math.cos(p.a1) + p.a2_v * p.a2_v * this.r2 * this.m2 * Math.cos(p.a1 - p.a2);
+                    let den2 = this.r2 * (2 * this.m1 + this.m2 - this.m2 * Math.cos(2 * p.a1 - 2 * p.a2));
+                    let a2_a = (num3 * num4) / den2;
+
+                    p.a1_v += a1_a;
+                    p.a2_v += a2_a;
+                    p.a1 += p.a1_v;
+                    p.a2 += p.a2_v;
+
+                    p.a1_v *= 0.9995; // 極低阻尼
+                    p.a2_v *= 0.9995;
+
+                    let x1 = cx + this.r1 * Math.sin(p.a1);
+                    let y1 = cy + this.r1 * Math.cos(p.a1);
+                    let x2 = x1 + this.r2 * Math.sin(p.a2);
+                    let y2 = y1 + this.r2 * Math.cos(p.a2);
+
+                    p.x1 = x1; p.y1 = y1; p.x2 = x2; p.y2 = y2;
+                    p.trail.push({x: x2, y: y2});
+                    if (p.trail.length > 250) p.trail.shift();
+                }
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(5, 5, 10, 0.15)';
+                ctx.fillRect(0, 0, width, height);
+
+                const cx = width / 2, cy = height * 0.35;
+
+                // 繪製彩虹運動長曝光軌跡
+                for (let p of this.pendulums) {
+                    if (p.trail.length < 2) continue;
+                    ctx.beginPath();
+                    ctx.moveTo(p.trail[0].x, p.trail[0].y);
+                    for (let i = 1; i < p.trail.length; i++) {
+                        ctx.lineTo(p.trail[i].x, p.trail[i].y);
+                    }
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = 1.8;
+                    ctx.stroke();
+                }
+
+                // 繪製擺臂與擺錘
+                for (let p of this.pendulums) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.stroke();
+
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath(); ctx.arc(p.x2, p.y2, 5, 0, Math.PI * 2); ctx.fill();
+                }
+            }
+        }
+
+        // ==========================================
+        // 10. 物理實驗 2：洛倫茲奇異吸引子 (Lorenz Attractor)
+        // ==========================================
+        class LorenzAttractor {
+            constructor() {
+                this.name = "10. 洛倫茲奇異吸引子";
+                this.reset();
+            }
+            reset() {
+                this.sigma = 10;
+                this.rho = 28;
+                this.beta = 8 / 3;
+                this.camAngle = 0;
+                this.numParticles = 1200;
+                this.particles = [];
+
+                for (let i = 0; i < this.numParticles; i++) {
+                    this.particles.push({
+                        x: (Math.random() - 0.5) * 2,
+                        y: (Math.random() - 0.5) * 2,
+                        z: 25 + (Math.random() - 0.5) * 2,
+                        hue: (i / this.numParticles) * 360,
+                        history: []
+                    });
+                }
+            }
+            init() {
+                this.reset();
+                ctx.fillStyle = '#000'; ctx.fillRect(0, 0, width, height);
+            }
+            update() {
+                this.camAngle += 0.008;
+                const dt = 0.008;
+
+                for (let p of this.particles) {
+                    let dx = (this.sigma * (p.y - p.x)) * dt;
+                    let dy = (p.x * (this.rho - p.z) - p.y) * dt;
+                    let dz = (p.x * p.y - this.beta * p.z) * dt;
+
+                    p.x += dx; p.y += dy; p.z += dz;
+
+                    p.history.push({x: p.x, y: p.y, z: p.z});
+                    if (p.history.length > 8) p.history.shift();
+                }
+            }
+            project(x, y, z) {
+                let cz = z - 25;
+                let x1 = x * Math.cos(this.camAngle) + cz * Math.sin(this.camAngle);
+                let z1 = -x * Math.sin(this.camAngle) + cz * Math.cos(this.camAngle);
+                let y2 = y * Math.cos(0.4) - z1 * Math.sin(0.4);
+                let z2 = y * Math.sin(0.4) + z1 * Math.cos(0.4);
+
+                const fov = 500;
+                const scale = fov / (fov + z2 + 150);
+                return {
+                    x: width / 2 + x1 * 14 * scale,
+                    y: height / 2 + y2 * 14 * scale,
+                    scale: scale
+                };
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.fillRect(0, 0, width, height);
+
+                for (let p of this.particles) {
+                    if (p.history.length < 2) continue;
+                    ctx.beginPath();
+                    for (let i = 0; i < p.history.length; i++) {
+                        let pt = this.project(p.history[i].x, p.history[i].y, p.history[i].z);
+                        if (i === 0) ctx.moveTo(pt.x, pt.y);
+                        else ctx.lineTo(pt.x, pt.y);
+                    }
+                    ctx.strokeStyle = `hsl(${p.hue}, 100%, 65%)`;
+                    ctx.lineWidth = 1.2;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // ==========================================
+        // 主控制器 (控盤 10 種效果)
+        // ==========================================
+        const screensavers = [
+            new DVDBounce(),
+            new Starfield(),
+            new MystifyBezier(),
+            new Pipes3D(),
+            new FlowerBox3D(),
+            new MatrixRain(),
+            new SynthwaveGrid(),
+            new GravitationalChaos(),
+            new DoublePendulum(),
+            new LorenzAttractor()
+        ];
+
+        let currentIndex = 0;
+        let activeSaver = screensavers[currentIndex];
+
+        function initNumButtons() {
+            numSelectorEl.innerHTML = '';
+            screensavers.forEach((saver, idx) => {
+                const btn = document.createElement('div');
+                btn.className = `num-btn ${idx === currentIndex ? 'active' : ''}`;
+                btn.innerText = (idx + 1) % 10;
+                btn.title = saver.name;
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    switchSaver(idx);
+                });
+                numSelectorEl.appendChild(btn);
+            });
+        }
+
+        function switchSaver(index) {
+            currentIndex = (index + screensavers.length) % screensavers.length;
+            activeSaver = screensavers[currentIndex];
+            activeSaver.init();
+
+            titleEl.innerText = activeSaver.name;
+            document.querySelectorAll('.num-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', idx === currentIndex);
+            });
+            showHUD();
+        }
+
+        window.addEventListener('click', (e) => {
+            if (hud.contains(e.target)) return;
+            switchSaver(currentIndex + 1);
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                switchSaver(currentIndex + 1);
+            } else if (e.key === 'ArrowLeft') {
+                switchSaver(currentIndex - 1);
+            } else if (e.key >= '1' && e.key <= '9') {
+                switchSaver(parseInt(e.key) - 1);
+            } else if (e.key === '0') {
+                switchSaver(9);
+            } else if (e.key === 'f' || e.key === 'F') {
+                toggleFullscreen();
+            }
+        });
+
+        initNumButtons();
+        switchSaver(0);
+
+        function loop() {
+            activeSaver.update();
+            activeSaver.draw();
+            requestAnimationFrame(loop);
+        }
+        loop();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Physics Screensaver</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030308;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+            cursor: default;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #hud {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: auto;
+            transition: opacity 0.8s ease;
+            z-index: 10;
+            background: rgba(15, 15, 25, 0.65);
+            padding: 20px 25px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+            width: 92%;
+            max-width: 650px;
+            text-align: center;
+        }
+
+        .fade-out {
+            opacity: 0;
+            pointer-events: none !important;
+        }
+
+        #title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            background: linear-gradient(45deg, #00f2fe, #4facfe, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #subtitle {
+            font-size: 0.85rem;
+            color: #b0b5d0;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover, .btn:active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .btn.small {
+            padding: 8px 10px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="hud">
+        <div id="title">幕布名稱</div>
+        <div id="subtitle">物理學描述</div>
+        <div class="btn-row">
+            <button class="btn" onclick="triggerScene(-1)">&#9664; 上一個</button>
+            <button class="btn small" onclick="switchScene(0)">1</button>
+            <button class="btn small" onclick="switchScene(1)">2</button>
+            <button class="btn small" onclick="switchScene(2)">3</button>
+            <button class="btn small" onclick="switchScene(3)">4</button>
+            <button class="btn small" onclick="switchScene(4)">5</button>
+            <button class="btn small" onclick="switchScene(5)">6</button>
+            <button class="btn small" onclick="switchScene(6)">7</button>
+            <button class="btn small" onclick="switchScene(7)">8</button>
+            <button class="btn small" onclick="switchScene(8)">9</button>
+            <button class="btn small" onclick="switchScene(9)">10</button>
+            <button class="btn small" onclick="switchScene(10)">11</button>
+            <button class="btn" onclick="triggerScene(1)">下一個 &#9654;</button>
+        </div>
+        <div class="btn-row" style="margin-top: 8px;">
+            <button class="btn" onclick="toggleFullScreen()">[F] 全螢幕</button>
+            <button class="btn" onclick="resetCurrentScene()">[R] 重置</button>
+        </div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const hud = document.getElementById('hud');
+        const titleEl = document.getElementById('title');
+        const subtitleEl = document.getElementById('subtitle');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        let currentSceneIndex = 0;
+        let hudTimeout;
+
+        function showHUD() {
+            hud.classList.remove('fade-out');
+            clearTimeout(hudTimeout);
+            hudTimeout = setTimeout(() => {
+                hud.classList.add('fade-out');
+            }, 5000);
+        }
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        const Scene1 = {
+			name: "1. 雙恆星+三衛星",
+			desc: "全隨機生成的雙恆星與三衛星系統",
+			stars: [], 
+			satellites: [], 
+			G: 1.5, 
+			dt: 0.6,
+
+
+			init() {
+				this.stars = [];
+				this.satellites = [];
+
+				for (let i = 0; i < 2; i++) {
+					const mass = 400 + Math.random() * 800;
+					const angle = Math.random() * Math.PI * 2;
+					const dist = 40 + Math.random() * 100;
+					const speed = 1 + Math.random() * 3;
+					const vAngle = Math.random() * Math.PI * 2;
+
+
+					this.stars.push({
+						x: Math.cos(angle) * dist,
+						y: Math.sin(angle) * dist,
+						vx: Math.cos(vAngle) * speed,
+						vy: Math.sin(vAngle) * speed,
+						mass: mass,
+						color: `hsl(${Math.floor(Math.random() * 360)}, 100%, 65%)`,
+						radius: 8 + Math.sqrt(mass) * 0.35
+					});
+				}
+
+				for (let i = 0; i < 3; i++) {
+					const angle = Math.random() * Math.PI * 2;
+					const dist = 120 + Math.random() * 200;
+					const speed = 1 + Math.random() * 4;
+					const vAngle = Math.random() * Math.PI * 2;
+
+
+					this.satellites.push({
+						x: Math.cos(angle) * dist,
+						y: Math.sin(angle) * dist,
+						vx: Math.cos(vAngle) * speed,
+						vy: Math.sin(vAngle) * speed,
+						mass: 0.01 + Math.random() * 2,
+						color: `hsl(${Math.floor(Math.random() * 360)}, 100%, 75%)`,
+						radius: 3 + Math.random() * 4,
+						trail: []
+					});
+				}
+
+				const all = [...this.stars, ...this.satellites];
+				let totalMass = 0;
+				let comX = 0, comY = 0;
+				let comVx = 0, comVy = 0;
+
+
+				for (let b of all) {
+					totalMass += b.mass;
+					comX += b.x * b.mass;
+					comY += b.y * b.mass;
+					comVx += b.vx * b.mass;
+					comVy += b.vy * b.mass;
+				}
+
+
+				comX /= totalMass;
+				comY /= totalMass;
+				comVx /= totalMass;
+				comVy /= totalMass;
+
+
+				for (let b of all) {
+					b.x -= comX;
+					b.y -= comY;
+					b.vx -= comVx;
+					b.vy -= comVy;
+				}
+			},
+
+
+			update() {
+				const allBodies = [...this.stars, ...this.satellites];
+				const len = allBodies.length;
+
+				for (let i = 0; i < len; i++) {
+					let fx = 0, fy = 0;
+					const b1 = allBodies[i];
+
+
+					for (let j = 0; j < len; j++) {
+						if (i === j) continue;
+						const b2 = allBodies[j];
+						const dx = b2.x - b1.x;
+						const dy = b2.y - b1.y;
+						const distSq = dx * dx + dy * dy + 300;
+						const dist = Math.sqrt(distSq);
+						const force = (this.G * b1.mass * b2.mass) / distSq;
+
+
+						fx += force * (dx / dist);
+						fy += force * (dy / dist);
+					}
+
+
+					b1.vx += (fx / b1.mass) * this.dt;
+					b1.vy += (fy / b1.mass) * this.dt;
+				}
+
+
+				for (let b of allBodies) {
+					b.x += b.vx * this.dt;
+					b.y += b.vy * this.dt;
+				}
+
+
+				for (let sat of this.satellites) {
+					sat.trail.push({ x: sat.x, y: sat.y });
+					if (sat.trail.length > 400) sat.trail.shift();
+				}
+			},
+
+
+			draw() {
+				ctx.fillStyle = 'rgba(5, 5, 12, 0.18)';
+				ctx.fillRect(0, 0, width, height);
+				const cx = width / 2, cy = height / 2;
+
+
+				for (let sat of this.satellites) {
+					if (sat.trail.length > 1) {
+						ctx.lineWidth = 1.2;
+						for (let i = 1; i < sat.trail.length; i++) {
+							const alpha = i / sat.trail.length;
+							ctx.strokeStyle = sat.color;
+							ctx.globalAlpha = alpha * 0.8;
+							ctx.beginPath();
+							ctx.moveTo(cx + sat.trail[i - 1].x, cy + sat.trail[i - 1].y);
+							ctx.lineTo(cx + sat.trail[i].x, cy + sat.trail[i].y);
+							ctx.stroke();
+						}
+						ctx.globalAlpha = 1.0;
+					}
+				}
+
+
+				for (let b of [...this.stars, ...this.satellites]) {
+					ctx.shadowBlur = b.radius * 2.5;
+					ctx.shadowColor = b.color;
+					ctx.fillStyle = b.color;
+					ctx.beginPath();
+					ctx.arc(cx + b.x, cy + b.y, b.radius, 0, Math.PI * 2);
+					ctx.fill();
+					ctx.shadowBlur = 0;
+				}
+			}
+		};
+
+        const Scene2 = {
+            name: "2. 多重雙擺",
+            desc: "25 個初始角度極微小差異的雙擺，迅速分化出無序混沌。",
+            pendulums: [], count: 25, g: 1.0,
+
+            init() {
+                this.pendulums = [];
+                const l1 = 160, l2 = 140; 
+                const baseAngle1 = Math.PI / 2 + (Math.random() - 0.5);
+                const baseAngle2 = Math.PI / 2 + (Math.random() - 0.5);
+
+                for (let i = 0; i < this.count; i++) {
+                    this.pendulums.push({
+                        l1: l1, l2: l2, m1: 10, m2: 10,
+                        a1: baseAngle1 + i * 0.005, a2: baseAngle2 + i * 0.005,
+                        v1: 0, v2: 0, hue: (i * 360 / this.count), history: []
+                    });
+                }
+            },
+            update() {
+                for (let p of this.pendulums) {
+                    let num1 = -this.g * (2 * p.m1 + p.m2) * Math.sin(p.a1) - p.m2 * this.g * Math.sin(p.a1 - 2 * p.a2) - 2 * Math.sin(p.a1 - p.a2) * p.m2 * (p.v2 * p.v2 * p.l2 + p.v1 * p.v1 * p.l1 * Math.cos(p.a1 - p.a2));
+                    let den1 = p.l1 * (2 * p.m1 + p.m2 - p.m2 * Math.cos(2 * p.a1 - 2 * p.a2));
+                    let num2 = 2 * Math.sin(p.a1 - p.a2) * (p.v1 * p.v1 * p.l1 * (p.m1 + p.m2) + this.g * (p.m1 + p.m2) * Math.cos(p.a1) + p.v2 * p.v2 * p.l2 * p.m2 * Math.cos(p.a1 - p.a2));
+                    let den2 = p.l2 * (2 * p.m1 + p.m2 - p.m2 * Math.cos(2 * p.a1 - 2 * p.a2));
+                    
+                    p.v1 += (num1 / den1) * 0.3; p.v2 += (num2 / den2) * 0.3;
+                    p.a1 += p.v1 * 0.3; p.a2 += p.v2 * 0.3;
+                    p.v1 *= 0.9999; p.v2 *= 0.9999; 
+
+                    let x2 = p.l1 * Math.sin(p.a1) + p.l2 * Math.sin(p.a2);
+                    let y2 = p.l1 * Math.cos(p.a1) + p.l2 * Math.cos(p.a2);
+
+                    p.history.push({ x: x2, y: y2 });
+                    if (p.history.length > 200) p.history.shift();
+                }
+            },
+            draw() {
+                ctx.fillStyle = 'rgba(5, 5, 10, 0.15)'; ctx.fillRect(0, 0, width, height);
+                const cx = width / 2, cy = height / 3;
+
+                for (let p of this.pendulums) {
+                    if (p.history.length > 1) {
+                        ctx.beginPath(); ctx.strokeStyle = `hsl(${p.hue}, 100%, 60%)`; ctx.lineWidth = 1.5;
+                        ctx.moveTo(cx + p.history[0].x, cy + p.history[0].y);
+                        for (let pt of p.history) ctx.lineTo(cx + pt.x, cy + pt.y);
+                        ctx.stroke();
+                    }
+                    
+                    let x1 = cx + p.l1 * Math.sin(p.a1), y1 = cy + p.l1 * Math.cos(p.a1);
+                    let x2 = x1 + p.l2 * Math.sin(p.a2), y2 = y1 + p.l2 * Math.cos(p.a2);
+                    ctx.strokeStyle = `hsla(${p.hue}, 100%, 80%, 0.15)`; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+                }
+            }
+        };
+
+        const Scene3 = {
+            name: "3. 洛倫茲奇異吸引子",
+            desc: "氣象學家洛倫茲提出的三維非線性微分方程，呈現著名的蝴蝶翅膀形狀吸引子。",
+            points: [], x: 0.1, y: 0, z: 0, rotY: 0,
+            sigma: 10, rho: 28, beta: 8 / 3,
+
+            init() {
+                this.points = []; this.x = 0.1; this.y = 0; this.z = 0; this.rotY = 0;
+            },
+            update() {
+                let dt = 0.008;
+                for (let i = 0; i < 6; i++) {
+                    let dx = this.sigma * (this.y - this.x) * dt;
+                    let dy = (this.x * (this.rho - this.z) - this.y) * dt;
+                    let dz = (this.x * this.y - this.beta * this.z) * dt;
+                    this.x += dx; this.y += dy; this.z += dz;
+                    this.points.push({ x: this.x, y: this.y, z: this.z });
+                    if (this.points.length > 1500) this.points.shift();
+                }
+                this.rotY += 0.005;
+            },
+            draw() {
+                ctx.fillStyle = 'rgba(2, 2, 8, 0.2)'; ctx.fillRect(0, 0, width, height);
+                const scale = 14;
+                const cx = width / 2, cy = height / 2 + 50;
+
+                ctx.lineWidth = 1.2;
+                for (let i = 1; i < this.points.length; i++) {
+                    let p1 = this.points[i - 1], p2 = this.points[i];
+                    let x1 = p1.x * Math.cos(this.rotY) + p1.z * Math.sin(this.rotY);
+                    let z1 = -p1.x * Math.sin(this.rotY) + p1.z * Math.cos(this.rotY);
+                    let x2 = p2.x * Math.cos(this.rotY) + p2.z * Math.sin(this.rotY);
+                    let z2 = -p2.x * Math.sin(this.rotY) + p2.z * Math.cos(this.rotY);
+
+                    ctx.strokeStyle = `hsl(${(i * 0.1 + p2.z * 4) % 360}, 100%, 65%)`;
+                    ctx.beginPath();
+                    ctx.moveTo(cx + x1 * scale, cy - p1.y * scale);
+                    ctx.lineTo(cx + x2 * scale, cy - p2.y * scale);
+                    ctx.stroke();
+                }
+            }
+        };
+
+        const Scene4 = {
+            name: "4. 磁力擺混沌軌跡",
+            desc: "鐵質擺錘在三個對稱磁場與微弱重力下的三元混沌運動，永不收斂。",
+            magnets: [], bobs: [],
+
+            init() {
+                const r = 180;
+                this.magnets = [
+                    { x: r * Math.cos(-Math.PI / 2) + (Math.random()-0.5)*25, y: r * Math.sin(-Math.PI / 2) + (Math.random()-0.5)*25, color: '#ff0055' },
+                    { x: r * Math.cos(Math.PI / 6) + (Math.random()-0.5)*25, y: r * Math.sin(Math.PI / 6) + (Math.random()-0.5)*25, color: '#00ffcc' },
+                    { x: r * Math.cos(Math.PI * 5 / 6) + (Math.random()-0.5)*25, y: r * Math.sin(Math.PI * 5 / 6) + (Math.random()-0.5)*25, color: '#ffcc00' }
+                ];
+                this.bobs = [];
+                for (let i = 0; i < 12; i++) {
+                    this.bobs.push({
+                        x: (Math.random() - 0.5) * 80, y: (Math.random() - 0.5) * 80,
+                        vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
+                        trail: [], hue: i * 30
+                    });
+                }
+            },
+            update() {
+                for (let b of this.bobs) {
+                    let fx = -0.000005 * b.x, fy = -0.000005 * b.y; 
+                    for (let m of this.magnets) {
+                        let dx = m.x - b.x, dy = m.y - b.y;
+                        let distSq = dx * dx + dy * dy + 600; 
+                        let dist = Math.sqrt(distSq);
+                        let f = 3500 / distSq; 
+                        fx += f * (dx / dist); fy += f * (dy / dist);
+                    }
+                    b.vx = (b.vx + fx) * 0.999995; b.vy = (b.vy + fy) * 0.999995; 
+
+                    let speed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+                    if (speed > 15) { b.vx = (b.vx / speed) * 15; b.vy = (b.vy / speed) * 15; }
+
+                    b.x += b.vx; b.y += b.vy;
+                    b.trail.push({ x: b.x, y: b.y });
+                    if (b.trail.length > 250) b.trail.shift();
+                }
+            },
+            draw() {
+                ctx.fillStyle = 'rgba(5, 2, 10, 0.15)'; ctx.fillRect(0, 0, width, height);
+                const cx = width / 2, cy = height / 2 + 30;
+
+                for (let m of this.magnets) {
+                    ctx.shadowBlur = 20; ctx.shadowColor = m.color;
+                    ctx.fillStyle = m.color; ctx.beginPath();
+                    ctx.arc(cx + m.x, cy + m.y, 16, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+                }
+                for (let b of this.bobs) {
+                    if (b.trail.length > 1) {
+                        ctx.beginPath(); ctx.strokeStyle = `hsl(${b.hue}, 100%, 70%)`; ctx.lineWidth = 2;
+                        ctx.moveTo(cx + b.trail[0].x, cy + b.trail[0].y);
+                        for (let pt of b.trail) ctx.lineTo(cx + pt.x, cy + pt.y);
+                        ctx.stroke();
+                    }
+                    ctx.fillStyle = '#ffffff'; ctx.beginPath();
+                    ctx.arc(cx + b.x, cy + b.y, 4, 0, Math.PI * 2); ctx.fill();
+                }
+            }
+        };
+
+        const Scene5 = {
+            name: "5. 星系吸積盤",
+            desc: "數百顆天體在中心超大質量黑洞引力作用下進行軌道演化。",
+            particles: [], blackHoleMass: 8000, G: 0.2,
+
+            init() {
+                this.particles = []; 
+                for (let i = 0; i < 350; i++) {
+                    let angle = Math.random() * Math.PI * 2;
+                    let dist = 50 + Math.random() * 250;
+                    let speed = Math.sqrt(this.G * this.blackHoleMass / dist) * (0.9 + Math.random() * 0.2);
+                    this.particles.push({
+                        x: Math.cos(angle) * dist, y: Math.sin(angle) * dist,
+                        vx: -Math.sin(angle) * speed, vy: Math.cos(angle) * speed,
+                        mass: 1 + Math.random() * 3, hue: 180 + (dist % 180)
+                    });
+                }
+            },
+            update() {
+                for (let p of this.particles) {
+                    let dx = -p.x, dy = -p.y;
+                    let distSq = dx * dx + dy * dy + 200, dist = Math.sqrt(distSq);
+                    let force = (this.G * this.blackHoleMass) / distSq;
+                    p.vx += force * (dx / dist); p.vy += force * (dy / dist);
+                    p.x += p.vx; p.y += p.vy;
+                }
+            },
+            draw() {
+                ctx.fillStyle = 'rgba(0, 2, 8, 0.2)'; ctx.fillRect(0, 0, width, height);
+                const cx = width / 2, cy = height / 2;
+                ctx.shadowBlur = 30; ctx.shadowColor = '#00f2fe';
+                ctx.fillStyle = '#000000'; ctx.strokeStyle = '#00f2fe'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(cx, cy, 18, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+
+                for (let p of this.particles) {
+                    let speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                    ctx.fillStyle = `hsl(${(p.hue + speed * 15) % 360}, 100%, 65%)`;
+                    ctx.beginPath(); ctx.arc(cx + p.x, cy + p.y, p.mass, 0, Math.PI * 2); ctx.fill();
+                }
+            }
+        };
+
+        const Scene6 = {
+            name: "6. 水波干涉與駐波場",
+            desc: "多個簡諧波源在空間中疊加形成的乾涉條紋與波動現象。",
+            sources: [], t: 0,
+
+            init() {
+                this.t = 0; 
+                this.sources = [
+                    { x: -120, y: -80, freq: 0.08, phase: 0 },
+                    { x: 120, y: -80, freq: 0.08, phase: Math.PI / 2 },
+                    { x: 0, y: 120, freq: 0.09, phase: Math.PI }
+                ];
+            },
+            update() {
+                this.t += 0.05;
+                this.sources[0].x = Math.cos(this.t * 0.3) * 150;
+                this.sources[0].y = Math.sin(this.t * 0.3) * 150;
+            },
+            draw() {
+                ctx.fillStyle = 'rgba(2, 4, 10, 1)'; ctx.fillRect(0, 0, width, height);
+                const step = 16, cols = Math.ceil(width / step), rows = Math.ceil(height / step);
+                const cx = width / 2, cy = height / 2;
+
+                for (let i = 0; i < cols; i++) {
+                    for (let j = 0; j < rows; j++) {
+                        let x = i * step, y = j * step, amplitude = 0;
+                        for (let s of this.sources) {
+                            let dist = Math.sqrt((x - (cx + s.x)) ** 2 + (y - (cy + s.y)) ** 2);
+                            amplitude += Math.sin(dist * s.freq - this.t * 3 + s.phase);
+                        }
+                        let normAmp = (amplitude + this.sources.length) / (this.sources.length * 2);
+                        ctx.fillStyle = `hsl(${(normAmp * 280 + 160) % 360}, 100%, ${normAmp * 70}%)`;
+                        ctx.beginPath();
+                        ctx.arc(x, y, Math.max(1, normAmp * (step / 1.8)), 0, Math.PI * 2); ctx.fill();
+                    }
+                }
+                for (let s of this.sources) {
+                    ctx.fillStyle = '#ffffff'; ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff';
+                    ctx.beginPath(); ctx.arc(cx + s.x, cy + s.y, 6, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+                }
+            }
+        };
+
+        const Scene7 = {
+            name: "7. 3D 艾澤混沌吸引子",
+            desc: "具有球形流形與頂部噴流結構的高維非線性混沌吸引子。",
+            particles: [], rotY: 0,
+            a: 0.95, b: 0.7, c: 0.6, d: 3.5, e: 0.25, f: 0.1,
+
+            init() {
+                this.particles = []; this.rotY = 0;
+                for (let i = 0; i < 800; i++) {
+                    this.particles.push({ x: (Math.random() - 0.5)*2, y: (Math.random() - 0.5)*2, z: (Math.random() - 0.5)*2, age: Math.random() * 500 });
+                }
+            },
+            update() {
+                let dt = 0.01; this.rotY += 0.008;
+                for (let p of this.particles) {
+                    let dx = (p.z - this.b) * p.x - this.d * p.y;
+                    let dy = this.d * p.x + (p.z - this.b) * p.y;
+                    let dz = this.c + this.a * p.z - (p.z ** 3) / 3 - (p.x ** 2 + p.y ** 2) * (1 + this.e * p.z) + this.f * p.z * (p.x ** 3);
+                    p.x += dx * dt; p.y += dy * dt; p.z += dz * dt; p.age += 1;
+                    if (p.age > 600 || isNaN(p.x)) {
+                        p.x = (Math.random() - 0.5)*0.5; p.y = (Math.random() - 0.5)*0.5; p.z = (Math.random() - 0.5)*0.5; p.age = 0;
+                    }
+                }
+            },
+            draw() {
+                ctx.fillStyle = 'rgba(2, 2, 6, 0.2)'; ctx.fillRect(0, 0, width, height);
+                const scale = 150, cx = width / 2, cy = height / 2 + 30;
+
+                for (let p of this.particles) {
+                    let rx = p.x * Math.cos(this.rotY) + p.z * Math.sin(this.rotY);
+                    let rz = -p.x * Math.sin(this.rotY) + p.z * Math.cos(this.rotY);
+                    ctx.fillStyle = `hsl(${(p.z * 100 + 200) % 360}, 100%, 65%)`;
+                    ctx.beginPath(); ctx.arc(cx + rx * scale, cy - p.y * scale, Math.max(0.8, (rz + 2) * 1.5), 0, Math.PI * 2); ctx.fill();
+                }
+            }
+        };
+
+        const Scene8 = {
+            name: "8. 理想氣體彈性碰撞",
+            desc: "基於二維動量守恆與動能守恆的完全彈性碰撞，模擬高溫分子的熱力學運動。",
+            particles: [],
+            
+            init() {
+                this.particles = [];
+                for (let i = 0; i < 150; i++) {
+                    let radius = 5 + Math.random() * 8;
+                    this.particles.push({
+                        id: i,
+                        x: radius + Math.random() * (width - radius * 2),
+                        y: radius + Math.random() * (height - radius * 2),
+                        vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
+                        radius: radius, mass: radius * radius, cx: 0, cy: 0
+                    });
+                }
+            },
+            update() {
+                const cellSize = 26; 
+                const cols = Math.floor(width / cellSize) + 1;
+                const rows = Math.floor(height / cellSize) + 1;
+                let grid = new Array(cols * rows);
+                for(let i=0; i<grid.length; i++) grid[i] = [];
+
+                for (let p of this.particles) {
+                    p.x += p.vx; p.y += p.vy;
+                    if (p.x - p.radius < 0) { p.x = p.radius; p.vx *= -1; }
+                    else if (p.x + p.radius > width) { p.x = width - p.radius; p.vx *= -1; }
+                    if (p.y - p.radius < 0) { p.y = p.radius; p.vy *= -1; }
+                    else if (p.y + p.radius > height) { p.y = height - p.radius; p.vy *= -1; }
+
+                    let cx = Math.floor(p.x / cellSize), cy = Math.floor(p.y / cellSize);
+                    if (cx >= 0 && cx < cols && cy >= 0 && cy < rows) {
+                        grid[cx + cy * cols].push(p);
+                        p.cx = cx; p.cy = cy;
+                    }
+                }
+
+                for (let i = 0; i < this.particles.length; i++) {
+                    let p1 = this.particles[i];
+                    for (let dx = -1; dx <= 1; dx++) {
+                        for (let dy = -1; dy <= 1; dy++) {
+                            let nx = p1.cx + dx, ny = p1.cy + dy;
+                            if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
+                                let cell = grid[nx + ny * cols];
+                                for (let p2 of cell) {
+                                    if (p1.id >= p2.id) continue;
+                                    let distX = p2.x - p1.x, distY = p2.y - p1.y;
+                                    let distSq = distX * distX + distY * distY;
+                                    let minDist = p1.radius + p2.radius;
+
+                                    if (distSq < minDist * minDist) {
+                                        let dist = Math.sqrt(distSq);
+                                        let overlap = minDist - dist;
+                                        let nxNorm = distX / dist, nyNorm = distY / dist;
+
+                                        p1.x -= nxNorm * overlap * 0.5; p2.x += nxNorm * overlap * 0.5;
+                                        
+                                        let kx = p1.vx - p2.vx, ky = p1.vy - p2.vy;
+                                        let p = 2 * (nxNorm * kx + nyNorm * ky) / (p1.mass + p2.mass);
+                                        p1.vx -= p * p2.mass * nxNorm; p1.vy -= p * p2.mass * nyNorm;
+                                        p2.vx += p * p1.mass * nxNorm; p2.vy += p * p1.mass * nyNorm;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            draw() {
+                ctx.fillStyle = 'rgba(0, 0, 5, 0.4)'; ctx.fillRect(0, 0, width, height);
+                ctx.globalCompositeOperation = 'screen';
+
+                for (let p of this.particles) {
+                    let speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                    let hue = 240 - Math.min(speed * 20, 240);
+                    ctx.shadowBlur = 15; ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
+                    ctx.fillStyle = `hsl(${hue}, 100%, 70%)`;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+            }
+        };
+
+        const Scene9 = {
+            name: "9. 3D 彈性網格波動",
+            desc: "基於耦合彈簧振子的二維拉普拉斯波動方程，投影至等角 3D 空間。",
+            grid: [], cols: 45, rows: 45, spacing: 18, angle: 0,
+
+            init() {
+                this.grid = [];
+                for (let i = 0; i < this.cols; i++) {
+                    this.grid[i] = [];
+                    for (let j = 0; j < this.rows; j++) this.grid[i][j] = { z: 0, vz: 0 };
+                }
+            },
+            update() {
+                this.angle += 0.05;
+                if (Math.random() < 0.04) {
+                    this.grid[Math.floor(this.cols/2)][Math.floor(this.rows/2)].z = -180;
+                }
+
+                let nextZ = [];
+                for (let i = 0; i < this.cols; i++) {
+                    nextZ[i] = [];
+                    for (let j = 0; j < this.rows; j++) {
+                        let curr = this.grid[i][j], force = 0;
+                        if (i > 0) force += this.grid[i-1][j].z - curr.z;
+                        if (i < this.cols-1) force += this.grid[i+1][j].z - curr.z;
+                        if (j > 0) force += this.grid[i][j-1].z - curr.z;
+                        if (j < this.rows-1) force += this.grid[i][j+1].z - curr.z;
+                        
+                        curr.vz = (curr.vz + force * 0.03) * 0.97;
+                        nextZ[i][j] = curr.z + curr.vz;
+                    }
+                }
+                for (let i = 0; i < this.cols; i++) {
+                    for (let j = 0; j < this.rows; j++) this.grid[i][j].z = nextZ[i][j];
+                }
+            },
+            draw() {
+                ctx.fillStyle = '#050508'; ctx.fillRect(0, 0, width, height);
+                ctx.lineWidth = 1.5;
+                
+                for (let i = 0; i < this.cols - 1; i++) {
+                    for (let j = 0; j < this.rows - 1; j++) {
+                        let p1 = this.getProjected(i, j), p2 = this.getProjected(i + 1, j), p3 = this.getProjected(i, j + 1);
+                        let zAvg = (this.grid[i][j].z + this.grid[i+1][j].z) / 2;
+                        let hue = zAvg > 0 ? 300 : 180, light = Math.min(100, 50 + Math.abs(zAvg));
+                        
+                        ctx.strokeStyle = `hsla(${hue}, 100%, ${light}%, 0.7)`;
+                        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p3.x, p3.y); ctx.stroke();
+                    }
+                }
+            },
+            getProjected(i, j) {
+                let x = (i - this.cols / 2) * this.spacing, y = (j - this.rows / 2) * this.spacing, z = this.grid[i][j].z;
+                return { x: width / 2 + (x - y) * Math.cos(0.5), y: height / 2 + 50 + (x + y) * Math.sin(0.5) + z };
+            }
+        };
+
+        const Scene10 = {
+            name: "10. 氫原子電子雲 3dz²軌道",
+            desc: "薛丁格方程式可視化：使用蒙特卡羅方法生成符合機率密度的量子態分佈。",
+            points: [], rotY: 0, rotX: 0.3,
+
+            init() {
+                this.points = []; this.rotY = 0;
+                for (let i = 0; i < 6000; i++) {
+                    let pt = this.generateQuantumPoint();
+                    if (pt) this.points.push(pt);
+                }
+            },
+            generateQuantumPoint() {
+                let x = (Math.random() - 0.5) * 12, y = (Math.random() - 0.5) * 12, z = (Math.random() - 0.5) * 12;
+                let r = Math.sqrt(x*x + y*y + z*z), theta = Math.acos(z / r);
+                
+                let rho = r / 3, radial = rho * rho * Math.exp(-rho / 2);
+                let angular = 3 * Math.cos(theta) * Math.cos(theta) - 1;
+                let probability = (radial * radial * angular * angular);
+                
+                if (Math.random() < probability * 0.5) {
+                    return { x: x, y: y, z: z, hue: angular > 0 ? 190 : 320, baseAlpha: Math.random() * 0.8 + 0.2 };
+                }
+                return null;
+            },
+            update() {
+                this.rotY += 0.005;
+                for (let i = 0; i < 25; i++) { 
+                    let newPt = this.generateQuantumPoint();
+                    if (newPt) this.points[Math.floor(Math.random() * this.points.length)] = newPt;
+                }
+            },
+            draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'; ctx.fillRect(0, 0, width, height);
+                ctx.globalCompositeOperation = 'screen';
+                const scale = 55, cx = width / 2, cy = height / 2;
+                let cosY = Math.cos(this.rotY), sinY = Math.sin(this.rotY), cosX = Math.cos(this.rotX), sinX = Math.sin(this.rotX);
+
+                for (let p of this.points) {
+                    let rx = p.x * cosY - p.z * sinY, rz = p.x * sinY + p.z * cosY;
+                    let ry = p.y * cosX - rz * sinX, fz = p.y * sinX + rz * cosX;
+                    let depth = (fz + 10) / 20;
+                    
+                    ctx.fillStyle = `hsla(${p.hue}, 100%, 65%, ${p.baseAlpha * Math.min(1, Math.max(0.1, depth))})`;
+                    ctx.beginPath(); ctx.arc(cx + rx * scale, cy - ry * scale, Math.max(0.5, depth * 2.5), 0, Math.PI * 2); ctx.fill();
+                }
+            }
+        };
+
+        const Scene11 = {
+            name: "11. 流體動力學",
+            desc: "運算 1800+ 流體粒子的壓力梯度、表面張力與黏性阻尼。",
+            particles: [], count: 1800, radius: 25, 
+            grid: [], cols: 0, rows: 0,
+
+            init() {
+                this.particles = [];
+                let pCols = 40, startX = width / 2 - (pCols * 10) / 2;
+                for (let i = 0; i < this.count; i++) {
+                    this.particles.push({
+                        x: startX + (i % pCols) * 11 + (Math.random()-0.5)*2,
+                        y: 80 + Math.floor(i / pCols) * 11,
+                        vx: 0, vy: 0, density: 0, pressure: 0, neighbors: []
+                    });
+                }
+            },
+            
+            update() {
+                const radSq = this.radius * this.radius;
+                this.cols = Math.floor(width / this.radius) + 1;
+                this.rows = Math.floor(height / this.radius) + 1;
+                const totalCells = this.cols * this.rows;
+
+                if (this.grid.length !== totalCells) {
+                    this.grid = new Array(totalCells);
+                    for(let i=0; i<totalCells; i++) this.grid[i] = [];
+                } else {
+                    for(let i=0; i<totalCells; i++) this.grid[i].length = 0;
+                }
+
+                for (let i = 0; i < this.count; i++) {
+                    let p = this.particles[i];
+                    if(p.x < 0) p.x = 0; if(p.x >= width) p.x = width - 1;
+                    if(p.y < 0) p.y = 0; if(p.y >= height) p.y = height - 1;
+
+                    let cx = Math.floor(p.x / this.radius);
+                    let cy = Math.floor(p.y / this.radius);
+                    this.grid[cx + cy * this.cols].push(p);
+                }
+
+                for (let i = 0; i < this.count; i++) {
+                    let p = this.particles[i];
+                    p.density = 0;
+                    p.neighbors = [];
+                    
+                    let cx = Math.floor(p.x / this.radius);
+                    let cy = Math.floor(p.y / this.radius);
+
+                    for (let dx = -1; dx <= 1; dx++) {
+                        let nx = cx + dx;
+                        if(nx < 0 || nx >= this.cols) continue;
+                        for (let dy = -1; dy <= 1; dy++) {
+                            let ny = cy + dy;
+                            if(ny < 0 || ny >= this.rows) continue;
+                            
+                            let cell = this.grid[nx + ny * this.cols];
+                            for(let j = 0; j < cell.length; j++) {
+                                let p2 = cell[j];
+                                if (p === p2) continue;
+                                
+                                let distSq = (p.x - p2.x)**2 + (p.y - p2.y)**2;
+                                if (distSq < radSq) {
+                                    p.neighbors.push(p2);
+                                    let q = 1 - Math.sqrt(distSq) / this.radius;
+                                    p.density += q * q;
+                                }
+                            }
+                        }
+                    }
+                    p.pressure = (p.density - 4.0) * 0.8;
+                }
+
+                for (let i = 0; i < this.count; i++) {
+                    let p = this.particles[i];
+                    let fx = 0, fy = 0.2; 
+
+                    for (let j = 0; j < p.neighbors.length; j++) {
+                        let p2 = p.neighbors[j];
+                        let dx = p.x - p2.x, dy = p.y - p2.y;
+                        let distSq = dx * dx + dy * dy;
+
+                        if (distSq > 0.001) {
+                            let dist = Math.sqrt(distSq), nx = dx / dist, ny = dy / dist;
+                            let q = 1 - dist / this.radius;
+
+                            let press = (p.pressure + p2.pressure) * 0.5;
+                            let force = press * q + 0.05 * q; 
+                            
+                            fx += nx * force; fy += ny * force;
+                            fx += (p2.vx - p.vx) * 0.02 * q; fy += (p2.vy - p.vy) * 0.02 * q;
+                        }
+                    }
+                    p.vx += fx; p.vy += fy;
+                }
+
+                let damp = 0.4;
+                for (let i = 0; i < this.count; i++) {
+                    let p = this.particles[i];
+                    p.x += p.vx; p.y += p.vy;
+                    
+                    if (p.x < 15) { p.x = 15; p.vx *= -damp; }
+                    if (p.x > width - 15) { p.x = width - 15; p.vx *= -damp; }
+                    if (p.y > height - 15) { p.y = height - 15; p.vy *= -damp; }
+                    if (p.y < 15) { p.y = 15; p.vy *= -damp; }
+                }
+            },
+            draw() {
+                ctx.fillStyle = '#010308'; ctx.fillRect(0, 0, width, height);
+                for (let p of this.particles) {
+                    let speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
+                    let hue = 200 + Math.min(speed * 12, 60);
+                    ctx.fillStyle = `hsla(${hue}, 100%, 65%, 0.9)`;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill();
+                }
+            }
+        };
+
+        const scenes = [Scene1, Scene2, Scene3, Scene4, Scene5, Scene6, Scene7, Scene8, Scene9, Scene10, Scene11];
+
+        function switchScene(index) {
+            currentSceneIndex = (index + scenes.length) % scenes.length;
+            const current = scenes[currentSceneIndex];
+            titleEl.textContent = current.name;
+            subtitleEl.textContent = current.desc;
+            current.init();
+            showHUD();
+        }
+
+        function triggerScene(offset) {
+            switchScene(currentSceneIndex + offset);
+        }
+
+        function resetCurrentScene() {
+            scenes[currentSceneIndex].init();
+            showHUD();
+        }
+
+        function toggleFullScreen() {
+            showHUD();
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            showHUD();
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                triggerScene(1);
+            } else if (e.key === 'ArrowLeft') {
+                triggerScene(-1);
+            } else if (e.key >= '1' && e.key <= '9') {
+                switchScene(parseInt(e.key) - 1);
+            } else if (e.key === '0') {
+                switchScene(9);
+            } else if (e.key === '-') {
+                switchScene(10);
+            } else if (e.key.toLowerCase() === 'f') {
+                toggleFullScreen();
+            } else if (e.key.toLowerCase() === 'r') {
+                resetCurrentScene();
+            }
+        });
+
+        canvas.addEventListener('dblclick', toggleFullScreen);
+        
+        window.addEventListener('mousemove', showHUD);
+        window.addEventListener('touchstart', showHUD, {passive: true});
+
+        switchScene(0);
+
+        function loop() {
+            ctx.globalCompositeOperation = 'source-over'; 
+            scenes[currentSceneIndex].update();
+            scenes[currentSceneIndex].draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+</html>
