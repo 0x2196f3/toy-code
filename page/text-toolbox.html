@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Toolbox</title>
+<style>
+:root{
+    --code-size:16px;
+    --code-leading:24px;
+    --canvas-pad-top:10px;
+    --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --color-bg:#eef1f5;
+    --color-surface:#ffffff;
+    --color-text:#1c2128;
+    --color-muted:#5c6570;
+    --color-faint:#9aa3ad;
+    --color-border:#d3d9e0;
+    --color-hover:#e8ebf0;
+    --color-accent:#2563eb;
+    --color-accent-contrast:#ffffff;
+    --color-ok:#157347;
+    --color-warn:#b45309;
+    --color-mark:rgba(250,204,21,.38);
+}
+@media (prefers-color-scheme:dark){
+    :root{
+        --color-bg:#121417;
+        --color-surface:#1c2025;
+        --color-text:#e2e6ea;
+        --color-muted:#9aa4ae;
+        --color-faint:#6b7680;
+        --color-border:#333a42;
+        --color-hover:#272d34;
+        --color-accent:#3b82f6;
+        --color-accent-contrast:#ffffff;
+        --color-ok:#4ade80;
+        --color-warn:#fbbf24;
+        --color-mark:rgba(250,204,21,.20);
+    }
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+    min-height:100vh;
+    font-family:var(--font-sans);
+    background:var(--color-bg);
+    color:var(--color-text);
+    padding:clamp(12px,3vw,28px);
+    line-height:1.5;
+}
+.layout{max-width:1360px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.site-header{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+h1{font-size:clamp(1.55rem,4vw,2.1rem);letter-spacing:-.02em}
+
+/* Updated Tabs Styling for rounded rectangle instead of pill */
+.tabs{display:inline-flex;flex-wrap:wrap;justify-content:center;padding:4px;gap:4px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px}
+.tab{
+    appearance:none;border:none;background:transparent;color:var(--color-muted);
+    font:inherit;font-weight:600;font-size:.95rem;padding:9px 22px;border-radius:8px;cursor:pointer;
+    transition:background-color .2s,color .2s;
+}
+.tab:hover{color:var(--color-text)}
+.tab.active{background:var(--color-accent);color:var(--color-accent-contrast)}
+.panel{display:none;flex-direction:column;gap:16px}
+.panel.active{display:flex}
+.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:13px}
+.options{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 20px}
+.options label{display:inline-flex;align-items:center;gap:7px;font-size:.92rem;cursor:pointer;user-select:none;-webkit-user-select:none}
+.options input[type="checkbox"]{width:16px;height:16px;accent-color:var(--color-accent);cursor:pointer}
+.actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.btn{
+    appearance:none;border:1px solid transparent;font:inherit;font-weight:600;font-size:.95rem;
+    padding:10px 22px;border-radius:10px;cursor:pointer;
+    background:var(--color-accent);color:var(--color-accent-contrast);
+    transition:filter .15s,transform .05s;
+}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:transparent;color:var(--color-text);border-color:var(--color-border)}
+.btn.ghost:hover{background:var(--color-hover);filter:none}
+.panes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch}
+.editor{
+    position:relative;display:flex;overflow:hidden;
+    background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;
+    min-height:220px;
+    transition:border-color .2s;
+}
+.editor:focus-within{border-color:var(--color-accent)}
+.gutter{
+    flex:none;min-width:3.4ch;padding:var(--canvas-pad-top) 10px var(--canvas-pad-top) 14px;
+    font-family:var(--font-mono);font-size:var(--code-size);line-height:var(--code-leading);
+    color:var(--color-faint);text-align:right;overflow:hidden;user-select:none;
+    border-right:1px solid var(--color-border);
+}
+.gutter span{display:block;height:var(--code-leading)}
+.canvas{position:relative;flex:1;min-width:0;overflow-x:auto}
+.marks,.canvas textarea{
+    padding:var(--canvas-pad-top) 14px;
+    font-family:var(--font-mono);font-size:var(--code-size);line-height:var(--code-leading);tab-size:4;
+}
+.marks{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.marks .bar{position:absolute;left:0;right:0;height:var(--code-leading);background:var(--color-mark)}
+.canvas textarea{
+    border:none;outline:none;resize:none;background:transparent;color:var(--color-text);
+    white-space:pre;overflow:hidden;width:100%;min-height:180px;display:block;box-sizing:border-box;
+}
+.canvas textarea::placeholder{color:var(--color-faint)}
+.icon-btn{
+    position:absolute;top:8px;right:8px;z-index:5;
+    display:flex;align-items:center;justify-content:center;width:32px;height:32px;
+    border-radius:9px;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-muted);
+    cursor:pointer;opacity:.75;transition:opacity .15s,color .15s;
+}
+.icon-btn:hover{opacity:1;color:var(--color-text)}
+.icon-btn svg{width:15px;height:15px}
+
+/* Main FAB Button */
+.fab{
+    position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:40;
+    padding:14px 26px;border:none;border-radius:12px;
+    background:var(--color-accent);color:var(--color-accent-contrast);
+    font:inherit;font-weight:700;font-size:1rem;
+    box-shadow:0 10px 24px rgba(0,0,0,.28);cursor:pointer;
+    opacity:0;transform:translateY(16px);pointer-events:none;
+    transition:opacity .25s ease,transform .25s ease;
+}
+.fab.show{opacity:1;transform:none;pointer-events:auto}
+
+/* Scroll Top/Bottom Floating Buttons */
+.scroll-fabs{
+    position:fixed;right:max(16px,env(safe-area-inset-right));bottom:calc(max(16px,env(safe-area-inset-bottom)) + 68px);
+    z-index:40;display:flex;flex-direction:column;gap:10px;
+    opacity:0;transform:translateY(16px);pointer-events:none;
+    transition:opacity .25s ease,transform .25s ease;
+}
+.scroll-fabs.show{opacity:1;transform:none;pointer-events:auto}
+.fab-mini{
+    width:42px;height:42px;border-radius:10px;border:1px solid var(--color-border);
+    background:var(--color-surface);color:var(--color-muted);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 16px rgba(0,0,0,.15);cursor:pointer;transition:color .15s,background-color .15s;
+}
+.fab-mini:hover{color:var(--color-text);background:var(--color-hover)}
+
+button:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+
+/* Toast Component */
+.toast-container{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    z-index:1000;display:flex;flex-direction:column;align-items:center;gap:8px;
+    pointer-events:none;
+}
+.toast{
+    background:var(--color-surface);color:var(--color-text);
+    border:1px solid var(--color-border);padding:10px 20px;border-radius:10px;
+    box-shadow:0 8px 20px rgba(0,0,0,.18);font-size:.95rem;font-weight:600;
+    opacity:0;transform:translateY(12px);transition:opacity .2s ease,transform .2s ease;
+    max-width:90vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{border-color:var(--color-ok);color:var(--color-ok)}
+.toast.warn{border-color:var(--color-warn);color:var(--color-warn)}
+
+/* 
+ * Mobile/Portrait Styling 
+ * Fixed height container layout with no page scroll, equal textarea splits
+ */
+@media (max-width:760px){
+    html, body {
+        height:100%; height:100dvh; overflow:hidden; /* Lock outer page scroll */
+    }
+    body { padding:10px; display:flex; flex-direction:column; }
+    .layout {
+        flex:1; min-height:0; height:100%;
+        display:flex; flex-direction:column; gap:10px;
+    }
+    .site-header { flex-shrink:0; gap:8px; }
+    h1 { font-size:1.4rem; }
+    .panel.active {
+        flex:1; min-height:0;
+        display:flex; flex-direction:column; gap:10px;
+    }
+    .card { flex-shrink:0; padding:12px; }
+    .options { justify-content:center; gap:8px 12px; } /* Centered checkboxes */
+    .panes {
+        flex:1; min-height:0;
+        display:flex; flex-direction:column; gap:10px;
+    }
+    .editor {
+        flex:1; min-height:0;
+        height:auto !important; /* Force override inline JS height */
+        border-radius:12px;
+    }
+    /* Let the textarea completely fill and handle scrolling natively */
+    .canvas textarea {
+        position:absolute !important; inset:0 !important;
+        height:100% !important; width:100% !important;
+        overflow-y:auto !important;
+    }
+    /* FAB and Scroll buttons naturally hide because intersection observer is on card inside viewport, but we can force hide to be safe */
+    .fab, .scroll-fabs { display:none !important; }
+}
+</style>
+</head>
+<body>
+<main class="layout">
+    <header class="site-header">
+        <h1>Text Toolbox</h1>
+        <nav class="tabs" aria-label="Tools">
+            <button type="button" class="tab active" id="tab-base64" aria-pressed="true">Base64 Convert</button>
+            <button type="button" class="tab" id="tab-url" aria-pressed="false">URL Convert</button>
+            <button type="button" class="tab" id="tab-json" aria-pressed="false">JSON Validate</button>
+            <button type="button" class="tab" id="tab-compare" aria-pressed="false">Compare</button>
+            <button type="button" class="tab" id="tab-sort" aria-pressed="false">Sort</button>
+            <button type="button" class="tab" id="tab-obfuscate" aria-pressed="false">Batch Obfuscate</button>
+        </nav>
+    </header>
+
+    <!-- 1. Base64 Convert -->
+    <section class="panel active" id="panel-base64" aria-label="Base64 convert">
+        <div class="card">
+            <div class="options">
+                <label><input type="checkbox" id="b64-auto">Auto convert</label>
+            </div>
+            <div class="actions">
+                <button type="button" class="btn" id="b64-encode">Encode</button>
+                <button type="button" class="btn" id="b64-decode">Decode</button>
+                <button type="button" class="btn ghost" id="b64-swap">Swap</button>
+                <button type="button" class="btn ghost" id="b64-clear-left">Clear Left</button>
+                <button type="button" class="btn ghost" id="b64-clear-right">Clear Right</button>
+            </div>
+        </div>
+        <div class="panes">
+            <section class="editor" id="b64-input" aria-label="Input text">
+                <button type="button" class="icon-btn copy" title="Copy text" aria-label="Copy text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <div class="gutter"></div>
+                <div class="canvas">
+                    <div class="marks"></div>
+                    <textarea spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off" placeholder="Input string"></textarea>
+                </div>
+            </section>
+            <section class="editor" id="b64-output" aria-label="Output text">
+                <button type="button" class="icon-btn copy" title="Copy text" aria-label="Copy text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <div class="gutter"></div>
+                <div class="canvas">
+                    <div class="marks"></div>
+                    <textarea spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off" placeholder="Base64 result"></textarea>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <!-- 2. URL Convert -->
+    <section class="panel" id="panel-url" aria-label="URL convert">
+        <div class="card">
+            <div class="options">
+                <label><input type="checkbox" id="url-auto">Auto convert</label>
+            </div>
+            <div class="actions">
+                <button type="button" class="btn" id="url-encode">Encode</button>
+                <button type="button" class="btn" id="url-decode">Decode</button>
+                <button type="button" class="btn ghost" id="url-swap">Swap</button>
+                <button type="button" class="btn ghost" id="url-clear-left">Clear Left</button>
+                <button type="button" class="btn ghost" id="url-clear-right">Clear Right</button>
+            </div>
+        </div>
+        <div class="panes">
+            <section class="editor" id="url-input" aria-label="Input text">
+                <button type="button" class="icon-btn copy" title="Copy text" aria-label="Copy text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <div class="gutter"></div>
+                <div class="canvas">
+                    <div class="marks"></div>
+                    <textarea spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off" placeholder="Input URL or string"></textarea>
+                </div>
+            </section>
+            <section class="editor" id="url-output" aria-label="Output text">
+                <button type="button" class="icon-btn copy" title="Copy text" aria-label="Copy text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <div class="gutter"></div>
+                <div class="canvas">
+                    <div class="marks"></div>
+                    <textarea spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off" placeholder="URL convert result"></textarea>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <!-- 3. JSON Validate -->
+    <section class="panel" id="panel-json" aria-label="JSON validate">
+        <div class="card">
+            <div class="options">
+                <label><input type="checkbox" id="json-auto">Auto convert</label>
+            </div>
+            <div class="actions">
+                <button type="button" class="btn" id="json-val">Validate</button>
+                <button type="button" class="btn ghost" id="json-clear-left">Clear Left</button>
+                <button type="button" class="btn ghost" id="json-clear-right">Clear Right</button>
+            </div>
+        </div>
+        <div class="panes">
+            <section class="editor" id="json-input" aria-label="Input JSON">
+                <button type="button" class="icon-btn copy" title="Copy text" aria-label="Copy text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <div class="gutter"></div>
+                <div class="canvas">
+                    <div class="marks"></div>
+                    <textarea spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off" placeholder="Paste JSON here"></textarea>
+                </div>
+            </section>
+            <section class="editor" id="json-output" aria-label="Formatted JSON">
+                <button type="button" class="icon-btn copy" title="Copy text" aria-label="Copy text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <div class="gutter"></div>
+                <div class="canvas">
+                    <div class="marks"></div>
+                    <textarea spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off" readonly placeholder="Formatted JSON output"></textarea>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <!-- 4. Compare -->
+    <section class="panel" id="panel-compare" aria-label="Text compare">
+        <div class="card">
+            <div class="options">
+                <label><input type="checkbox" id="cmp-ignore-case">Ignore case</label>
+                <label><input type="checkbox" id="cmp-ignore-spaces">Ignore spaces &amp; tabs</label>
+                <label><input type="checkbox" id="cmp-ignore-eol">Ignore line endings (CRLF / LF)</label>
+                <label><input type="checkbox" id="cmp-ignore-blank">Ignore empty lines</label>
+                <label><input type="checkbox" id="cmp-auto">Auto compare</label>
+            </div>
+            <div class="actions">
+                <button type="button" class="btn" id="cmp-run">Compare Texts</button>
+                <button type="button" class="btn ghost" id="cmp-clear-left">Clear Left</button>
+                <button type="button" class="btn ghost" id="cmp-clear-right">Clear Right</button>
+            </div>
+        </div>
+        <div class="panes">
+            <section class="editor" id="editor-left" aria-label="First text">
+                <button type="button" class="icon-btn copy" title="Copy text" aria-label="Copy text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <div class="gutter"></div>
+                <div class="canvas">
+                    <div class="marks"></div>
+                    <textarea spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off" placeholder="Paste the first text here"></textarea>
+                </div>
+            </section>
+            <section class="editor" id="editor-right" aria-label="Second text">
+                <button type="button" class="icon-btn copy" title="Copy text" aria-label="Copy text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <div class="gutter"></div>
+                <div class="canvas">
+                    <div class="marks"></div>
+                    <textarea spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off" placeholder="Paste the second text here"></textarea>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <!-- 5. Sort -->
+    <section class="panel" id="panel-sort" aria-label="Line sorter">
+        <div class="card">
+            <div class="options">
+                <label><input type="checkbox" id="sort-case-sensitive" checked>Case sensitive</label>
+                <label><input type="checkbox" id="sort-descending">Descending</label>
+                <label><input type="checkbox" id="sort-drop-duplicates">Remove duplicate lines</label>
+                <label><input type="checkbox" id="sort-drop-blank">Remove empty lines</label>
+                <label><input type="checkbox" id="sort-auto">Auto sort</label>
+            </div>
+            <div class="actions">
+                <button type="button" class="btn" id="sort-run">Sort Lines</button>
+                <button type="button" class="btn ghost" id="sort-clear-left">Clear Left</button>
+                <button type="button" class="btn ghost" id="sort-clear-right">Clear Right</button>
+            </div>
+        </div>
+        <div class="panes">
+            <section class="editor" id="sort-input" aria-label="Input text">
+                <button type="button" class="icon-btn copy" title="Copy text" aria-label="Copy text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <div class="gutter"></div>
+                <div class="canvas">
+                    <div class="marks"></div>
+                    <textarea spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off" placeholder="Type or paste lines to sort"></textarea>
+                </div>
+            </section>
+            <section class="editor" id="sort-output" aria-label="Sorted result">
+                <button type="button" class="icon-btn copy" title="Copy text" aria-label="Copy text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <div class="gutter"></div>
+                <div class="canvas">
+                    <div class="marks"></div>
+                    <textarea spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off" readonly placeholder="Sorted result appears here"></textarea>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <!-- 6. Batch Obfuscate -->
+    <section class="panel" id="panel-obfuscate" aria-label="Batch obfuscate">
+        <div class="card">
+            <div class="options">
+                <label><input type="checkbox" id="obf-auto" checked>Auto convert</label>
+            </div>
+            <div class="actions">
+                <button type="button" class="btn" id="obf-run">Convert</button>
+                <button type="button" class="btn ghost" id="obf-clear-left">Clear Left</button>
+                <button type="button" class="btn ghost" id="obf-clear-right">Clear Right</button>
+            </div>
+        </div>
+        <div class="panes">
+            <section class="editor" id="obf-input" aria-label="Input text">
+                <button type="button" class="icon-btn copy" title="Copy text" aria-label="Copy text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <div class="gutter"></div>
+                <div class="canvas">
+                    <div class="marks"></div>
+                    <textarea spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off" placeholder="Input text to obfuscate"></textarea>
+                </div>
+            </section>
+            <section class="editor" id="obf-output" aria-label="Output text">
+                <button type="button" class="icon-btn copy" title="Copy text" aria-label="Copy text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <div class="gutter"></div>
+                <div class="canvas">
+                    <div class="marks"></div>
+                    <textarea spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off" readonly placeholder="Obfuscated output"></textarea>
+                </div>
+            </section>
+        </div>
+    </section>
+</main>
+
+<!-- Scroll Top/Bottom Floating Elements -->
+<div class="scroll-fabs" id="scroll-fabs">
+    <button type="button" class="fab-mini" id="fab-top" aria-label="Scroll to top" title="Scroll to top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><polyline points="18 15 12 9 6 15"></polyline></svg>
+    </button>
+    <button type="button" class="fab-mini" id="fab-bottom" aria-label="Scroll to bottom" title="Scroll to bottom">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+</div>
+
+<button type="button" class="fab" id="fab">Encode</button>
+
+<script>
+(() => {
+    "use strict";
+
+    const CODE_LEADING = 24;
+    const CANVAS_PAD_TOP = 10;
+
+    const qs = (selector, root = document) => root.querySelector(selector);
+
+    const toastContainer = document.createElement("div");
+    toastContainer.className = "toast-container";
+    document.body.appendChild(toastContainer);
+
+    const showToast = (msg, tone = "") => {
+        if (!msg) return;
+        const toast = document.createElement("div");
+        toast.className = "toast" + (tone ? " " + tone : "");
+        toast.textContent = msg;
+        toastContainer.appendChild(toast);
+        requestAnimationFrame(() => {
+            toast.classList.add("show");
+        });
+        setTimeout(() => {
+            toast.classList.remove("show");
+            toast.addEventListener("transitionend", () => toast.remove());
+        }, 2500);
+    };
+
+    const copyFrom = async area => {
+        let ok = false;
+        if (navigator.clipboard && window.isSecureContext) {
+            try {
+                await navigator.clipboard.writeText(area.value);
+                ok = true;
+            } catch (err) {
+                ok = false;
+            }
+        }
+        if (!ok) {
+            area.focus();
+            area.select();
+            try {
+                ok = document.execCommand("copy");
+            } catch (err) {
+                ok = false;
+            }
+            window.getSelection().removeAllRanges();
+        }
+        return ok;
+    };
+
+    const mountEditor = (root, config = {}) => {
+        const area = qs("textarea", root);
+        const gutter = qs(".gutter", root);
+        const marks = qs(".marks", root);
+        const copyBtn = qs(".copy", root);
+
+        if (config.readOnly) area.readOnly = true;
+        if (config.placeholder) area.placeholder = config.placeholder;
+
+        const lineTotal = () => Math.max(1, area.value.split("\n").length);
+
+        const adjustHeight = () => {
+            if (window.innerWidth <= 760) {
+                area.style.height = "";
+                return;
+            }
+            area.style.height = "auto";
+            area.style.height = Math.max(180, area.scrollHeight) + "px";
+        };
+
+        const drawGutter = () => {
+            let html = "";
+            for (let i = 1, n = lineTotal(); i <= n; i++) html += "<span>" + i + "</span>";
+            gutter.innerHTML = html;
+        };
+
+        const drawMarks = rows => {
+            let html = "";
+            for (const row of rows) {
+                html += '<div class="bar" style="top:' + (CANVAS_PAD_TOP + row * CODE_LEADING) + 'px"></div>';
+            }
+            marks.innerHTML = html;
+        };
+
+        area.addEventListener("input", () => {
+            adjustHeight();
+            drawGutter();
+            if (config.onChange) config.onChange();
+        });
+
+        area.addEventListener("scroll", () => {
+            gutter.scrollTop = area.scrollTop;
+            marks.scrollTop = area.scrollTop;
+        });
+
+        copyBtn.addEventListener("click", async () => {
+            if (!area.value) {
+                showToast("Nothing to copy.", "warn");
+                return;
+            }
+            showToast((await copyFrom(area)) ? "Copied to clipboard." : "Copy failed.", "");
+        });
+
+        drawGutter();
+        setTimeout(adjustHeight, 0);
+
+        return { area, drawGutter, drawMarks, adjustHeight };
+    };
+
+    const setEditorValue = (editor, val) => {
+        editor.area.value = val;
+        editor.adjustHeight();
+        editor.drawGutter();
+    };
+
+    const wipe = editor => {
+        setEditorValue(editor, "");
+        editor.drawMarks([]);
+    };
+
+    function obfuscate(str) {
+        const set = "v" + Math.random().toString(36).substring(2, 10);
+        const letters = Array.from("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ").sort(() => Math.random() - 0.5).join('');
+        const setlettre = "Set " + set + "=" + letters;
+        const code = str;
+        let codeobfu = "";
+        const lettertab = {};
+        for (let i = 0; i < letters.length; i++) {
+            lettertab[letters[i]] = "%" + set + ":~" + i + ",1%";
+        }
+        for (let i = 0; i < code.length; i++) {
+            if (lettertab[code[i]]) {
+                codeobfu += lettertab[code[i]];
+            } else {
+                codeobfu += code[i];
+            }
+        }
+        return '@echo off\n' + 'chcp 65001>nul\n' + setlettre + '\n' + codeobfu;
+    }
+
+    function base64ToUint8Array(base64) {
+        base64 = base64.replace(/\s+/g, '');
+        const bin = atob(base64);
+        const len = bin.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+        return bytes;
+    }
+
+    function uint8ArrayToBinaryString(bytes) {
+        const CHUNK = 0x8000;
+        let result = '';
+        for (let i = 0; i < bytes.length; i += CHUNK) {
+            result += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+        }
+        return result;
+    }
+
+    const b64Auto = qs("#b64-auto");
+    const maybeB64Auto = () => { if (b64Auto.checked) runB64Encode(); };
+
+    const b64Input = mountEditor(qs("#b64-input"), { onChange: maybeB64Auto });
+    const b64Output = mountEditor(qs("#b64-output"));
+
+    const runB64Encode = () => {
+        const val = b64Input.area.value;
+        if (!val) { setEditorValue(b64Output, ""); return; }
+        try {
+            const res = btoa(unescape(encodeURIComponent(val)));
+            setEditorValue(b64Output, res);
+            showToast("Encoded to Base64.", "ok");
+        } catch (e) {
+            showToast("Encode Error: " + e.message, "warn");
+        }
+    };
+
+    const runB64Decode = () => {
+        const val = b64Input.area.value;
+        if (!val) { setEditorValue(b64Output, ""); return; }
+        let res = "";
+        let isErr = false;
+        try {
+            res = decodeURIComponent(escape(atob(val)));
+        } catch (e) {
+            try {
+                const bytes = base64ToUint8Array(val);
+                res = uint8ArrayToBinaryString(bytes);
+            } catch (e2) {
+                res = 'Error: Invalid Base64 string.';
+                isErr = true;
+            }
+        }
+        setEditorValue(b64Output, res);
+        if (isErr) {
+            showToast("Invalid Base64 string.", "warn");
+        } else {
+            showToast("Decoded Base64.", "ok");
+        }
+    };
+
+    qs("#b64-encode").addEventListener("click", runB64Encode);
+    qs("#b64-decode").addEventListener("click", runB64Decode);
+    qs("#b64-swap").addEventListener("click", () => {
+        const temp = b64Input.area.value;
+        setEditorValue(b64Input, b64Output.area.value);
+        setEditorValue(b64Output, temp);
+        showToast("Swapped Base64 fields.", "");
+        maybeB64Auto();
+    });
+    qs("#b64-clear-left").addEventListener("click", () => { wipe(b64Input); showToast("Left cleared.", ""); maybeB64Auto(); });
+    qs("#b64-clear-right").addEventListener("click", () => { wipe(b64Output); showToast("Right cleared.", ""); });
+    b64Auto.addEventListener("change", maybeB64Auto);
+
+    const urlAuto = qs("#url-auto");
+    const maybeUrlAuto = () => { if (urlAuto.checked) runUrlEncode(); };
+
+    const urlInput = mountEditor(qs("#url-input"), { onChange: maybeUrlAuto });
+    const urlOutput = mountEditor(qs("#url-output"));
+
+    const runUrlEncode = () => {
+        const val = urlInput.area.value;
+        if (!val) { setEditorValue(urlOutput, ""); return; }
+        try {
+            setEditorValue(urlOutput, encodeURIComponent(val));
+            showToast("URL Encoded.", "ok");
+        } catch (e) {
+            showToast("URL Encode Error: " + e.message, "warn");
+        }
+    };
+
+    const runUrlDecode = () => {
+        const val = urlInput.area.value;
+        if (!val) { setEditorValue(urlOutput, ""); return; }
+        try {
+            setEditorValue(urlOutput, decodeURIComponent(val));
+            showToast("URL Decoded.", "ok");
+        } catch (e) {
+            showToast("URL Decode Error: " + e.message, "warn");
+        }
+    };
+
+    qs("#url-encode").addEventListener("click", runUrlEncode);
+    qs("#url-decode").addEventListener("click", runUrlDecode);
+    qs("#url-swap").addEventListener("click", () => {
+        const temp = urlInput.area.value;
+        setEditorValue(urlInput, urlOutput.area.value);
+        setEditorValue(urlOutput, temp);
+        showToast("Swapped URL fields.", "");
+        maybeUrlAuto();
+    });
+    qs("#url-clear-left").addEventListener("click", () => { wipe(urlInput); showToast("Left cleared.", ""); maybeUrlAuto(); });
+    qs("#url-clear-right").addEventListener("click", () => { wipe(urlOutput); showToast("Right cleared.", ""); });
+    urlAuto.addEventListener("change", maybeUrlAuto);
+
+    const jsonAuto = qs("#json-auto");
+    const maybeJsonAuto = () => { if (jsonAuto.checked) runJsonValidate(); };
+
+    const jsonInput = mountEditor(qs("#json-input"), { onChange: maybeJsonAuto });
+    const jsonOutput = mountEditor(qs("#json-output"), { readOnly: true });
+
+    const runJsonValidate = () => {
+        const val = jsonInput.area.value.trim();
+        if (!val) { setEditorValue(jsonOutput, ""); return; }
+        try {
+            const parsed = JSON.parse(val);
+            setEditorValue(jsonOutput, JSON.stringify(parsed, null, 2));
+            showToast("Valid JSON.", "ok");
+        } catch (e) {
+            setEditorValue(jsonOutput, "Error: " + e.message);
+            showToast("Invalid JSON: " + e.message, "warn");
+        }
+    };
+
+    qs("#json-val").addEventListener("click", runJsonValidate);
+    qs("#json-clear-left").addEventListener("click", () => { wipe(jsonInput); showToast("Left cleared.", ""); maybeJsonAuto(); });
+    qs("#json-clear-right").addEventListener("click", () => { wipe(jsonOutput); showToast("Right cleared.", ""); });
+    jsonAuto.addEventListener("change", maybeJsonAuto);
+
+    const cmpIgnoreCase = qs("#cmp-ignore-case");
+    const cmpIgnoreSpaces = qs("#cmp-ignore-spaces");
+    const cmpIgnoreEol = qs("#cmp-ignore-eol");
+    const cmpIgnoreBlank = qs("#cmp-ignore-blank");
+    const cmpAuto = qs("#cmp-auto");
+    const cmpRunBtn = qs("#cmp-run");
+
+    const compareOptions = () => ({
+        foldCase: cmpIgnoreCase.checked,
+        stripSpaces: cmpIgnoreSpaces.checked,
+        unifyEols: cmpIgnoreEol.checked,
+        stripBlanks: cmpIgnoreBlank.checked
+    });
+
+    const splitForCompare = (raw, options) => {
+        let text = raw;
+        if (options.unifyEols) text = raw.replace(/\r\n?/g, "\n");
+        const rows = [];
+        text.split("\n").forEach((line, index) => {
+            if (options.stripBlanks && line.trim().length === 0) return;
+            rows.push({ text: line, row: index });
+        });
+        return rows;
+    };
+
+    const keyOf = (line, options) => {
+        let key = line;
+        if (options.foldCase) key = key.toLowerCase();
+        if (options.stripSpaces) key = key.replace(/[ \t]/g, "");
+        return key;
+    };
+
+    const runCompare = () => {
+        const options = compareOptions();
+        const left = splitForCompare(editorLeft.area.value, options);
+        const right = splitForCompare(editorRight.area.value, options);
+
+        if (left.length === 0 && right.length === 0) {
+            editorLeft.drawMarks([]);
+            editorRight.drawMarks([]);
+            showToast("Both editors are empty.", "");
+            return;
+        }
+
+        const span = Math.max(left.length, right.length);
+        let count = 0;
+        let firstAt = 0;
+        const leftMarks = [];
+        const rightMarks = [];
+
+        for (let i = 0; i < span; i++) {
+            const leftKey = i < left.length ? keyOf(left[i].text, options) : null;
+            const rightKey = i < right.length ? keyOf(right[i].text, options) : null;
+            if (leftKey !== rightKey) {
+                count++;
+                if (count === 1) firstAt = (i < left.length ? left[i].row : right[i].row) + 1;
+                if (i < left.length) leftMarks.push(left[i].row);
+                if (i < right.length) rightMarks.push(right[i].row);
+            }
+        }
+
+        editorLeft.drawMarks(leftMarks);
+        editorRight.drawMarks(rightMarks);
+
+        if (count === 0) {
+            showToast("Identical under the current options.", "ok");
+        } else {
+            showToast(count + " line(s) differ; first at line " + firstAt + ".", "warn");
+        }
+    };
+
+    const maybeCompare = () => {
+        if (cmpAuto.checked) runCompare();
+    };
+
+    const editorLeft = mountEditor(qs("#editor-left"), { onChange: maybeCompare });
+    const editorRight = mountEditor(qs("#editor-right"), { onChange: maybeCompare });
+
+    qs("#cmp-clear-left").addEventListener("click", () => { wipe(editorLeft); showToast("Left cleared.", ""); maybeCompare(); });
+    qs("#cmp-clear-right").addEventListener("click", () => { wipe(editorRight); showToast("Right cleared.", ""); maybeCompare(); });
+    cmpRunBtn.addEventListener("click", runCompare);
+    [cmpIgnoreCase, cmpIgnoreSpaces, cmpIgnoreEol, cmpIgnoreBlank, cmpAuto].forEach(box =>
+        box.addEventListener("change", maybeCompare)
+    );
+
+    const sortCaseSensitive = qs("#sort-case-sensitive");
+    const sortDescending = qs("#sort-descending");
+    const sortDropDuplicates = qs("#sort-drop-duplicates");
+    const sortDropBlank = qs("#sort-drop-blank");
+    const sortAuto = qs("#sort-auto");
+    const sortRunBtn = qs("#sort-run");
+
+    const runSort = () => {
+        const caseSensitive = sortCaseSensitive.checked;
+        let rows = sortSource.area.value.split("\n");
+
+        if (sortDropBlank.checked) rows = rows.filter(row => row.trim().length > 0);
+
+        if (sortDropDuplicates.checked) {
+            const seen = new Set();
+            rows = rows.filter(row => {
+                const key = caseSensitive ? row : row.toLowerCase();
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        }
+
+        const collator = new Intl.Collator(undefined, {
+            numeric: true,
+            sensitivity: caseSensitive ? "variant" : "base"
+        });
+        rows.sort((a, b) => collator.compare(a, b));
+        if (sortDescending.checked) rows.reverse();
+
+        setEditorValue(sortTarget, rows.join("\n"));
+
+        const before = sortSource.area.value.split("\n");
+        const span = Math.max(before.length, rows.length);
+        let moved = 0;
+        for (let i = 0; i < span; i++) {
+            const oldRow = i < before.length ? before[i] : null;
+            const newRow = i < rows.length ? rows[i] : null;
+            if (oldRow !== newRow) moved++;
+        }
+        showToast("Sorted " + rows.length + " line(s); " + moved + " line(s) changed place.", "ok");
+    };
+
+    const maybeSort = () => {
+        if (sortAuto.checked) runSort();
+    };
+
+    const sortSource = mountEditor(qs("#sort-input"), { onChange: maybeSort });
+    const sortTarget = mountEditor(qs("#sort-output"), { readOnly: true });
+
+    sortRunBtn.addEventListener("click", runSort);
+    qs("#sort-clear-left").addEventListener("click", () => { wipe(sortSource); showToast("Left cleared.", ""); maybeSort(); });
+    qs("#sort-clear-right").addEventListener("click", () => { wipe(sortTarget); showToast("Right cleared.", ""); });
+
+    [sortCaseSensitive, sortDescending, sortDropDuplicates, sortDropBlank, sortAuto].forEach(box =>
+        box.addEventListener("change", maybeSort)
+    );
+
+    const obfAuto = qs("#obf-auto");
+    const maybeObfAuto = () => { if (obfAuto.checked) runObfuscate(); };
+
+    const obfInput = mountEditor(qs("#obf-input"), { onChange: maybeObfAuto });
+    const obfOutput = mountEditor(qs("#obf-output"), { readOnly: true });
+
+    const runObfuscate = () => {
+        const val = obfInput.area.value;
+        setEditorValue(obfOutput, obfuscate(val));
+        showToast("Obfuscated text.", "ok");
+    };
+
+    qs("#obf-run").addEventListener("click", runObfuscate);
+    qs("#obf-clear-left").addEventListener("click", () => { wipe(obfInput); showToast("Left cleared.", ""); maybeObfAuto(); });
+    qs("#obf-clear-right").addEventListener("click", () => { wipe(obfOutput); showToast("Right cleared.", ""); });
+    obfAuto.addEventListener("change", maybeObfAuto);
+
+    const tools = [
+        { name: "base64", tab: qs("#tab-base64"), panel: qs("#panel-base64"), btn: qs("#b64-encode"), fabText: "Encode", run: runB64Encode },
+        { name: "url", tab: qs("#tab-url"), panel: qs("#panel-url"), btn: qs("#url-encode"), fabText: "Encode", run: runUrlEncode },
+        { name: "json", tab: qs("#tab-json"), panel: qs("#panel-json"), btn: qs("#json-val"), fabText: "Validate", run: runJsonValidate },
+        { name: "compare", tab: qs("#tab-compare"), panel: qs("#panel-compare"), btn: cmpRunBtn, fabText: "Compare", run: runCompare },
+        { name: "sort", tab: qs("#tab-sort"), panel: qs("#panel-sort"), btn: sortRunBtn, fabText: "Sort", run: runSort },
+        { name: "obfuscate", tab: qs("#tab-obfuscate"), panel: qs("#panel-obfuscate"), btn: qs("#obf-run"), fabText: "Convert", run: runObfuscate }
+    ];
+
+    const fab = qs("#fab");
+    const scrollFabs = qs("#scroll-fabs");
+    let activeTool = tools[0];
+    const primaryOnScreen = {};
+
+    const refreshFab = () => {
+        const isOffScreen = primaryOnScreen[activeTool.name] === false;
+        fab.classList.toggle("show", isOffScreen);
+        scrollFabs.classList.toggle("show", isOffScreen);
+    };
+
+    const selectTool = name => {
+        activeTool = tools.find(t => t.name === name) || tools[0];
+        tools.forEach(t => {
+            const isActive = t.name === activeTool.name;
+            t.tab.classList.toggle("active", isActive);
+            t.tab.setAttribute("aria-pressed", String(isActive));
+            t.panel.classList.toggle("active", isActive);
+        });
+        fab.textContent = activeTool.fabText;
+        refreshFab();
+    };
+
+    tools.forEach(t => {
+        t.tab.addEventListener("click", () => selectTool(t.name));
+        t.btn.dataset.tool = t.name;
+    });
+
+    fab.addEventListener("click", () => activeTool.run());
+    
+    qs("#fab-top").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    qs("#fab-bottom").addEventListener("click", () => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }));
+
+    const screenWatcher = new IntersectionObserver(entries => {
+        for (const entry of entries) {
+            primaryOnScreen[entry.target.dataset.tool] = entry.isIntersecting;
+        }
+        refreshFab();
+    }, { threshold: 0 });
+
+    tools.forEach(t => screenWatcher.observe(t.btn));
+
+    window.addEventListener("resize", () => {
+        tools.forEach(t => {
+            if (t.panel.classList.contains("active")) {
+                t.panel.querySelectorAll("textarea").forEach(area => {
+                    area.dispatchEvent(new Event("input"));
+                });
+            }
+        });
+    });
+
+    selectTool("base64");
+})();
+</script>
+</body>
+</html>

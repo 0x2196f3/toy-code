@@ -131,6 +131,7 @@ def main():
             compress_folder(sevenz, path, results)
 
     print_summary(results)
+    input("Done")
 
 if __name__ == '__main__':
     main()

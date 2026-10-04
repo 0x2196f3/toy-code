@@ -43,7 +43,6 @@
             overflow: hidden;
         }
 
-        /* Header Elements */
         header {
             display: flex;
             justify-content: space-between;
@@ -76,7 +75,6 @@
             background-color: var(--border);
         }
 
-        /* Main Container */
         main {
             flex: 1;
             overflow-y: auto;
@@ -84,9 +82,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             padding: 24px;
-            padding-bottom: 90px; /* space for bottom nav */
+            padding-bottom: 90px;
         }
 
         .tab-content {
@@ -107,7 +104,6 @@
             to { opacity: 1; }
         }
 
-        /* UI Controls & Buttons */
         .btn {
             background-color: var(--primary);
             color: white;
@@ -133,7 +129,6 @@
         }
         .btn-secondary:hover { background-color: rgba(33, 150, 243, 0.1); }
 
-        /* Tab 1: Clock Style */
         .clock-display {
             font-size: 64px;
             font-weight: 300;
@@ -160,7 +155,6 @@
             cursor: pointer;
         }
 
-        /* Tab 2: Stopwatch Style */
         .stopwatch-display {
             font-size: 72px;
             font-weight: 200;
@@ -188,7 +182,6 @@
 
         .lap-item:last-child { border-bottom: none; }
 
-        /* Tab 3: Timer Style */
         .timer-display {
             font-size: 72px;
             font-weight: 200;
@@ -233,7 +226,82 @@
             margin: 0;
         }
 
-        /* Bottom Navigation Bar */
+        .add-tz-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            margin-bottom: 24px;
+            align-items: center;
+        }
+        
+        .add-tz-row select {
+            flex: 1;
+            max-width: none;
+        }
+
+        .world-clock-list {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .world-clock-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .world-clock-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .world-clock-info h2 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .world-clock-info p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .world-clock-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .world-clock-time {
+            font-size: 24px;
+            font-weight: 300;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #E53935;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .delete-btn:hover {
+            background-color: rgba(229, 57, 53, 0.1);
+        }
+
         nav {
             position: fixed;
             bottom: 0;
@@ -279,7 +347,6 @@
             transform: scale(1.1);
         }
 
-        /* Screen Flashing Alarm Animation */
         .flash-alarm {
             animation: alarmFlash 0.5s infinite alternate;
         }
@@ -289,9 +356,8 @@
             to { background-color: #B71C1C; color: #FFFFFF; }
         }
 
-        /* Responsive adaptations */
         @media (min-width: 768px) {
-            main { padding-bottom: 24px; }
+            main { padding-bottom: 24px; justify-content: flex-start; padding-top: 40px; }
             nav {
                 height: 64px;
                 border-top: none;
@@ -315,6 +381,7 @@
     </header>
 
     <main id="mainContainer">
+        <!-- Tab 1: Clock -->
         <section id="clockTab" class="tab-content">
             <div class="clock-display" id="clockDisplay">00:00:00</div>
             <div class="date-display" id="dateDisplay">Loading date...</div>
@@ -362,6 +429,26 @@
                 <button class="btn" id="timerBtnRight">Start</button>
             </div>
         </section>
+
+        <section id="worldclockTab" class="tab-content">
+            <div class="add-tz-row">
+                <select id="newTzSelect">
+                    <option value="America/New_York">New York (UTC-5)</option>
+                    <option value="America/Los_Angeles">Los Angeles (UTC-8)</option>
+                    <option value="Europe/London">London (UTC+0)</option>
+                    <option value="Europe/Paris">Paris (UTC+1)</option>
+                    <option value="Europe/Berlin">Berlin (UTC+1)</option>
+                    <option value="Europe/Moscow">Moscow (UTC+3)</option>
+                    <option value="Asia/Dubai">Dubai (UTC+4)</option>
+                    <option value="Asia/Shanghai">Shanghai (UTC+8)</option>
+                    <option value="Asia/Taipei">Taipei (UTC+8)</option>
+                    <option value="Asia/Tokyo">Tokyo (UTC+9)</option>
+                    <option value="Australia/Sydney">Sydney (UTC+11)</option>
+                </select>
+                <button class="btn" id="addTzBtn" style="min-width: 80px;">Add</button>
+            </div>
+            <div class="world-clock-list" id="worldClockList"></div>
+        </section>
     </main>
 
 	<nav>
@@ -383,10 +470,17 @@
 			</svg>
 			<span>Timer</span>
 		</button>
+        <button class="nav-item" onclick="switchTab('worldclock')">
+            <svg viewBox="0 0 24 24">
+                <path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.34.16-2h4.68c.09.66.16 1.32.16 2 0 .68-.07 1.34-.16 2zm1.15 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/>
+            </svg>
+            <span>World</span>
+        </button>
 	</nav>
 
     <script>
-        // --- Global Audio Engine (Web Audio API Synthesizer) ---
+        let currentActiveTab = 'clock';
+
         const AudioEngine = {
             ctx: null,
             alarmInterval: null,
@@ -430,7 +524,36 @@
             }
         };
 
-        // --- Theme Engine ---
+        function syncStateToUrl() {
+            const url = new URL(window.location);
+            url.searchParams.set('tab', currentActiveTab);
+            
+            url.searchParams.delete('action');
+            url.searchParams.delete('h');
+            url.searchParams.delete('m');
+            url.searchParams.delete('s');
+            url.searchParams.delete('tz');
+            url.searchParams.delete('cities');
+            
+            if (currentActiveTab === 'clock') {
+                url.searchParams.set('tz', document.getElementById('timezoneSelect').value);
+            }
+            else if (currentActiveTab === 'stopwatch') {
+                if (swIsRunning) url.searchParams.set('action', 'start');
+            }
+            else if (currentActiveTab === 'timer') {
+                url.searchParams.set('h', document.getElementById('timerH').value);
+                url.searchParams.set('m', document.getElementById('timerM').value);
+                url.searchParams.set('s', document.getElementById('timerS').value);
+                if (timerIsRunning) url.searchParams.set('action', 'start');
+            }
+            else if (currentActiveTab === 'worldclock') {
+                url.searchParams.set('cities', worldClockCities.join(','));
+            }
+            
+            window.history.replaceState({}, '', url);
+        }
+
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
         
@@ -460,7 +583,6 @@
             setTheme(currentTheme === 'dark' ? 'light' : 'dark');
         });
 
-        // --- Tab Controller ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
@@ -468,11 +590,13 @@
             const targetTab = document.getElementById(`${tabId}Tab`);
             if (targetTab) targetTab.classList.add('active');
 
-            const navIdx = ['clock', 'stopwatch', 'timer'].indexOf(tabId);
+            const navIdx = ['clock', 'stopwatch', 'timer', 'worldclock'].indexOf(tabId);
             if (navIdx !== -1) document.querySelectorAll('.nav-item')[navIdx].classList.add('active');
+
+            currentActiveTab = tabId;
+            syncStateToUrl();
         }
 
-        // --- Tab 1: Clock & Timezones ---
         const clockDisplay = document.getElementById('clockDisplay');
         const dateDisplay = document.getElementById('dateDisplay');
         const timezoneSelect = document.getElementById('timezoneSelect');
@@ -496,18 +620,19 @@
                 const dateFormatter = new Intl.DateTimeFormat('en-US', dateOptions);
                 dateDisplay.textContent = dateFormatter.format(now);
             } catch (e) {
-                // Fail-safe fallback if timezone lookup errors out
                 clockDisplay.textContent = now.toTimeString().split(' ')[0];
                 dateDisplay.textContent = now.toDateString();
             }
         }
-        setInterval(updateClock, 200);
-        timezoneSelect.addEventListener('change', updateClock);
+        
+        timezoneSelect.addEventListener('change', () => {
+            updateClock();
+            syncStateToUrl();
+        });
 
 
-        // --- Tab 2: Stopwatch Logic ---
         let swInterval = null;
-        let swElapsedTime = 0; // in ms
+        let swElapsedTime = 0; 
         let swLastStartTime = 0;
         let swIsRunning = false;
         let swLaps = [];
@@ -541,6 +666,7 @@
             swInterval = setInterval(updateStopwatchUI, 30);
             swBtnRight.textContent = 'Pause';
             swBtnLeft.textContent = 'Lap';
+            syncStateToUrl();
         }
 
         function pauseStopwatch() {
@@ -550,6 +676,7 @@
             clearInterval(swInterval);
             swBtnRight.textContent = 'Resume';
             swBtnLeft.textContent = 'Reset';
+            syncStateToUrl();
         }
 
         function lapStopwatch() {
@@ -569,6 +696,7 @@
             swBtnLeft.textContent = 'Reset';
             lapContainer.style.display = 'none';
             lapContainer.innerHTML = '';
+            syncStateToUrl();
         }
 
         function renderLaps() {
@@ -590,10 +718,9 @@
         });
 
 
-        // --- Tab 3: Timer Logic ---
         let timerInterval = null;
-        let timerTargetTime = 0; // ms absolute timestamp
-        let timerRemaining = 0;  // ms configuration backup
+        let timerTargetTime = 0; 
+        let timerRemaining = 0;  
         let timerIsRunning = false;
         let timerIsAlarming = false;
 
@@ -605,6 +732,10 @@
         const timerBtnLeft = document.getElementById('timerBtnLeft');
         const timerBtnRight = document.getElementById('timerBtnRight');
         const mainContainer = document.getElementById('mainContainer');
+
+        [timerH, timerM, timerS].forEach(input => {
+            input.addEventListener('input', syncStateToUrl);
+        });
 
         function formatTimer(ms) {
             let totalSeconds = Math.ceil(ms / 1000);
@@ -652,6 +783,7 @@
             timerBtnRight.textContent = 'Pause';
             timerBtnLeft.style.display = 'inline-block';
             timerBtnLeft.textContent = 'Cancel';
+            syncStateToUrl();
         }
 
         function pauseTimer() {
@@ -660,6 +792,7 @@
             timerRemaining = timerTargetTime - performance.now();
             clearInterval(timerInterval);
             timerBtnRight.textContent = 'Resume';
+            syncStateToUrl();
         }
 
         function cancelTimer() {
@@ -672,6 +805,7 @@
             timerDisplay.style.display = 'none';
             timerBtnRight.textContent = 'Start';
             timerBtnLeft.style.display = 'none';
+            syncStateToUrl();
         }
 
         function triggerTimerAlarm() {
@@ -686,6 +820,7 @@
 
             timerBtnRight.style.display = 'none';
             timerBtnLeft.textContent = 'Stop';
+            syncStateToUrl();
         }
 
         function stopTimerAlarm() {
@@ -703,48 +838,90 @@
         });
 
         timerBtnLeft.addEventListener('click', () => {
-            if (timerIsAlarming) {
-                cancelTimer();
-            } else {
-                cancelTimer();
+            cancelTimer();
+        });
+
+        let worldClockCities = [
+            'America/New_York',
+            'Europe/London',
+            'Europe/Berlin',
+            'Europe/Moscow',
+            'Asia/Shanghai'
+        ];
+
+        function renderWorldClocks() {
+            const listElement = document.getElementById('worldClockList');
+            if (!listElement) return;
+            const now = new Date();
+            
+            listElement.innerHTML = worldClockCities.map((tz, index) => {
+                try {
+                    const timeStr = new Intl.DateTimeFormat('en-US', {
+                        timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+                    }).format(now);
+                    const dateStr = new Intl.DateTimeFormat('en-US', {
+                        timeZone: tz, month: 'short', day: 'numeric'
+                    }).format(now);
+                    const tzName = tz.split('/')[1].replace('_', ' ');
+                    
+                    return `
+                        <div class="world-clock-item">
+                            <div class="world-clock-info">
+                                <h2>${tzName}</h2>
+                                <p>${dateStr}</p>
+                            </div>
+                            <div class="world-clock-right">
+                                <div class="world-clock-time">${timeStr}</div>
+                                <button class="delete-btn" onclick="removeWorldClockCity(${index})" aria-label="Delete">
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } catch(e) {
+                    return `<div class="world-clock-item">Error loading ${tz}</div>`;
+                }
+            }).join('');
+        }
+
+        function removeWorldClockCity(index) {
+            worldClockCities.splice(index, 1);
+            renderWorldClocks();
+            syncStateToUrl();
+        }
+
+        document.getElementById('addTzBtn').addEventListener('click', () => {
+            const tz = document.getElementById('newTzSelect').value;
+            if (!worldClockCities.includes(tz)) {
+                worldClockCities.push(tz);
+                renderWorldClocks();
+                syncStateToUrl();
             }
         });
 
+        setInterval(() => {
+            updateClock();
+            if (currentActiveTab === 'worldclock') renderWorldClocks();
+        }, 200);
 
-        // --- Deep Link / URL Parameters Processing Engine ---
+
         function processUrlParams() {
             const params = new URLSearchParams(window.location.search);
-            const tab = params.get('tab');
-            const action = params.get('action');
-
-            if (!tab) {
-                switchTab('clock');
-                return;
-            }
-
-            switchTab(tab);
+            const tab = params.get('tab') || 'clock'; 
 
             if (tab === 'clock') {
                 const tz = params.get('tz');
                 if (tz) {
-                    // Check if input timezone exists in list options
                     let options = Array.from(timezoneSelect.options).map(o => o.value);
-                    if (options.includes(tz)) {
-                        timezoneSelect.value = tz;
-                    } else {
-                        // Dynamically insert if it's a valid string format
+                    if (!options.includes(tz)) {
                         let newOpt = document.createElement('option');
                         newOpt.value = tz;
                         newOpt.textContent = tz;
                         timezoneSelect.appendChild(newOpt);
-                        timezoneSelect.value = tz;
                     }
-                    updateClock();
-                }
-            } 
-            else if (tab === 'stopwatch') {
-                if (action === 'start') {
-                    startStopwatch();
+                    timezoneSelect.value = tz;
                 }
             } 
             else if (tab === 'timer') {
@@ -762,18 +939,27 @@
                 timerH.value = h;
                 timerM.value = m;
                 timerS.value = s;
-
-                if (action === 'start') {
-                    startTimer();
+            }
+            else if (tab === 'worldclock') {
+                const citiesParam = params.get('cities');
+                if (citiesParam) {
+                    worldClockCities = citiesParam.split(',').filter(Boolean);
                 }
+            }
+
+            switchTab(tab); 
+            
+            const action = params.get('action');
+            if (action === 'start') {
+                if (tab === 'stopwatch') startStopwatch();
+                if (tab === 'timer') startTimer();
             }
         }
 
-        // --- Initialization Execution ---
         window.addEventListener('DOMContentLoaded', () => {
             initTheme();
-            updateClock();
             processUrlParams();
+            if(currentActiveTab === 'worldclock') renderWorldClocks();
         });
     </script>
 </body>

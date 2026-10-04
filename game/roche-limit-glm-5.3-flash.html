@@ -1,0 +1,1048 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Roche Limit Breakup — Lunar Destruction Simulator</title>
+<!-- Visual/logic spec: "Roche Limit Simulation Prompt" (CC-BY-NC-SA 4.0 by karminski-牙医) -->
+<style>
+  :root{ --glass-bg: rgba(9,16,32,.55); --glass-brd: rgba(255,255,255,.14); }
+  *{ box-sizing:border-box }
+  html,body{ margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;color:#e8f0ff; }
+  canvas{ display:block }
+
+  .panel{ position:fixed;z-index:10;background:var(--glass-bg);border:1px solid var(--glass-brd);
+    border-radius:14px;backdrop-filter:blur(12px) saturate(1.3);-webkit-backdrop-filter:blur(12px) saturate(1.3);
+    box-shadow:0 8px 32px rgba(0,0,0,.4); }
+
+  /* ------- info panel ------- */
+  #info-panel{ top:18px;left:18px;width:335px;padding:14px 18px 12px;font-size:13px;line-height:1.45; }
+  #info-panel h1{ margin:0 0 10px;font-size:14px;font-weight:700;letter-spacing:.14em;color:#fff;
+    display:flex;align-items:center;gap:8px;text-transform:uppercase; }
+  #info-panel h1 .dot{ width:9px;height:9px;border-radius:50%;background:#ff5252;box-shadow:0 0 10px #ff5252;flex:none; }
+  #stage-name{ font-weight:800;font-size:14px;letter-spacing:.08em;color:#4fc3f7;transition:color .3s; }
+  #stage-desc{ margin:5px 0 12px;min-height:42px;opacity:.85;font-size:12.5px; }
+  .grid{ display:grid;grid-template-columns:1fr auto;row-gap:3px;column-gap:14px;
+    font-family:Consolas,Menlo,monospace;font-size:12px;
+    border-top:1px solid rgba(255,255,255,.1);padding-top:9px; }
+  .grid .k{ opacity:.55;letter-spacing:.05em }
+  .grid .v{ font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:#fff }
+  #hint{ margin-top:10px;font-size:11px;opacity:.45;letter-spacing:.06em }
+
+  /* ------- reset button ------- */
+  #reset-btn{ position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:10;
+    padding:13px 46px;border:none;border-radius:999px;cursor:pointer;color:#fff;
+    font-size:14px;font-weight:800;letter-spacing:.18em;font-family:inherit;
+    background:linear-gradient(135deg,#ff8a3d 0%,#ff3d68 100%);
+    box-shadow:0 6px 26px rgba(255,61,104,.45), inset 0 1px 0 rgba(255,255,255,.25);
+    transition:transform .18s ease,box-shadow .18s ease,filter .18s ease; }
+  #reset-btn:hover{ transform:translateX(-50%) scale(1.08);
+    box-shadow:0 10px 38px rgba(255,61,104,.7);filter:brightness(1.08); }
+  #reset-btn:active{ transform:translateX(-50%) scale(.97); }
+
+  /* ------- legend ------- */
+  #legend{ right:18px;bottom:22px;padding:13px 16px;font-size:12px;
+    display:flex;flex-direction:column;gap:8px;min-width:235px; }
+  #legend h2{ margin:0 0 2px;font-size:11px;font-weight:700;letter-spacing:.18em;opacity:.6;text-transform:uppercase }
+  .lrow{ display:flex;align-items:center;gap:10px }
+  .sw{ width:26px;height:13px;border-radius:3px;flex:none }
+  .sw.line{ height:0;border-top:2px dashed #ff4d4d;border-radius:0 }
+  .sw.atmo{ background:radial-gradient(circle,#cfeaff 0%,rgba(130,195,255,.35) 55%,transparent 75%) }
+  .sw.rock{ background:linear-gradient(145deg,#9a9aa4,#5d5d66);border:1px solid #777 }
+  .sw.fire{ background:radial-gradient(circle,#ffe082 0%,#ff9100 55%,#dd2c00 100%);border-radius:50% }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div id="info-panel" class="panel">
+  <h1><span class="dot"></span>Roche Limit Breakup Sim</h1>
+  <div id="stage-name">—</div>
+  <div id="stage-desc">—</div>
+  <div class="grid">
+    <span class="k">DISTANCE TO EARTH</span><span class="v" id="d-distance">—</span>
+    <span class="k">CHUNKS RELEASED</span><span class="v" id="d-released">—</span>
+    <span class="k">CHUNKS ALIVE</span><span class="v" id="d-alive">—</span>
+    <span class="k">IMPACTS</span><span class="v" id="d-impacted">—</span>
+    <span class="k">SHELL METEORS FREE</span><span class="v" id="d-shells">—</span>
+  </div>
+  <div id="hint">DRAG · ORBIT&nbsp;&nbsp;|&nbsp;&nbsp;SCROLL · ZOOM</div>
+</div>
+
+<button id="reset-btn">⟳ RESET SIMULATION</button>
+
+<div id="legend" class="panel">
+  <h2>Legend</h2>
+  <div class="lrow"><span class="sw line"></span><span>Roche limit — tidal breakup boundary</span></div>
+  <div class="lrow"><span class="sw atmo"></span><span>Atmosphere — debris ignites below 1.15 R⊕</span></div>
+  <div class="lrow"><span class="sw rock"></span><span>Lunar chunks (70) + shell pebbles (5000)</span></div>
+  <div class="lrow"><span class="sw fire"></span><span>Burning debris / impact flash</span></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ============================================================
+   CONFIG
+============================================================ */
+const EARTH_RADIUS        = 5;
+const ATMO_RADIUS         = EARTH_RADIUS * 1.15;            // atmospheric entry (ignition) threshold
+const MOON_RADIUS         = 1.8;
+const ROCHE_LIMIT         = 14;                             // tidal breakup radius
+const MOON_START_DISTANCE = ROCHE_LIMIT + MOON_RADIUS * 2;  // one lunar diameter outside the limit
+const TOTAL_APPROACH_DIST = MOON_START_DISTANCE - (ROCHE_LIMIT - MOON_RADIUS * 1.05);
+const CHUNK_COUNT         = 70;                             // large meteorite chunks forming the moon
+const SHELL_COUNT         = 5000;                           // tiny shell meteorites covering the surface
+const G_EARTH             = 80;                             // gravitational parameter GM (pure-gravity model)
+const APPROACH_BASE_SPEED = 0.005;                          // spec value, expressed per 1/30 s tick (very slow)
+const APPROACH_TICK_HZ    = 30;                             // converts the tick-based speed to per-second
+const SHELL_DRAG          = 0.22;                           // mild drag so the vortex spirals into Earth
+const SHELL_HIDE_R        = EARTH_RADIUS * 1.2;             // shell meteors vanish here (cheap, no explosion)
+const FLASH_LIGHT_SIZE    = 0.28;                           // chunks bigger than this spawn a PointLight
+const FLASH_INTENSITY     = 8 * 12;                         // spec: intensity 8 (legacy units) — x12 for r155+ physical lights
+
+/* ============================================================
+   RENDERER / SCENE / CAMERA / CONTROLS
+============================================================ */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;   // filmic tone mapping
+renderer.toneMappingExposure = 1.2;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
+camera.position.set(12, 15, 40);                       // elevated oblique overview
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance   = 9;
+controls.maxDistance   = 160;
+
+/* ============================================================
+   LIGHTS — bright, multi-source, no pitch-black corners
+============================================================ */
+scene.add(new THREE.AmbientLight(0x8fa8c8, 0.55));               // soft ambient fill
+
+const sun = new THREE.DirectionalLight(0xfff1dd, 2.6);           // key light (the Sun)
+sun.position.set(35, 22, 18);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -30; sun.shadow.camera.right = 30;
+sun.shadow.camera.top  =  30; sun.shadow.camera.bottom = -30;
+sun.shadow.camera.near = 2;   sun.shadow.camera.far = 120;
+sun.shadow.bias = -0.0004;
+sun.shadow.normalBias = 0.03;
+scene.add(sun); scene.add(sun.target);
+
+const fill = new THREE.DirectionalLight(0x7fa8ff, 0.55);         // cool fill from the opposite side
+fill.position.set(-30, -10, -25);
+scene.add(fill);
+
+/* ============================================================
+   STARFIELD — spherical shell of ~2600 white points
+============================================================ */
+{
+  const N = 2600;
+  const pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
+  const v = new THREE.Vector3();
+  for (let i = 0; i < N; i++) {
+    const u = Math.random() * 2 - 1, t = Math.random() * Math.PI * 2, s = Math.sqrt(1 - u * u);
+    const r = 430 + Math.random() * 190;
+    pos[i*3] = s * Math.cos(t) * r; pos[i*3+1] = u * r; pos[i*3+2] = s * Math.sin(t) * r;
+    const b = 0.55 + Math.random() * 0.45;
+    col[i*3] = b * (0.85 + Math.random() * 0.15);
+    col[i*3+1] = b * (0.9 + Math.random() * 0.1);
+    col[i*3+2] = b;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const stars = new THREE.Points(g, new THREE.PointsMaterial({
+    size: 1.9, sizeAttenuation: true, vertexColors: true,
+    transparent: true, opacity: 0.95, depthWrite: false
+  }));
+  stars.frustumCulled = false;
+  scene.add(stars);
+}
+
+/* ============================================================
+   PROCEDURAL EARTH TEXTURE (Canvas 2D, 2048x1024)
+============================================================ */
+function createEarthTexture() {
+  const W = 2048, H = 1024;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+
+  // Ocean: vertical gradient deep blue -> bright blue
+  const sea = ctx.createLinearGradient(0, 0, 0, H);
+  sea.addColorStop(0, '#0D47A1');
+  sea.addColorStop(0.55, '#1565C0');
+  sea.addColorStop(1, '#2196F3');
+  ctx.fillStyle = sea; ctx.fillRect(0, 0, W, H);
+
+  const LAND  = ['#4CAF50', '#66BB6A', '#81C784', '#43A047'];
+  const PATCH = ['#2E7D32', '#1B5E20', '#A5D6A7', '#388E3C'];
+
+  // Organic closed blob via midpoint quadratic curves (never plain circles)
+  function blobPath(cx, cy, rx, ry, n, jit) {
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const a = i / n * Math.PI * 2;
+      const rr = 1 - jit + Math.random() * jit * 2;
+      pts.push([cx + Math.cos(a) * rx * rr, cy + Math.sin(a) * ry * rr]);
+    }
+    const P = new Path2D();
+    const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const m0 = mid(pts[pts.length - 1], pts[0]);
+    P.moveTo(m0[0], m0[1]);
+    for (let i = 0; i < pts.length; i++) {
+      const nxt = pts[(i + 1) % pts.length];
+      const m = mid(pts[i], nxt);
+      P.quadraticCurveTo(pts[i][0], pts[i][1], m[0], m[1]);
+    }
+    P.closePath();
+    return P;
+  }
+
+  // One continent: irregular outline + clipped terrain patches; drawn 3x for seamless wrapping
+  function drawContinent(cx, cy, rx, ry, color) {
+    const n = 9 + Math.floor(Math.random() * 5);
+    for (const dx of [-W, 0, W]) {
+      ctx.save(); ctx.translate(dx, 0);
+      const P = blobPath(cx, cy, rx, ry, n, 0.42);
+      ctx.fillStyle = color; ctx.fill(P);
+      ctx.clip(P);
+      for (let k = 0; k < 12; k++) {                     // mountains / plains color variation
+        const px = cx + (Math.random() - 0.5) * rx * 1.6;
+        const py = cy + (Math.random() - 0.5) * ry * 1.6;
+        ctx.fillStyle = PATCH[Math.floor(Math.random() * PATCH.length)];
+        ctx.beginPath();
+        ctx.arc(px, py, rx * (0.10 + Math.random() * 0.22), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  // 8 continental landmasses
+  const defs = [
+    [290, 340, 175, 95], [760, 270, 205, 120], [1180, 360, 150, 90], [1640, 310, 185, 110],
+    [520, 700, 150, 80], [1010, 660, 190, 100], [1470, 720, 130, 70], [880, 470, 95, 60]
+  ];
+  for (const d of defs) drawContinent(d[0], d[1], d[2], d[3], LAND[Math.floor(Math.random() * LAND.length)]);
+
+  // Clouds: ~56 soft semi-transparent clusters
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 56; i++) {
+    ctx.globalAlpha = 0.25;
+    const cx = Math.random() * W, cy = H * 0.08 + Math.random() * H * 0.84;
+    const puffs = 1 + Math.floor(Math.random() * 3);
+    for (let p = 0; p < puffs; p++) {
+      const r = 14 + Math.pow(Math.random(), 1.6) * 60;
+      ctx.beginPath();
+      ctx.arc(cx + (Math.random() - 0.5) * 70, cy + (Math.random() - 0.5) * 34, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  // Polar ice caps: white -> transparent vertical gradients
+  let cap = ctx.createLinearGradient(0, 0, 0, H * 0.10);
+  cap.addColorStop(0, 'rgba(240,248,255,0.95)'); cap.addColorStop(1, 'rgba(240,248,255,0)');
+  ctx.fillStyle = cap; ctx.fillRect(0, 0, W, H * 0.10);
+  cap = ctx.createLinearGradient(0, H, 0, H * 0.90);
+  cap.addColorStop(0, 'rgba(240,248,255,0.95)'); cap.addColorStop(1, 'rgba(240,248,255,0)');
+  ctx.fillStyle = cap; ctx.fillRect(0, H * 0.90, W, H * 0.10);
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+
+/* ---------------- Earth mesh + double Fresnel atmosphere ---------------- */
+const earthMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(EARTH_RADIUS, 96, 64),
+  new THREE.MeshStandardMaterial({
+    map: createEarthTexture(), roughness: 0.7, metalness: 0.1
+  })
+);
+earthMesh.castShadow = true;
+earthMesh.receiveShadow = true;
+scene.add(earthMesh);
+
+// Fresnel rim-glow shader (shared by both atmosphere shells)
+function makeGlowMaterial(color, power, strength, side) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uColor:    { value: new THREE.Color(color) },
+      uPower:    { value: power },
+      uStrength: { value: strength }
+    },
+    vertexShader: `
+      varying vec3 vWorldNormal; varying vec3 vWorldPos;
+      void main(){
+        vWorldNormal = normalize(mat3(modelMatrix) * normal);
+        vec4 wp = modelMatrix * vec4(position, 1.0);
+        vWorldPos = wp.xyz;
+        gl_Position = projectionMatrix * viewMatrix * wp;
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uPower; uniform float uStrength;
+      varying vec3 vWorldNormal; varying vec3 vWorldPos;
+      void main(){
+        vec3 viewDir = normalize(cameraPosition - vWorldPos);
+        float rim = pow(1.0 - abs(dot(viewDir, normalize(vWorldNormal))), uPower);
+        gl_FragColor = vec4(uColor, rim * uStrength);
+      }`,
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side
+  });
+}
+// Inner shell — FrontSide, tight limb glow (exponent 2.5)
+const atmoInner = new THREE.Mesh(
+  new THREE.SphereGeometry(EARTH_RADIUS * 1.07, 64, 48),
+  makeGlowMaterial(0x7fc4ff, 2.5, 1.15, THREE.FrontSide)
+);
+scene.add(atmoInner);
+// Outer shell — BackSide, wide halo (exponent 3.5)
+const atmoOuter = new THREE.Mesh(
+  new THREE.SphereGeometry(EARTH_RADIUS * 1.30, 64, 48),
+  makeGlowMaterial(0x5aa9ff, 3.5, 0.85, THREE.BackSide)
+);
+scene.add(atmoOuter);
+
+/* ============================================================
+   ROCHE LIMIT REFERENCE — red dashed ring + sprite label
+============================================================ */
+const ringPts = [];
+for (let i = 0; i <= 256; i++) {
+  const a = i / 256 * Math.PI * 2;
+  ringPts.push(new THREE.Vector3(Math.cos(a) * ROCHE_LIMIT, 0, Math.sin(a) * ROCHE_LIMIT));
+}
+const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
+const ringMat = new THREE.LineDashedMaterial({
+  color: 0xff4444, transparent: true, opacity: 0.6, dashSize: 0.9, gapSize: 0.55
+});
+const rocheRing = new THREE.Line(ringGeo, ringMat);
+rocheRing.computeLineDistances();
+scene.add(rocheRing);
+
+function makeTextSprite(text) {
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128;
+  const c = cv.getContext('2d');
+  c.font = '700 64px "Segoe UI", Arial, sans-serif';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.shadowColor = 'rgba(255,60,60,0.9)'; c.shadowBlur = 18;
+  c.fillStyle = '#ff7b7b'; c.fillText(text, 256, 66);
+  c.shadowBlur = 0; c.fillStyle = 'rgba(255,235,235,0.95)';
+  c.fillText(text, 256, 66);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+  sp.scale.set(8, 2, 1);
+  return sp;
+}
+const rocheLabel = makeTextSprite('ROCHE LIMIT');
+rocheLabel.position.set(Math.cos(2.45) * (ROCHE_LIMIT + 1.4), 1.6, Math.sin(2.45) * (ROCHE_LIMIT + 1.4));
+scene.add(rocheLabel);
+
+/* ============================================================
+   NOISE / GEOMETRY UTILITIES
+============================================================ */
+// Deterministic 3D hash -> [0,1)
+function hash3(x, y, z) {
+  const s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453123;
+  return s - Math.floor(s);
+}
+// Trilinear value noise -> [-1,1]
+function vnoise(x, y, z) {
+  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+  const xf = x - xi, yf = y - yi, zf = z - zi;
+  const sx = xf * xf * (3 - 2 * xf), sy = yf * yf * (3 - 2 * yf), sz = zf * zf * (3 - 2 * zf);
+  const c000 = hash3(xi, yi, zi),     c100 = hash3(xi + 1, yi, zi);
+  const c010 = hash3(xi, yi + 1, zi), c110 = hash3(xi + 1, yi + 1, zi);
+  const c001 = hash3(xi, yi, zi + 1),     c101 = hash3(xi + 1, yi, zi + 1);
+  const c011 = hash3(xi, yi + 1, zi + 1), c111 = hash3(xi + 1, yi + 1, zi + 1);
+  const x00 = c000 + (c100 - c000) * sx, x10 = c010 + (c110 - c010) * sx;
+  const x01 = c001 + (c101 - c001) * sx, x11 = c011 + (c111 - c011) * sx;
+  const y0 = x00 + (x10 - x00) * sy, y1 = x01 + (x11 - x01) * sy;
+  return (y0 + (y1 - y0) * sz) * 2 - 1;
+}
+function randUnit(out) {
+  const u = Math.random() * 2 - 1, t = Math.random() * Math.PI * 2;
+  const s = Math.sqrt(Math.max(0, 1 - u * u));
+  return out.set(s * Math.cos(t), u, s * Math.sin(t));
+}
+function fibSphere(i, n, out) {           // Fibonacci sphere distribution
+  const k = i + 0.5;
+  const phi = Math.acos(1 - 2 * k / n);
+  const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+  const s = Math.sin(phi);
+  return out.set(s * Math.cos(theta), Math.cos(phi), s * Math.sin(theta));
+}
+
+/* Meteorite geometry: icosahedron + noise displacement + craters + axis stretch */
+function createMeteoriteGeometry(size, detail) {
+  const geo = new THREE.IcosahedronGeometry(size, detail);
+  const pos = geo.attributes.position;
+  const seed = Math.random() * 57.3;
+
+  // Two random impact-crater directions per chunk
+  const craters = [];
+  for (let k = 0; k < 2; k++) {
+    craters.push({
+      dir: randUnit(new THREE.Vector3()),
+      ang: 0.45 + Math.random() * 0.5,
+      depth: size * (0.14 + Math.random() * 0.10)
+    });
+  }
+
+  const v = new THREE.Vector3(), nrm = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    nrm.copy(v).normalize();
+    // Three stacked noise octaves: large bulge / medium bumps / fine roughness
+    let disp =
+      size * 0.25 * vnoise(nrm.x * 1.6 + seed,      nrm.y * 1.6 + seed,      nrm.z * 1.6) +
+      size * 0.12 * vnoise(nrm.x * 4.2 + seed * 1.7, nrm.y * 4.2 + seed * 0.6, nrm.z * 4.2 + seed) +
+      size * 0.06 * vnoise(nrm.x * 9.5 + seed * 2.3, nrm.y * 9.5 + seed * 1.3, nrm.z * 9.5 - seed);
+    // Crater bowls with raised rims
+    for (const c of craters) {
+      const cosA = nrm.dot(c.dir);
+      if (cosA > Math.cos(c.ang)) {
+        const t = Math.acos(Math.min(1, cosA)) / c.ang;              // 0 center -> 1 edge
+        const bowl = Math.cos(t * Math.PI) * 0.5 + 0.5;
+        disp -= c.depth * bowl;
+        disp += c.depth * 0.35 * Math.exp(-((t - 0.82) * (t - 0.82)) / 0.0144);
+      }
+    }
+    v.addScaledVector(nrm, disp);
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  // Irregular base silhouette: per-axis stretch 0.7 - 1.3
+  geo.scale(0.7 + Math.random() * 0.6, 0.7 + Math.random() * 0.6, 0.7 + Math.random() * 0.6);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/* ============================================================
+   PARTICLE POOL (shared Points + custom shader, additive)
+============================================================ */
+function makeParticleMaterial() {
+  return new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `
+      attribute float aSize; attribute float aAlpha; attribute vec3 aColor;
+      varying float vAlpha; varying vec3 vColor;
+      void main(){
+        vAlpha = aAlpha; vColor = aColor;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = aSize * (280.0 / max(1.0, -mv.z));
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      varying float vAlpha; varying vec3 vColor;
+      void main(){
+        float d = length(gl_PointCoord - vec2(0.5));
+        float a = smoothstep(0.5, 0.06, d) * vAlpha;
+        gl_FragColor = vec4(vColor, a);
+      }`
+  });
+}
+class ParticlePool {
+  constructor(max, drag = 0.985) {
+    this.max = max; this.drag = drag; this.cursor = 0;
+    this.pos = new Float32Array(max * 3); this.vel = new Float32Array(max * 3);
+    this.life = new Float32Array(max); this.maxLife = new Float32Array(max);
+    this.baseSize = new Float32Array(max);
+    this.c0 = new Float32Array(max * 3); this.c1 = new Float32Array(max * 3);
+    const g = new THREE.BufferGeometry();
+    this.aPos   = new THREE.BufferAttribute(new Float32Array(max * 3), 3);
+    this.aCol   = new THREE.BufferAttribute(new Float32Array(max * 3), 3);
+    this.aSize  = new THREE.BufferAttribute(new Float32Array(max), 1);
+    this.aAlpha = new THREE.BufferAttribute(new Float32Array(max), 1);
+    for (const a of [this.aPos, this.aCol, this.aSize, this.aAlpha]) a.setUsage(THREE.DynamicDrawUsage);
+    g.setAttribute('position', this.aPos);
+    g.setAttribute('aColor', this.aCol);
+    g.setAttribute('aSize', this.aSize);
+    g.setAttribute('aAlpha', this.aAlpha);
+    this.points = new THREE.Points(g, makeParticleMaterial());
+    this.points.frustumCulled = false;
+    this.points.renderOrder = 5;
+    scene.add(this.points);
+  }
+  spawn(px, py, pz, vx, vy, vz, life, size, c0, c1) {
+    const i = this.cursor; this.cursor = (this.cursor + 1) % this.max;
+    const i3 = i * 3;
+    this.pos[i3] = px; this.pos[i3+1] = py; this.pos[i3+2] = pz;
+    this.vel[i3] = vx; this.vel[i3+1] = vy; this.vel[i3+2] = vz;
+    this.life[i] = life; this.maxLife[i] = life; this.baseSize[i] = size;
+    this.c0[i3] = c0[0]; this.c0[i3+1] = c0[1]; this.c0[i3+2] = c0[2];
+    this.c1[i3] = c1[0]; this.c1[i3+1] = c1[1]; this.c1[i3+2] = c1[2];
+  }
+  update(dt) {
+    const dragF = Math.pow(this.drag, dt * 60);   // frame-rate independent damping
+    for (let i = 0; i < this.max; i++) {
+      const i3 = i * 3;
+      let L = this.life[i];
+      if (L <= 0) { this.aAlpha.array[i] = 0; continue; }
+      L -= dt; this.life[i] = L;
+      if (L <= 0) { this.aAlpha.array[i] = 0; continue; }
+      this.vel[i3] *= dragF; this.vel[i3+1] *= dragF; this.vel[i3+2] *= dragF;
+      this.pos[i3] += this.vel[i3] * dt;
+      this.pos[i3+1] += this.vel[i3+1] * dt;
+      this.pos[i3+2] += this.vel[i3+2] * dt;
+      const t = L / this.maxLife[i];
+      const fadeIn = Math.min(1, (this.maxLife[i] - L) * 14);
+      this.aAlpha.array[i] = fadeIn * t * t;
+      this.aSize.array[i] = this.baseSize[i] * (0.35 + 0.65 * t);
+      this.aCol.array[i3]   = this.c1[i3]   + (this.c0[i3]   - this.c1[i3])   * t;
+      this.aCol.array[i3+1] = this.c1[i3+1] + (this.c0[i3+1] - this.c1[i3+1]) * t;
+      this.aCol.array[i3+2] = this.c1[i3+2] + (this.c0[i3+2] - this.c1[i3+2]) * t;
+      this.aPos.array[i3] = this.pos[i3]; this.aPos.array[i3+1] = this.pos[i3+1]; this.aPos.array[i3+2] = this.pos[i3+2];
+    }
+    this.aPos.needsUpdate = true; this.aCol.needsUpdate = true;
+    this.aSize.needsUpdate = true; this.aAlpha.needsUpdate = true;
+  }
+  reset() { this.life.fill(0); this.aAlpha.array.fill(0); this.aAlpha.needsUpdate = true; }
+}
+const trailPool = new ParticlePool(3600, 0.97);    // atmospheric flame trails
+const burstPool = new ParticlePool(1600, 0.965);   // explosions + shockwave rings
+
+const COL_TRAIL_A  = [1.00, 0.87, 0.45], COL_TRAIL_B  = [0.62, 0.13, 0.03];
+const COL_BURST_A  = [1.00, 0.94, 0.60], COL_BURST_B  = [0.55, 0.10, 0.04];
+const COL_RING_A   = [1.00, 0.60, 0.25], COL_RING_B   = [0.45, 0.08, 0.03];
+
+/* ============================================================
+   SIMULATION STATE
+============================================================ */
+const debrisGroup = new THREE.Group(); scene.add(debrisGroup);
+const chunks = [];
+let shellSys = null;
+const scorches = [], flashLights = [];
+
+const moonCenter = new THREE.Vector3(MOON_START_DISTANCE, 0, 0);
+const moonVel    = new THREE.Vector3();
+let releasedCount = 0, impactedCount = 0;
+let shellsReleased = 0, shellsAlive = SHELL_COUNT;
+let finished = false, simTime = 0;
+
+const BURN_ORANGE = new THREE.Color(0xff6a00);
+const MARE_DIR = new THREE.Vector3(0.32, 0.78, 0.54).normalize();  // "maria" dark-region direction
+
+// scratch vectors (avoid per-frame allocations)
+const _cv1 = new THREE.Vector3(), _mv1 = new THREE.Vector3();
+const _tv1 = new THREE.Vector3(), _tv2 = new THREE.Vector3(), _tv3 = new THREE.Vector3();
+const _ev1 = new THREE.Vector3(), _ev2 = new THREE.Vector3(), _ev3 = new THREE.Vector3();
+const _t1 = new THREE.Vector3(), _t2 = new THREE.Vector3();
+const _hv1 = new THREE.Vector3(), _hv2 = new THREE.Vector3();
+const _sv1 = new THREE.Vector3();
+const _sdummy = new THREE.Object3D();
+
+/* ============================================================
+   MOON CHUNK (one lithic fragment of the broken moon)
+============================================================ */
+function pickMoonGray(dir) {
+  // Angular position decides maria (dark basalt) vs highlands (lighter rock)
+  const isMare = dir.dot(MARE_DIR) > 0.35;
+  const l = isMare ? 0.30 + Math.random() * 0.06 : 0.52 + Math.random() * 0.10;
+  return new THREE.Color().setHSL(0.08, 0.045, l);
+}
+
+class MoonChunk {
+  constructor(size, offset, color) {
+    this.size = size;
+    this.localOffset = offset.clone();                    // position relative to moon centre
+    this.geometry = createMeteoriteGeometry(size, size >= 0.24 ? 1 : 0);
+    this.material = new THREE.MeshStandardMaterial({
+      color, roughness: 0.93, metalness: 0.06, flatShading: true,
+      emissive: new THREE.Color(0xff4400), emissiveIntensity: 0
+    });
+    this.baseColor = color.clone();
+    this.mesh = new THREE.Mesh(this.geometry, this.material);
+    this.mesh.castShadow = true;
+    this.released = false; this.impacted = false; this.alive = false;
+    this.burning = false; this.justIgnited = false;
+    this.velocity = new THREE.Vector3();
+    this.trailAcc = 0;
+    this.spinAxis = randUnit(new THREE.Vector3());
+    this.spinRate = (0.4 + Math.random() * 1.4) * (Math.random() < 0.5 ? -1 : 1);
+    this.alive = true;
+  }
+  release(vel) { this.released = true; this.velocity.copy(vel); }
+  update(dt) {
+    const p = this.mesh.position;
+    // Pure Earth gravity only (NO cohesion): F = GM / r², directed at Earth's centre.
+    // The per-chunk difference in r IS the tidal force -> natural onion-peeling.
+    const r = p.length();
+    const g = G_EARTH / (r * r);
+    this.velocity.addScaledVector(_cv1.copy(p).normalize(), -g * dt);
+    p.addScaledVector(this.velocity, dt);
+    this.mesh.rotateOnAxis(this.spinAxis, this.spinRate * dt);   // tumble only AFTER release
+
+    const r2 = p.length();
+    if (r2 < ATMO_RADIUS) {
+      const depth = THREE.MathUtils.clamp((ATMO_RADIUS - r2) / (ATMO_RADIUS - EARTH_RADIUS), 0, 1);
+      if (!this.burning) { this.burning = true; this.justIgnited = true; }
+      this.material.emissiveIntensity = depth * 2.6;
+      this.material.color.copy(this.baseColor).lerp(BURN_ORANGE, Math.min(1, depth * 0.9));
+    } else if (this.burning) {
+      this.material.emissiveIntensity *= Math.pow(0.25, dt);     // cool down if it climbs back out
+    }
+    // IMPORTANT: only FLAG the impact here. The main loop performs the impact work
+    // in a dedicated pass BEFORE the alive-filtered trail pass (avoids the classic bug
+    // where setting alive=false in the same frame kills the explosion forever).
+    if (r2 <= EARTH_RADIUS && !this.impacted) this.impacted = true;
+  }
+}
+
+/* ---------------- Build the moon: 70 Fibonacci-arranged chunks ---------------- */
+function buildMoon() {
+  const layers = [
+    { count: 40, rMin: 0.78, rMax: 1.00, sMin: 0.18, sMax: 0.36 }, // shell layer
+    { count: 20, rMin: 0.40, rMax: 0.78, sMin: 0.12, sMax: 0.26 }, // middle layer
+    { count: 10, rMin: 0.00, rMax: 0.45, sMin: 0.14, sMax: 0.32 }  // core layer
+  ];
+  const dir = new THREE.Vector3();
+  for (let li = 0; li < layers.length; li++) {
+    const L = layers[li];
+    for (let j = 0; j < L.count; j++) {
+      let rad;
+      if (li < 2) {                                     // Fibonacci sphere for outer layers
+        fibSphere(j, L.count, dir);
+        rad = MOON_RADIUS * (L.rMin + Math.random() * (L.rMax - L.rMin));
+      } else {                                          // core: random directions, volume-filled
+        randUnit(dir);
+        rad = MOON_RADIUS * Math.cbrt(Math.random()) * L.rMax;
+      }
+      const offset = dir.clone().multiplyScalar(rad);
+      const size = L.sMin + Math.random() * (L.sMax - L.sMin);
+      const c = new MoonChunk(size, offset, pickMoonGray(dir));
+      c.mesh.position.copy(moonCenter).add(offset);
+      debrisGroup.add(c.mesh);
+      chunks.push(c);
+    }
+  }
+  buildShellMeteors();
+  releasedCount = 0; impactedCount = 0;
+  shellsReleased = 0; shellsAlive = SHELL_COUNT;
+  finished = false;
+}
+
+/* ---------------- 5000 tiny shell meteorites (InstancedMesh for performance) ---------------- */
+function buildShellMeteors() {
+  const VARIANTS = 5, per = SHELL_COUNT / VARIANTS;
+  shellSys = {
+    meshes: [],
+    pos:  new Float32Array(SHELL_COUNT * 3),
+    vel:  new Float32Array(SHELL_COUNT * 3),
+    off:  new Float32Array(SHELL_COUNT * 3),   // local offset on the moon
+    ang:  new Float32Array(SHELL_COUNT * 3),
+    spin: new Float32Array(SHELL_COUNT * 3),
+    scale:new Float32Array(SHELL_COUNT),
+    age:  new Float32Array(SHELL_COUNT),
+    state:new Uint8Array(SHELL_COUNT)          // 0 attached, 1 free, 2 hidden
+  };
+  const col = new THREE.Color();
+  for (let v = 0; v < VARIANTS; v++) {
+    // Unit-size rocky geometry; per-instance scale gives the 0.05 - 0.11 sizes
+    const geo = createMeteoriteGeometry(1.0, 0);
+    const mat = new THREE.MeshStandardMaterial({ roughness: 0.96, metalness: 0.04, flatShading: true });
+    const mesh = new THREE.InstancedMesh(geo, mat, per);
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    mesh.castShadow = false; mesh.receiveShadow = false;
+    mesh.frustumCulled = false;
+    debrisGroup.add(mesh);
+    shellSys.meshes.push(mesh);
+  }
+  for (let gi = 0; gi < SHELL_COUNT; gi++) {
+    const o = gi * 3;
+    randUnit(_sv1);
+    const rr = MOON_RADIUS * (0.97 + Math.random() * 0.08);   // just above the big-chunk shell
+    shellSys.off[o] = _sv1.x * rr; shellSys.off[o+1] = _sv1.y * rr; shellSys.off[o+2] = _sv1.z * rr;
+    shellSys.scale[gi] = 0.05 + Math.random() * 0.06;
+    shellSys.ang[o] = Math.random() * Math.PI * 2;
+    shellSys.ang[o+1] = Math.random() * Math.PI * 2;
+    shellSys.ang[o+2] = Math.random() * Math.PI * 2;
+    shellSys.spin[o] = (Math.random() - 0.5) * 2.4;
+    shellSys.spin[o+1] = (Math.random() - 0.5) * 2.4;
+    shellSys.spin[o+2] = (Math.random() - 0.5) * 2.4;
+    const vi = Math.floor(gi / per), li = gi % per;
+    col.setScalar(0.45 + Math.random() * 0.20);               // light-grey albedo variation
+    shellSys.meshes[vi].setColorAt(li, col);
+    _sdummy.position.set(moonCenter.x + shellSys.off[o], moonCenter.y + shellSys.off[o+1], moonCenter.z + shellSys.off[o+2]);
+    _sdummy.rotation.set(shellSys.ang[o], shellSys.ang[o+1], shellSys.ang[o+2]);
+    _sdummy.scale.setScalar(shellSys.scale[gi]);
+    _sdummy.updateMatrix();
+    shellSys.meshes[vi].setMatrixAt(li, _sdummy.matrix);
+  }
+  for (const m of shellSys.meshes) {
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    m.instanceMatrix.needsUpdate = true;
+  }
+}
+
+function updateShells(dt) {
+  const S = shellSys, per = SHELL_COUNT / 5;
+  const dragF = Math.max(0, 1 - SHELL_DRAG * dt);
+  for (let gi = 0; gi < SHELL_COUNT; gi++) {
+    const st = S.state[gi];
+    if (st === 2) continue;                        // already hidden
+    const o = gi * 3;
+    let x = S.pos[o], y = S.pos[o+1], z = S.pos[o+2];
+
+    if (st === 0) {
+      // Approach phase: locked to the moon body
+      x = moonCenter.x + S.off[o]; y = moonCenter.y + S.off[o+1]; z = moonCenter.z + S.off[o+2];
+      S.pos[o] = x; S.pos[o+1] = y; S.pos[o+2] = z;
+      const rl = Math.sqrt(x*x + y*y + z*z);
+      if (rl <= ROCHE_LIMIT) {
+        // Individual release + tangential vortex kick (cross product with the Earth-Moon axis)
+        S.state[gi] = 1; shellsReleased++;
+        const inv = 1 / rl, rx = x * inv, ry = y * inv, rz = z * inv;
+        let tx = rz, tz = -rx;                      // UP x radial
+        const tl = Math.hypot(tx, tz) || 1e-6; tx /= tl; tz /= tl;
+        const swirl = 1.1 + Math.random() * 2.3 + moonVel.length() * 2.0;
+        S.vel[o]   = moonVel.x + tx * swirl - rx * Math.random() * 0.7 + (Math.random() - 0.5) * 0.5;
+        S.vel[o+1] = moonVel.y + (Math.random() - 0.5) * 0.5 - ry * 0.2;
+        S.vel[o+2] = moonVel.z + tz * swirl - rz * Math.random() * 0.7 + (Math.random() - 0.5) * 0.5;
+      }
+    } else {
+      // Free flight under gravity (+ drag so the vortex spirals in)
+      const rl = Math.sqrt(x*x + y*y + z*z);
+      const g = G_EARTH / (rl * rl), inv = 1 / rl;
+      S.vel[o]   += -x * inv * g * dt;
+      S.vel[o+1] += -y * inv * g * dt;
+      S.vel[o+2] += -z * inv * g * dt;
+      S.vel[o] *= dragF; S.vel[o+1] *= dragF; S.vel[o+2] *= dragF;
+      S.age[gi] += dt;
+      if (S.age[gi] > 26) {                        // safety: guarantee eventual re-entry
+        S.vel[o]   -= x * inv * 2.6 * dt;
+        S.vel[o+1] -= y * inv * 2.6 * dt;
+        S.vel[o+2] -= z * inv * 2.6 * dt;
+      }
+      x += S.vel[o] * dt; y += S.vel[o+1] * dt; z += S.vel[o+2] * dt;
+      S.pos[o] = x; S.pos[o+1] = y; S.pos[o+2] = z;
+      if (Math.sqrt(x*x + y*y + z*z) <= SHELL_HIDE_R) {
+        // Cheap removal: no explosion, no burning — just hide (performance rule)
+        S.state[gi] = 2; shellsAlive--;
+        _sdummy.position.set(0, -9999, 0);
+        _sdummy.scale.setScalar(0);
+        _sdummy.updateMatrix();
+        S.meshes[Math.floor(gi / per)].setMatrixAt(gi % per, _sdummy.matrix);
+        continue;
+      }
+      S.ang[o] += S.spin[o] * dt; S.ang[o+1] += S.spin[o+1] * dt; S.ang[o+2] += S.spin[o+2] * dt;
+    }
+    _sdummy.position.set(x, y, z);
+    _sdummy.rotation.set(S.ang[o], S.ang[o+1], S.ang[o+2]);
+    _sdummy.scale.setScalar(S.scale[gi]);
+    _sdummy.updateMatrix();
+    S.meshes[Math.floor(gi / per)].setMatrixAt(gi % per, _sdummy.matrix);
+  }
+  for (const m of S.meshes) m.instanceMatrix.needsUpdate = true;
+}
+
+/* ============================================================
+   EFFECTS: trails, explosions, scorch marks, flash lights
+============================================================ */
+function emitTrail(c, dt, pool) {
+  const p = c.mesh.position;
+  const depth = THREE.MathUtils.clamp((ATMO_RADIUS - p.length()) / (ATMO_RADIUS - EARTH_RADIUS), 0, 1);
+  c.trailAcc += dt * (26 + depth * 55);
+  let n = Math.floor(c.trailAcc);
+  if (n <= 0) return;
+  c.trailAcc -= n; if (n > 10) n = 10;
+  for (; n > 0; n--) {
+    _tv1.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
+        .multiplyScalar(c.size * 1.6).add(p);
+    _tv2.copy(p).normalize().multiplyScalar(0.5 + Math.random() * 0.8)
+        .addScaledVector(c.velocity, -0.12 - Math.random() * 0.1)
+        .add(_tv3.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(1.1));
+    pool.spawn(_tv1.x, _tv1.y, _tv1.z, _tv2.x, _tv2.y, _tv2.z,
+      0.45 + Math.random() * 0.65, (0.4 + Math.random() * 0.55) * (0.7 + c.size),
+      COL_TRAIL_A, COL_TRAIL_B);
+  }
+}
+
+function spawnExplosion(surf, normal, size) {
+  // Core spray: 30-60 particles, bright yellow -> orange -> dark red
+  const n = 30 + Math.floor(Math.random() * 31);
+  for (let i = 0; i < n; i++) {
+    randUnit(_ev1);
+    _ev2.copy(normal).multiplyScalar(0.55 + Math.random() * 1.1).addScaledVector(_ev1, 0.85);
+    const sp = (2.2 + Math.random() * 6.0) * (0.65 + size);
+    _ev3.copy(surf).addScaledVector(normal, 0.1 + Math.random() * 0.3);
+    burstPool.spawn(_ev3.x, _ev3.y, _ev3.z, _ev2.x * sp, _ev2.y * sp, _ev2.z * sp,
+      0.45 + Math.random() * 0.7, 0.45 + Math.random() * 0.9, COL_BURST_A, COL_BURST_B);
+  }
+  // Ring shockwave: 20-30 particles expanding along the surface plane
+  const m = 20 + Math.floor(Math.random() * 11);
+  _ev1.set(0, 1, 0); if (Math.abs(normal.y) > 0.9) _ev1.set(1, 0, 0);
+  _t1.crossVectors(normal, _ev1).normalize();
+  _t2.crossVectors(normal, _t1);
+  for (let i = 0; i < m; i++) {
+    const phi = Math.random() * Math.PI * 2;
+    _ev2.copy(_t1).multiplyScalar(Math.cos(phi)).addScaledVector(_t2, Math.sin(phi))
+        .addScaledVector(normal, 0.2 + Math.random() * 0.35);
+    const sp = 3.2 + Math.random() * 4.2;
+    burstPool.spawn(surf.x, surf.y, surf.z, _ev2.x * sp, _ev2.y * sp, _ev2.z * sp,
+      0.5 + Math.random() * 0.4, 0.5 + Math.random() * 0.7, COL_RING_A, COL_RING_B);
+  }
+}
+
+function addScorch(pos, normal, size) {
+  const r = THREE.MathUtils.clamp(size * 4.2, 1.1, 2.8);
+  const mesh = new THREE.Mesh(
+    new THREE.CircleGeometry(r, 26),
+    new THREE.MeshBasicMaterial({ color: 0x521103, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide })
+  );
+  mesh.position.copy(pos).addScaledVector(normal, 0.06);
+  mesh.lookAt(_hv1.copy(pos).add(normal));       // orient flush with the surface
+  mesh.renderOrder = 2;
+  scene.add(mesh);
+  scorches.push({ mesh, age: 0, life: 7 + Math.random() * 3 });
+  if (scorches.length > 46) {                    // cap concurrent scars
+    const old = scorches.shift();
+    scene.remove(old.mesh); old.mesh.geometry.dispose(); old.mesh.material.dispose();
+  }
+}
+
+function addFlashLight(pos, normal) {
+  if (flashLights.length >= 6) return;
+  const l = new THREE.PointLight(0xff8033, FLASH_INTENSITY, 16, 2);   // orange flash
+  l.position.copy(pos).addScaledVector(normal, 0.8);
+  scene.add(l);
+  flashLights.push({ light: l, age: 0, dur: 1.5 });
+}
+
+function updateFX(dt) {
+  for (let i = scorches.length - 1; i >= 0; i--) {
+    const s = scorches[i]; s.age += dt;
+    const k = s.age / s.life;
+    if (k >= 1) {
+      scene.remove(s.mesh); s.mesh.geometry.dispose(); s.mesh.material.dispose();
+      scorches.splice(i, 1); continue;
+    }
+    s.mesh.material.opacity = 0.85 * (1 - k);
+    const sc = 1 + k * 0.35; s.mesh.scale.set(sc, sc, sc);
+  }
+  for (let i = flashLights.length - 1; i >= 0; i--) {
+    const f = flashLights[i]; f.age += dt;
+    const k = f.age / f.dur;
+    if (k >= 1) { scene.remove(f.light); flashLights.splice(i, 1); continue; }
+    f.light.intensity = FLASH_INTENSITY * (1 - k) * (1 - k);
+  }
+}
+
+function clearAllFX() {
+  for (const s of scorches) { scene.remove(s.mesh); s.mesh.geometry.dispose(); s.mesh.material.dispose(); }
+  scorches.length = 0;
+  for (const f of flashLights) scene.remove(f.light);
+  flashLights.length = 0;
+  trailPool.reset(); burstPool.reset();
+}
+
+/* ============================================================
+   IMPACT HANDLING (dedicated pass, runs BEFORE the trail pass)
+============================================================ */
+function handleImpact(c) {
+  const surf = _hv1.copy(c.mesh.position).normalize().multiplyScalar(EARTH_RADIUS * 0.99);
+  const nrm  = _hv2.copy(surf).normalize();
+  spawnExplosion(surf, nrm, c.size);
+  addScorch(surf, nrm, c.size);
+  if (c.size >= FLASH_LIGHT_SIZE) addFlashLight(surf, nrm);
+  c.mesh.visible = false;
+  c.alive = false;
+  impactedCount++;
+}
+
+/* ============================================================
+   MAIN PHYSICS DRIVER (all timing via Clock delta -> frame-rate independent)
+============================================================ */
+function simulate(dt) {
+  // ---- Stage 1/2: drive the moon centre ----
+  if (releasedCount < CHUNK_COUNT) {
+    // Slow creep with a quadratic acceleration ramp: speedMult = 1 + progress² x 9
+    const traveled = MOON_START_DISTANCE - moonCenter.length();
+    const progress = THREE.MathUtils.clamp(traveled / TOTAL_APPROACH_DIST, 0, 1);
+    const speedMult = 1 + progress * progress * 9;
+    const speed = APPROACH_BASE_SPEED * APPROACH_TICK_HZ * speedMult;
+    _mv1.copy(moonCenter).normalize().negate();          // unit vector toward Earth
+    moonVel.copy(_mv1).multiplyScalar(speed);
+    moonCenter.addScaledVector(moonVel, dt);
+    moonCenter.y = Math.sin(simTime * 0.85) * 0.22;      // gentle bobbing
+  } else {
+    // Reference point only: ballistic fall under Earth gravity (does NOT drive chunk physics)
+    const r = moonCenter.length();
+    const g = G_EARTH / (r * r);
+    moonVel.addScaledVector(_mv1.copy(moonCenter).normalize(), -g * dt);
+    moonCenter.addScaledVector(moonVel, dt);
+    if (moonCenter.length() < EARTH_RADIUS) {
+      moonCenter.setLength(EARTH_RADIUS);
+      moonVel.set(0, 0, 0);
+    }
+  }
+
+  // ---- Per-chunk Roche detection + individual release ----
+  for (const c of chunks) {
+    if (!c.alive) continue;
+    if (!c.released) {
+      c.mesh.position.copy(moonCenter).add(c.localOffset);
+      // This chunk ITSELF crossed the line -> release it alone with the moon's velocity.
+      // Near-Earth chunks cross first; the far side keeps following -> onion peeling.
+      if (c.mesh.position.lengthSq() <= ROCHE_LIMIT * ROCHE_LIMIT) {
+        c.release(moonVel);
+        releasedCount++;
+      }
+    } else {
+      c.update(dt);
+    }
+  }
+
+  // ---- Shell mini-meteorites ----
+  if (shellSys) updateShells(dt);
+
+  // ---- PASS 1: process impacts FIRST (explosions, hide mesh, alive=false) ----
+  for (const c of chunks) {
+    if (c.impacted && c.alive) handleImpact(c);
+  }
+  // ---- PASS 2: flame trails for SURVIVORS only (skip dead with !alive) ----
+  for (const c of chunks) {
+    if (!c.alive || !c.burning || !c.released) continue;
+    if (c.justIgnited) {                                  // ignition burst
+      c.justIgnited = false;
+      const p = c.mesh.position;
+      for (let k = 0; k < 14; k++) {
+        randUnit(_tv1);
+        _tv2.copy(c.velocity).multiplyScalar(0.3).addScaledVector(_tv1, 1.4);
+        trailPool.spawn(p.x, p.y, p.z, _tv2.x, _tv2.y, _tv2.z,
+          0.5 + Math.random() * 0.5, 0.7 + Math.random() * 0.7, COL_TRAIL_A, COL_TRAIL_B);
+      }
+    }
+    emitTrail(c, dt, trailPool);
+  }
+
+  if (!finished && impactedCount >= CHUNK_COUNT) finished = true;
+}
+
+/* ============================================================
+   UI (HUD, phases, reset)
+============================================================ */
+const hud = {
+  stage: document.getElementById('stage-name'),
+  desc:  document.getElementById('stage-desc'),
+  dist:  document.getElementById('d-distance'),
+  rel:   document.getElementById('d-released'),
+  alive: document.getElementById('d-alive'),
+  imp:   document.getElementById('d-impacted'),
+  shell: document.getElementById('d-shells')
+};
+const PHASE_INFO = {
+  approach:   { label: 'STAGE 1 · APPROACH', color: '#4fc3f7',
+    desc: 'The moon crawls toward Earth at a pace that steadily accelerates. Every fragment crossing the red Roche line breaks away on its own.' },
+  disruption: { label: 'STAGE 2 · TIDAL DISRUPTION', color: '#ffb74d',
+    desc: 'Inside the Roche limit! Differential gravity peels the cluster apart layer by layer — near-side chunks fall first while the far side still clings on.' },
+  impact:     { label: 'STAGE 3 · ENTRY & IMPACT', color: '#ff5252',
+    desc: 'Fragments blaze through the atmosphere and hammer the surface: explosions, shockwave rings, flare lights and glowing burn scars.' },
+  complete:   { label: '✔ SIMULATION COMPLETE', color: '#69f0ae',
+    desc: 'All 70 lithic fragments have impacted. The moon is gone — only scars and drifting embers remain. Press RESET to run it again.' }
+};
+let phaseKey = '';
+function refreshHUD() {
+  hud.dist.textContent  = moonCenter.length().toFixed(2) + ' u';
+  hud.rel.textContent   = releasedCount + ' / ' + CHUNK_COUNT;
+  hud.alive.textContent = (CHUNK_COUNT - impactedCount) + '';
+  hud.imp.textContent   = impactedCount + ' / ' + CHUNK_COUNT;
+  hud.shell.textContent = shellsReleased + ' / ' + SHELL_COUNT;
+  const key = finished ? 'complete'
+    : impactedCount > 0 ? 'impact'
+    : (releasedCount > 0 || shellsReleased > 0) ? 'disruption'
+    : 'approach';
+  if (key !== phaseKey) {
+    phaseKey = key;
+    const p = PHASE_INFO[key];
+    hud.stage.textContent = p.label;
+    hud.stage.style.color = p.color;
+    hud.stage.style.textShadow = '0 0 12px ' + p.color + '66';
+    hud.desc.textContent = p.desc;
+  }
+}
+
+function disposeMoon() {
+  for (const c of chunks) {
+    debrisGroup.remove(c.mesh);
+    c.geometry.dispose(); c.material.dispose();
+  }
+  chunks.length = 0;
+  if (shellSys) {
+    for (const m of shellSys.meshes) {
+      debrisGroup.remove(m);
+      m.geometry.dispose(); m.material.dispose(); m.dispose();
+    }
+    shellSys = null;
+  }
+}
+
+function resetSim() {
+  clearAllFX();
+  disposeMoon();
+  moonCenter.set(MOON_START_DISTANCE, 0, 0);
+  moonVel.set(0, 0, 0);
+  buildMoon();
+  phaseKey = '';   // force HUD phase repaint
+}
+document.getElementById('reset-btn').addEventListener('click', resetSim);
+
+/* ============================================================
+   BOOT + RENDER LOOP
+============================================================ */
+buildMoon();
+
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  simTime += dt;
+  controls.update();
+
+  // Earth slow rotation (tidally-locked moon does NOT spin)
+  earthMesh.rotation.y += dt * 0.05;
+  rocheRing.rotation.y += dt * 0.03;                    // crawling dashes
+
+  // Breathing pulse on the Roche ring + label
+  const pulse = 0.5 + 0.5 * Math.sin(simTime * 1.7);
+  ringMat.opacity = 0.32 + 0.30 * pulse;
+  rocheLabel.material.opacity = 0.55 + 0.40 * pulse;
+
+  simulate(dt);
+  trailPool.update(dt);
+  burstPool.update(dt);
+  updateFX(dt);
+  refreshHUD();
+
+  renderer.render(scene, camera);
+});
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

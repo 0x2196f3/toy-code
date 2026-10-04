@@ -16,22 +16,17 @@
             --primary-text: #ffffff;
             --hover-bg: #f1f3f4;
             --shadow-color: rgba(0, 0, 0, 0.1);
-            --button-border-color: #dadce0;
-            --error-color: #B00020;
+            --error-color: #b00020;
         }
         @media (prefers-color-scheme: dark) {
             :root {
-            --bg-color: #121212;
-            --panel-bg: #1e1e1e;
-            --text-color: #e0e0e0;
-            --secondary-text-color: #a0a0a0;
-            --border-color: #303030;
-            --primary-color: #1a73e8;
-            --primary-text: #ffffff;
-            --hover-bg: #2c2c2c;
-            --shadow-color: rgba(0, 0, 0, 0.1);
-            --button-border-color: #303030;
-            --error-color: #ff4d4d;
+                --bg-color: #121212;
+                --panel-bg: #1e1e1e;
+                --text-color: #e0e0e0;
+                --secondary-text-color: #a0a0a0;
+                --border-color: #303030;
+                --hover-bg: #2c2c2c;
+                --error-color: #ff4d4d;
             }
         }
         body {
@@ -54,7 +49,7 @@
             border-radius: 8px;
             box-shadow: 0 1px 6px var(--shadow-color);
             overflow: hidden;
-            transition: background-color 0.3s, border-radius 0.3s;
+            transition: background-color 0.3s;
             display: flex;
             flex-direction: column;
         }
@@ -75,7 +70,7 @@
             flex-shrink: 0;
         }
         header h1 { font-size: 22px; margin: 0; font-weight: 500; }
-        header .controls { display: flex; gap: 8px; margin-right: -6px; }
+        .controls { display: flex; gap: 8px; margin-right: -6px; }
         .panel {
             flex: 1 1 400px;
             display: flex;
@@ -99,7 +94,8 @@
         }
         .panel-footer { padding: 15px; text-align: right; }
         :focus { outline: none; }
-        .language-selector select, .form-group select {
+        .language-selector select,
+        .form-group select {
             width: 100%;
             padding: 8px;
             border: 1px solid var(--border-color);
@@ -130,14 +126,7 @@
         }
         .icon-btn:hover { background-color: var(--hover-bg); }
         .icon-btn:disabled { cursor: not-allowed; opacity: 0.5; }
-        #switch-lang-btn {
-            align-items: center;
-            justify-content: center;
-            vertical-align: middle;
-            width: 40px;
-            height: 40px;
-            padding: 0;
-        }
+        #switch-lang-btn { vertical-align: middle; width: 40px; height: 40px; padding: 0; }
         #translate-btn {
             padding: 10px 24px;
             font-size: 14px;
@@ -156,34 +145,25 @@
             gap: 6px;
         }
         #translate-btn:hover { opacity: 0.9; }
-        #translate-btn .mobile-icon { display: none; }
-        #translate-btn .mobile-icon-abort { display: none; }
         #translate-btn .desktop-text { display: inline; }
+        #translate-btn .mobile-icon,
+        #translate-btn .mobile-icon-abort { display: none; }
         #translate-btn.abort-btn { background-color: var(--error-color); }
-        .char-count { position: absolute; bottom: 8px; right: 15px; font-size: 12px; color: var(--secondary-text-color); }
-        .copy-container { position: absolute; top: 15px; right: 15px; display: flex; align-items: center; }
         #translate-btn .loader {
             display: none;
             width: 14px;
             height: 14px;
-            border-width: 2px;
-            border-style: solid;
-            border-color: transparent;
+            border: 2px solid transparent;
             border-top-color: currentColor;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-        #translate-btn.loading .loader {
-            display: block;
-        }
+        #translate-btn.loading .loader { display: block; }
         #translate-btn.loading > span,
-        #translate-btn.loading > svg {
-            opacity: 0.5;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        #translate-btn.loading > svg { opacity: 0.5; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .char-count { position: absolute; bottom: 8px; right: 15px; font-size: 12px; color: var(--secondary-text-color); }
+        .copy-container { position: absolute; top: 15px; right: 15px; display: flex; align-items: center; }
         .toast {
             visibility: hidden;
             min-width: 250px;
@@ -202,14 +182,12 @@
             transition: opacity 0.3s, bottom 0.3s;
         }
         .toast.show { visibility: visible; opacity: 1; }
+        .toast.error { background-color: var(--error-color); color: #fff; }
         .modal {
             display: none;
             position: fixed;
             z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             overflow: auto;
             background-color: rgba(0, 0, 0, 0.5);
             justify-content: center;
@@ -229,7 +207,8 @@
         .modal-content h2 { margin-top: 0; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
-        .form-group input, .form-group textarea {
+        .form-group input,
+        .form-group textarea {
             width: 100%;
             padding: 8px;
             box-sizing: border-box;
@@ -239,21 +218,22 @@
             color: var(--text-color);
             transition: border-color 0.2s;
         }
-        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary-color); outline: none; }
+        .form-group input:focus,
+        .form-group textarea:focus { border-color: var(--primary-color); }
         .form-group textarea { min-height: 120px; font-family: monospace; font-size: 13px; }
         .form-group small { display: block; margin-top: 5px; color: var(--secondary-text-color); }
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
         .modal-actions button { padding: 10px 20px; border-radius: 4px; border: 1px solid transparent; cursor: pointer; font-weight: 500; }
         #save-settings-btn { background-color: var(--primary-color); color: var(--primary-text); }
-        #cancel-settings-btn { background-color: var(--panel-bg); color: var(--text-color); border-color: var(--button-border-color); }
+        #cancel-settings-btn { background-color: var(--panel-bg); color: var(--text-color); border-color: var(--border-color); }
         #cancel-settings-btn:hover { background-color: var(--hover-bg); }
         .stream-switch { display: flex; align-items: center; gap: 10px; }
         .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .2s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 4px; bottom: 4px; background-color: white; transition: .2s; border-radius: 50%; }
-        input:checked+.slider { background-color: var(--primary-color); }
-        input:checked+.slider:before { transform: translateX(14px); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.2s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 4px; bottom: 4px; background-color: white; transition: 0.2s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(14px); }
         .model-input-container { position: relative; display: flex; align-items: center; gap: 8px; }
         .model-input-container input { flex-grow: 1; }
         #fetch-models-btn { padding: 6px; font-size: 20px; flex-shrink: 0; }
@@ -272,19 +252,13 @@
             box-shadow: 0 4px 8px var(--shadow-color);
         }
         .model-suggestions.show { display: block; }
-        .suggestion-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            font-size: 14px;
-            color: var(--text-color);
-        }
+        .suggestion-item { padding: 8px 12px; cursor: pointer; font-size: 14px; color: var(--text-color); }
         .suggestion-item:hover { background-color: var(--hover-bg); }
-
         @media (max-width: 600px) {
             body { padding: 0; }
             .translator-container { height: 100vh; border-radius: 0; box-shadow: none; }
-            .main-content { flex-direction: column; flex-grow: 1; }
-            .panel { flex-basis: auto; flex-grow: 1; position: relative; }
+            .main-content { flex-direction: column; }
+            .panel { flex-basis: auto; position: relative; }
             textarea { min-height: 150px; }
             .panel-footer { padding: 0; height: 0; }
             #translate-btn {
@@ -297,9 +271,6 @@
                 padding: 0;
                 z-index: 10;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
-                display: flex;
-                align-items: center;
-                justify-content: center;
                 transition: background-color 0.2s, box-shadow 0.2s;
                 gap: 0;
             }
@@ -317,16 +288,11 @@
                 height: auto;
                 border-width: 4px;
                 border-top-color: var(--primary-color);
-                border-radius: 50%;
             }
             #switch-lang-btn {
                 position: absolute;
                 bottom: 32px;
                 right: calc(24px + 56px + 12px);
-                transform: translateY(0);
-                display: flex;
-                align-items: center;
-                justify-content: center;
             }
         }
     </style>
@@ -353,7 +319,7 @@
             <div class="textarea-wrapper">
                 <textarea id="source-text" placeholder="Enter text..."></textarea>
                 <div class="copy-container">
-                     <button id="clear-btn" class="icon-btn" title="Clear text">
+                    <button id="clear-btn" class="icon-btn" title="Clear text">
                         <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor">
                             <path d="M0 0h24v24H0V0z" fill="none"/>
                             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
@@ -367,7 +333,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
                 </button>
                 <button id="translate-btn">
-                    <div class="loader" id="loader"></div>
+                    <span class="loader"></span>
                     <span class="desktop-text">Translate</span>
                     <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px">
                         <path d="M0 0h24v24H0V0z" fill="none"></path>
@@ -412,9 +378,7 @@
         <div class="form-group">
             <label for="server-url">Server Base URL</label>
             <input type="text" id="server-url">
-            <small id="ollama-url-hint">Enter the base URL. E.g., `http://localhost:11434`</small>
-            <small id="ollama-cors-hint" style="display: none;">Warning: Your Ollama server may need to be configured to accept requests from this page (CORS). See documentation on setting OLLAMA_ORIGINS.</small>
-            <small id="openai-url-hint" style="display: none;">Enter the base URL. E.g., `http://localhost:8080`</small>
+            <small id="url-hint"></small>
         </div>
         <div class="form-group">
             <label for="api-key">API Key (Optional)</label>
@@ -447,6 +411,13 @@
                 <span class="slider"></span>
             </label>
         </div>
+        <div class="form-group stream-switch">
+            <label for="disable-reasoning-checkbox">Disable Reasoning</label>
+            <label class="switch">
+                <input type="checkbox" id="disable-reasoning-checkbox">
+                <span class="slider"></span>
+            </label>
+        </div>
         <div class="modal-actions">
             <button id="cancel-settings-btn">Cancel</button>
             <button id="save-settings-btn">Save</button>
@@ -467,6 +438,7 @@
             resultCharCount: document.getElementById('result-char-count'),
             settingsBtn: document.getElementById('settings-btn'),
             translateBtn: document.getElementById('translate-btn'),
+            translateLabel: document.querySelector('#translate-btn .desktop-text'),
             switchLangBtn: document.getElementById('switch-lang-btn'),
             settingsModal: document.getElementById('settings-modal'),
             saveSettingsBtn: document.getElementById('save-settings-btn'),
@@ -477,274 +449,217 @@
             modelName: document.getElementById('model-name'),
             systemPromptTemplate: document.getElementById('system-prompt-template'),
             userPromptTemplate: document.getElementById('user-prompt-template'),
-            loader: document.getElementById('loader'),
             copyBtn: document.getElementById('copy-btn'),
             clearBtn: document.getElementById('clear-btn'),
             toast: document.getElementById('toast'),
-            ollamaUrlHint: document.getElementById('ollama-url-hint'),
-            ollamaCorsHint: document.getElementById('ollama-cors-hint'),
-            openaiUrlHint: document.getElementById('openai-url-hint'),
+            urlHint: document.getElementById('url-hint'),
             streamSwitch: document.getElementById('stream-switch-checkbox'),
+            disableReasoningSwitch: document.getElementById('disable-reasoning-checkbox'),
             fetchModelsBtn: document.getElementById('fetch-models-btn'),
             modelSuggestions: document.getElementById('model-suggestions'),
-            modelInputContainer: document.querySelector('.model-input-container'),
+            modelInputContainer: document.querySelector('.model-input-container')
         };
 
-        const LANGUAGES = {
-            'English': 'en', 'Spanish': 'es', 'French': 'fr', 'German': 'de',
-            'Chinese (Simplified)': 'zh-CN', 'Chinese (Traditional)': 'zh-TW',
-            'Japanese': 'ja', 'Korean': 'ko', 'Russian': 'ru', 'Arabic': 'ar',
-            'Portuguese': 'pt', 'Italian': 'it', 'Hindi': 'hi'
-        };
+        const LANGUAGES = ['English', 'Spanish', 'French', 'German', 'Chinese (Simplified)', 'Chinese (Traditional)', 'Japanese', 'Korean', 'Russian', 'Arabic', 'Portuguese', 'Italian', 'Hindi'];
         const DEFAULT_SYSTEM_PROMPT = `As an expert translator, you will be given text to translate. Identify the source language if specified as 'auto'. Return ONLY the translation, without any explanations, notes, or conversational filler.`;
         const DEFAULT_USER_PROMPT = `Translate from {{source_language}} to {{destination_language}}.\nText: "{{text}}"`;
+        const URL_HINTS = {
+            ollama: 'Warning: your Ollama server may need CORS configuration (OLLAMA_ORIGINS).',
+            openai_compatible: 'Enter the base URL. E.g., `http://localhost:8080`'
+        };
 
         const DEFAULTS = {
-            apiType: 'ollama', serverUrl: 'http://localhost:11434', apiKey: '',
-            model: 'gemma3:270m', systemPrompt: DEFAULT_SYSTEM_PROMPT, userPrompt: DEFAULT_USER_PROMPT,
-            sourceLang: 'auto', destLang: 'English', stream: false,
+            apiType: 'openai_compatible',
+            serverUrl: 'http://localhost:8080',
+            apiKey: '',
+            model: 'gemma3:270m',
+            systemPrompt: DEFAULT_SYSTEM_PROMPT,
+            userPrompt: DEFAULT_USER_PROMPT,
+            sourceLang: 'auto',
+            destLang: 'English',
+            stream: false,
+            disableReasoning: false,
         };
+
         let currentSettings = {};
         let availableModels = [];
         let isTranslating = false;
         let abortController = null;
+        let toastTimer = null;
 
-        class OllamaAPI {
-            async getModels({ serverUrl, apiKey }) {
-                const endpoint = `${serverUrl.replace(/\/+$/, '')}/api/tags`;
-                const response = await fetch(endpoint, {
-                    method: 'GET',
-                    headers: { ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
-                });
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({ error: response.statusText }));
-                    throw new Error(err.error || 'Failed to fetch models');
-                }
-                const data = await response.json();
-                return data.models.map(m => m.name).sort();
-            }
+        const joinUrl = (base, path) => base.replace(/\/+$/, '') + path;
 
-            async generate(systemPrompt, userPrompt, { serverUrl, model, apiKey }, signal) {
-                const endpoint = `${serverUrl.replace(/\/+$/, '')}/api/generate`;
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
-                    body: JSON.stringify({ model, system: systemPrompt, prompt: userPrompt, stream: false }),
-                    signal,
-                });
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({ error: response.statusText }));
-                    throw new Error(err.error);
-                }
-                const data = await response.json();
-                return data.response.trim();
-            }
+        const buildHeaders = (apiKey, withContentType) => ({
+            ...(withContentType ? { 'Content-Type': 'application/json' } : {}),
+            ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
+        });
 
-            async* generateStream(systemPrompt, userPrompt, { serverUrl, model, apiKey }, signal) {
-                const endpoint = `${serverUrl.replace(/\/+$/, '')}/api/generate`;
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
-                    body: JSON.stringify({ model, system: systemPrompt, prompt: userPrompt, stream: true }),
-                    signal,
-                });
-
-                if (!response.ok || !response.body) {
-                    const err = await response.json().catch(() => ({ error: response.statusText }));
-                    throw new Error(err.error || 'Failed to connect to stream');
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (value) {
-                        buffer += decoder.decode(value, { stream: true });
-                        const lines = buffer.split('\n');
-                        buffer = lines.pop();
-                        for (const line of lines) {
-                            if (line.trim()) {
-                                const data = JSON.parse(line);
-                                if (data.response !== undefined) yield data.response;
-                            }
-                        }
-                    }
-                    if (done) {
-                        if (buffer.trim()) {
-                            try {
-                                const data = JSON.parse(buffer);
-                                if (data.response !== undefined) yield data.response;
-                            } catch (e) {}
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-
-        class OpenAICompatibleAPI {
-            async getModels({ serverUrl, apiKey }) {
-                const endpoint = `${serverUrl.replace(/\/+$/, '')}/v1/models`;
-                const response = await fetch(endpoint, {
-                    method: 'GET',
-                    headers: { ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
-                });
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({ error: response.statusText }));
-                    throw new Error(err.message || err.error?.message || err.error || "Failed to fetch models");
-                }
-                const data = await response.json();
-                return data.data.map(m => m.id).sort();
-            }
-
-            async generate(systemPrompt, userPrompt, { serverUrl, model, apiKey }, signal) {
-                const endpoint = `${serverUrl.replace(/\/+$/, '')}/v1/chat/completions`;
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
-                    body: JSON.stringify({
-                        model,
-                        messages: [
-                            { role: "system", content: systemPrompt },
-                            { role: "user", content: userPrompt }
-                        ],
-                        stream: false,
-                    }),
-                    signal,
-                });
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({ error: response.statusText }));
-                    throw new Error(err.message || err.error?.message || err.error || "Unknown API error");
-                }
-                const data = await response.json();
-                return data.choices[0].message.content.trim();
-            }
-
-            async* generateStream(systemPrompt, userPrompt, { serverUrl, model, apiKey }, signal) {
-                const endpoint = `${serverUrl.replace(/\/+$/, '')}/v1/chat/completions`;
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }) },
-                    body: JSON.stringify({
-                        model,
-                        messages: [
-                            { role: "system", content: systemPrompt },
-                            { role: "user", content: userPrompt }
-                        ],
-                        stream: true,
-                    }),
-                    signal,
-                });
-
-                if (!response.ok || !response.body) {
-                    const err = await response.json().catch(() => ({ error: response.statusText }));
-                    throw new Error(err.message || err.error?.message || err.error || 'Failed to connect to stream');
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (value) {
-                        buffer += decoder.decode(value, { stream: true });
-                        const lines = buffer.split('\n');
-                        buffer = lines.pop();
-                        for (const line of lines) {
-                            if (line.startsWith('data: ')) {
-                                const content = line.substring(6);
-                                if (content.trim() === '[DONE]') return;
-                                try {
-                                    const data = JSON.parse(content);
-                                    const text = data.choices[0]?.delta?.content;
-                                    if (text) yield text;
-                                } catch (e) {}
-                            }
-                        }
-                    }
-                    if (done) {
-                        if (buffer.trim() && buffer.startsWith('data: ')) {
-                            const content = buffer.substring(6);
-                            if (content.trim() !== '[DONE]') {
-                                try {
-                                    const data = JSON.parse(content);
-                                    const text = data.choices[0]?.delta?.content;
-                                    if (text) yield text;
-                                } catch (e) {}
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-
-        const getApiHandler = (apiType) => {
-            return apiType === 'openai_compatible' ? new OpenAICompatibleAPI() : new OllamaAPI();
+        const extractError = async (response, fallback) => {
+            const data = await response.json().catch(() => null);
+            const message = data && (data.message || (data.error && data.error.message) || data.error);
+            return message || fallback || response.statusText;
         };
 
+        const getModelsRequest = async (serverUrl, path, apiKey) => {
+            const response = await fetch(joinUrl(serverUrl, path), { headers: buildHeaders(apiKey) });
+            if (!response.ok) throw new Error(await extractError(response, 'Failed to fetch models'));
+            return response.json();
+        };
+
+        const postPrompt = async (serverUrl, path, apiKey, body, signal, streamFallback) => {
+            const response = await fetch(joinUrl(serverUrl, path), {
+                method: 'POST',
+                headers: buildHeaders(apiKey, true),
+                body,
+                signal
+            });
+            if (!response.ok || !response.body) throw new Error(await extractError(response, streamFallback));
+            return response;
+        };
+
+        async function* streamLines(body) {
+            const reader = body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                for (const line of lines) yield line;
+                if (done) {
+                    if (buffer.trim()) yield buffer;
+                    break;
+                }
+            }
+        }
+
+        const ollamaApi = {
+            async getModels(settings) {
+                const data = await getModelsRequest(settings.serverUrl, '/api/tags', settings.apiKey);
+                return data.models.map((m) => m.name).sort();
+            },
+            buildBody(systemPrompt, userPrompt, settings, stream) {
+                return JSON.stringify({
+                    model: settings.model,
+                    system: systemPrompt,
+                    prompt: userPrompt,
+                    stream,
+                    ...(settings.disableReasoning ? { think: false } : {})
+                });
+            },
+            async generate(systemPrompt, userPrompt, settings, signal) {
+                const response = await postPrompt(settings.serverUrl, '/api/generate', settings.apiKey,
+                    this.buildBody(systemPrompt, userPrompt, settings, false), signal);
+                const data = await response.json();
+                return (data.response || '').trim();
+            },
+            async* generateStream(systemPrompt, userPrompt, settings, signal) {
+                const response = await postPrompt(settings.serverUrl, '/api/generate', settings.apiKey,
+                    this.buildBody(systemPrompt, userPrompt, settings, true), signal, 'Failed to connect to stream');
+                for await (const line of streamLines(response.body)) {
+                    if (!line.trim()) continue;
+                    try {
+                        const data = JSON.parse(line);
+                        if (data.response !== undefined) yield data.response;
+                    } catch (e) {}
+                }
+            }
+        };
+
+        const openAiCompatibleApi = {
+            async getModels(settings) {
+                const data = await getModelsRequest(settings.serverUrl, '/v1/models', settings.apiKey);
+                return data.data.map((m) => m.id).sort();
+            },
+            buildBody(systemPrompt, userPrompt, settings, stream) {
+                return JSON.stringify({
+                    model: settings.model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userPrompt }
+                    ],
+                    stream,
+                    ...(settings.disableReasoning ? { reasoning_effort: 'none' } : {})
+                });
+            },
+            async generate(systemPrompt, userPrompt, settings, signal) {
+                const body = this.buildBody(systemPrompt, userPrompt, settings, false);
+                const response = await postPrompt(settings.serverUrl, '/v1/chat/completions', settings.apiKey, body, signal);
+                const data = await response.json();
+                return data.choices[0].message.content.trim();
+            },
+            async* generateStream(systemPrompt, userPrompt, settings, signal) {
+                const body = this.buildBody(systemPrompt, userPrompt, settings, true);
+                const response = await postPrompt(settings.serverUrl, '/v1/chat/completions', settings.apiKey, body, signal, 'Failed to connect to stream'); 
+                for await (const line of streamLines(response.body)) {
+                    if (!line.startsWith('data: ')) continue;
+                    const payload = line.slice(6);
+                    if (payload.trim() === '[DONE]') return;
+                    try {
+                        const data = JSON.parse(payload);
+                        const choice = data.choices && data.choices[0];
+                        const text = choice && choice.delta && choice.delta.content;
+                        if (text) yield text;
+                    } catch (e) {}
+                }
+            }
+        };
+
+        const getApiHandler = (apiType) => (apiType === 'openai_compatible' ? openAiCompatibleApi : ollamaApi);
+
         const showToast = (message, isError = false) => {
+            clearTimeout(toastTimer);
             dom.toast.textContent = message;
-            dom.toast.className = `toast show ${isError ? 'error' : ''}`;
-            setTimeout(() => {
-                dom.toast.className = dom.toast.className.replace("show", "");
-            }, 3000);
+            dom.toast.classList.add('show');
+            dom.toast.classList.toggle('error', isError);
+            toastTimer = setTimeout(() => dom.toast.classList.remove('show'), 3000);
         };
 
         const copyOutput = async () => {
             const textToCopy = dom.resultText.value;
             if (!textToCopy) return;
-
-            if (!navigator.clipboard) {
-                try {
+            try {
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(textToCopy);
+                } else {
                     const textArea = document.createElement('textarea');
                     textArea.value = textToCopy;
                     textArea.style.position = 'fixed';
                     textArea.style.top = '-9999px';
-                    textArea.style.left = '-9999px';
                     document.body.appendChild(textArea);
                     textArea.select();
-                    document.execCommand('copy');
+                    if (!document.execCommand('copy')) {
+                        throw new Error('execCommand failed');
+                    }
                     document.body.removeChild(textArea);
-                    showToast('Copied to clipboard!');
-                    return;
-                } catch (err) {
-                    showToast('Failed to copy!', true);
                 }
-            }
-            try {
-                await navigator.clipboard.writeText(textToCopy);
                 showToast('Copied to clipboard!');
             } catch (err) {
                 showToast('Failed to copy!', true);
             }
         };
-        
+
         const clearInput = () => {
             dom.sourceText.value = '';
             updateCharCount(dom.sourceText, dom.sourceCharCount);
         };
 
-        const updateUrlHint = (apiType) => {
-            const isOllama = apiType === 'ollama';
-            dom.ollamaUrlHint.style.display = isOllama ? 'block' : 'none';
-            dom.ollamaCorsHint.style.display = isOllama ? 'block' : 'none';
-            dom.openaiUrlHint.style.display = isOllama ? 'none' : 'block';
+        const updateUrlHint = (apiType) => { 
+            dom.urlHint.textContent = URL_HINTS[apiType] || ''; 
         };
 
+
         const populateLanguages = () => {
-            Object.keys(LANGUAGES).forEach(lang => dom.destLang.add(new Option(lang, lang)));
+            LANGUAGES.forEach((lang) => dom.destLang.add(new Option(lang, lang)));
             dom.sourceLang.add(new Option('Auto Detect', 'auto'));
-            Object.keys(LANGUAGES).forEach(lang => dom.sourceLang.add(new Option(lang, lang)));
+            LANGUAGES.forEach((lang) => dom.sourceLang.add(new Option(lang, lang)));
         };
 
         const updateCharCount = (textarea, countElement) => {
             countElement.textContent = textarea.value.length;
         };
-        
+
         const switchLanguages = () => {
             const source = dom.sourceLang.value;
             const dest = dom.destLang.value;
@@ -770,10 +685,11 @@
 
         const loadSettings = () => {
             const storedStream = localStorage.getItem('stream_response');
+            const storedDisableReasoning = localStorage.getItem('disable_reasoning');
             const params = new URLSearchParams(window.location.search);
             const src = params.get('src');
             const dst = params.get('dst');
-            
+
             currentSettings = {
                 apiType: localStorage.getItem('api_type') || DEFAULTS.apiType,
                 serverUrl: localStorage.getItem('server_url') || DEFAULTS.serverUrl,
@@ -784,6 +700,7 @@
                 sourceLang: localStorage.getItem('translator_src') || DEFAULTS.sourceLang,
                 destLang: localStorage.getItem('translator_dst') || DEFAULTS.destLang,
                 stream: storedStream !== null ? storedStream === 'true' : DEFAULTS.stream,
+                disableReasoning: storedDisableReasoning !== null ? storedDisableReasoning === 'true' : DEFAULTS.disableReasoning,
             };
 
             if (src && src.trim() !== '') currentSettings.sourceLang = src;
@@ -798,6 +715,7 @@
             dom.sourceLang.value = currentSettings.sourceLang;
             dom.destLang.value = currentSettings.destLang;
             dom.streamSwitch.checked = currentSettings.stream;
+            dom.disableReasoningSwitch.checked = currentSettings.disableReasoning;
             updateUrlHint(currentSettings.apiType);
         };
 
@@ -809,6 +727,8 @@
             currentSettings.systemPrompt = dom.systemPromptTemplate.value;
             currentSettings.userPrompt = dom.userPromptTemplate.value;
             currentSettings.stream = dom.streamSwitch.checked;
+            currentSettings.disableReasoning = dom.disableReasoningSwitch.checked;
+
 
             localStorage.setItem('api_type', currentSettings.apiType);
             localStorage.setItem('server_url', currentSettings.serverUrl);
@@ -817,6 +737,7 @@
             localStorage.setItem('system_prompt_template', currentSettings.systemPrompt);
             localStorage.setItem('user_prompt_template', currentSettings.userPrompt);
             localStorage.setItem('stream_response', currentSettings.stream);
+            localStorage.setItem('disable_reasoning', currentSettings.disableReasoning);
 
             toggleSettingsModal(false);
         };
@@ -828,10 +749,8 @@
                     dom.settingsModal.style.display = 'flex';
                     history.pushState({ modal: 'settings' }, '', '#settings');
                 }
-            } else {
-                if (modalIsVisible) {
-                    history.back();
-                }
+            } else if (modalIsVisible) {
+                history.back();
             }
         };
 
@@ -841,22 +760,22 @@
                 dom.modelSuggestions.classList.remove('show');
                 return;
             }
-
-            models.forEach(modelName => {
+            const fragment = document.createDocumentFragment();
+            models.forEach((name) => {
                 const item = document.createElement('div');
                 item.className = 'suggestion-item';
-                item.textContent = modelName;
+                item.textContent = name;
                 item.addEventListener('click', () => {
-                    dom.modelName.value = modelName;
+                    dom.modelName.value = name;
                     dom.modelSuggestions.classList.remove('show');
                 });
-                dom.modelSuggestions.appendChild(item);
+                fragment.appendChild(item);
             });
+            dom.modelSuggestions.appendChild(fragment);
             dom.modelSuggestions.classList.add('show');
         };
 
         const fetchAndPopulateModels = async () => {
-            const apiType = dom.apiType.value;
             const serverUrl = dom.serverUrl.value.trim();
             const apiKey = dom.apiKey.value.trim();
 
@@ -870,11 +789,10 @@
             renderSuggestions([]);
 
             try {
-                const apiHandler = getApiHandler(apiType);
-                const models = await apiHandler.getModels({ serverUrl, apiKey });
-                availableModels = models;
+                const apiHandler = getApiHandler(dom.apiType.value);
+                availableModels = await apiHandler.getModels({ serverUrl, apiKey });
                 renderSuggestions(availableModels);
-                showToast(models.length ? `Found ${models.length} models.` : 'No models found.');
+                showToast(availableModels.length ? `Found ${availableModels.length} models.` : 'No models found.');
             } catch (error) {
                 showToast(`Error fetching models: ${error.message}`, true);
             } finally {
@@ -898,38 +816,34 @@
             isTranslating = true;
             abortController = new AbortController();
             dom.translateBtn.classList.add('abort-btn', 'loading');
-            dom.translateBtn.querySelector('.desktop-text').textContent = 'Abort';
+            dom.translateLabel.textContent = 'Abort';
 
             dom.resultText.value = '';
             updateCharCount(dom.resultText, dom.resultCharCount);
 
             const finalUserPrompt = currentSettings.userPrompt
-                .replaceAll('{{text}}', text)
                 .replaceAll('{{source_language}}', dom.sourceLang.value)
-                .replaceAll('{{destination_language}}', dom.destLang.value);
+                .replaceAll('{{destination_language}}', dom.destLang.value)
+                .replaceAll('{{text}}', text);
+
 
             try {
                 const apiHandler = getApiHandler(currentSettings.apiType);
                 if (currentSettings.stream) {
-                     for await (const chunk of apiHandler.generateStream(currentSettings.systemPrompt, finalUserPrompt, currentSettings, abortController.signal)) {
+                    for await (const chunk of apiHandler.generateStream(currentSettings.systemPrompt, finalUserPrompt, currentSettings, abortController.signal)) {
                         dom.resultText.value += chunk;
                         updateCharCount(dom.resultText, dom.resultCharCount);
                     }
                 } else {
-                    const translation = await apiHandler.generate(currentSettings.systemPrompt, finalUserPrompt, currentSettings, abortController.signal);
-                    dom.resultText.value = translation;
+                    dom.resultText.value = await apiHandler.generate(currentSettings.systemPrompt, finalUserPrompt, currentSettings, abortController.signal);
                 }
             } catch (error) {
-                if (error.name === 'AbortError') {
-                    dom.resultText.value = 'Translation aborted.';
-                } else {
-                   dom.resultText.value = `Error: ${error.message}`;
-                }
+                dom.resultText.value = error.name === 'AbortError' ? 'Translation aborted.' : `Error: ${error.message}`;
             } finally {
                 isTranslating = false;
                 abortController = null;
                 dom.translateBtn.classList.remove('abort-btn', 'loading');
-                dom.translateBtn.querySelector('.desktop-text').textContent = 'Translate';
+                dom.translateLabel.textContent = 'Translate';
                 updateCharCount(dom.resultText, dom.resultCharCount);
             }
         };
@@ -961,14 +875,11 @@
                     renderSuggestions(availableModels);
                     return;
                 }
-                const filteredModels = availableModels.filter(m => m.toLowerCase().includes(inputText));
-                renderSuggestions(filteredModels);
+                renderSuggestions(availableModels.filter((m) => m.toLowerCase().includes(inputText)));
             });
 
             dom.modelName.addEventListener('focus', () => {
-                if (availableModels.length > 0) {
-                    renderSuggestions(availableModels);
-                }
+                if (availableModels.length > 0) renderSuggestions(availableModels);
             });
 
             document.addEventListener('click', (e) => {
@@ -982,10 +893,10 @@
             });
 
             window.addEventListener('keydown', (e) => {
-              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                translate().catch(() => {});
-              }
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    translate();
+                }
             });
         };
 

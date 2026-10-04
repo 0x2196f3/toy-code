@@ -2,819 +2,1129 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scientific & Programmer Calculator</title>
-    <script>
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark-mode');
-        }
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calculator</title>
     <style>
-        :root {
-            --bg-light: #f5f5f5;
-            --surface-light: #ffffff;
-            --text-primary-light: #212121;
-            --text-secondary-light: #757575;
-            --accent-light: #2962ff;
-            --accent-light-hover: #0039cb;
-            --special-func-light: #e0e0e0;
-            --special-func-light-hover: #bdbdbd;
-            --shadow-light: rgba(0, 0, 0, 0.15);
-
-            --bg-dark: #121212;
-            --surface-dark: #1e1e1e;
-            --text-primary-dark: #e0e0e0;
-            --text-secondary-dark: #bdbdbd;
-            --accent-dark: #448aff;
-            --accent-dark-hover: #82b1ff;
-            --special-func-dark: #2a2a2a;
-            --special-func-dark-hover: #3c3c3c;
-            --shadow-dark: rgba(0, 0, 0, 0.5);
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            height: 100dvh;
         }
 
-        *, *::before, *::after {
+        :root {
+            --bg-main: #f3f3f3;
+            --bg-calculator: #e6e6e6;
+            --bg-display: #e6e6e6;
+            --bg-button: #f9f9f9;
+            --bg-button-hover: #e5e5e5;
+            --bg-button-active: #cccccc;
+            --bg-operator: #f0f0f0;
+            --bg-operator-hover: #e0e0e0;
+            --bg-accent: #0078d7;
+            --bg-accent-hover: #0066b8;
+            --bg-accent-active: #005a9e;
+            --text-main: #000000;
+            --text-secondary: #555555;
+            --text-accent: #ffffff;
+            --border-color: #d1d1d1;
+            --active-base-bg: #d0e1f9;
+            --disabled-btn: #e0e0e0;
+            --mode-select-bg: #e6e6e6;
+            --mode-select-color: #000000;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-main: #1f1f1f;
+                --bg-calculator: #202020;
+                --bg-display: #202020;
+                --bg-button: #3b3b3b;
+                --bg-button-hover: #505050;
+                --bg-button-active: #282828;
+                --bg-operator: #2c2c2c;
+                --bg-operator-hover: #383838;
+                --bg-accent: #0078d7;
+                --bg-accent-hover: #0098ff;
+                --bg-accent-active: #005a9e;
+                --text-main: #ffffff;
+                --text-secondary: #aaaaaa;
+                --text-accent: #ffffff;
+                --border-color: #2b2b2b;
+                --active-base-bg: #004e8c;
+                --disabled-btn: #2a2a2a;
+                --mode-select-bg: #3b3b3b;
+                --mode-select-color: #ffffff;
+            }
+        }
+
+        body.dark-mode {
+            --bg-main: #1f1f1f;
+            --bg-calculator: #202020;
+            --bg-display: #202020;
+            --bg-button: #3b3b3b;
+            --bg-button-hover: #505050;
+            --bg-button-active: #282828;
+            --bg-operator: #2c2c2c;
+            --bg-operator-hover: #383838;
+            --bg-accent: #0078d7;
+            --bg-accent-hover: #0098ff;
+            --bg-accent-active: #005a9e;
+            --text-main: #ffffff;
+            --text-secondary: #aaaaaa;
+            --text-accent: #ffffff;
+            --border-color: #2b2b2b;
+            --active-base-bg: #004e8c;
+            --disabled-btn: #2a2a2a;
+            --mode-select-bg: #3b3b3b;
+            --mode-select-color: #ffffff;
+        }
+
+        body.light-mode {
+            --bg-main: #f3f3f3;
+            --bg-calculator: #e6e6e6;
+            --bg-display: #e6e6e6;
+            --bg-button: #f9f9f9;
+            --bg-button-hover: #e5e5e5;
+            --bg-button-active: #cccccc;
+            --bg-operator: #f0f0f0;
+            --bg-operator-hover: #e0e0e0;
+            --bg-accent: #0078d7;
+            --bg-accent-hover: #0066b8;
+            --bg-accent-active: #005a9e;
+            --text-main: #000000;
+            --text-secondary: #555555;
+            --text-accent: #ffffff;
+            --border-color: #d1d1d1;
+            --active-base-bg: #d0e1f9;
+            --disabled-btn: #e0e0e0;
+            --mode-select-bg: #e6e6e6;
+            --mode-select-color: #000000;
+        }
+
+        * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-        }
-
-        html, body {
-            height: 100%;
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            user-select: none;
         }
 
         body {
-            display: grid;
-            place-items: center;
-            background-color: var(--bg-light);
-            color: var(--text-primary-light);
-            transition: background-color 0.3s ease, color 0.3s ease;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: 0;
         }
 
-        html.dark-mode {
-            --bg: var(--bg-dark);
-            --surface: var(--surface-dark);
-            --text-primary: var(--text-primary-dark);
-            --text-secondary: var(--text-secondary-dark);
-            --accent: var(--accent-dark);
-            --accent-hover: var(--accent-dark-hover);
-            --special-func: var(--special-func-dark);
-            --special-func-hover: var(--special-func-dark-hover);
-            --shadow: var(--shadow-dark);
-        }
-        
-        html:not(.dark-mode) {
-            --bg: var(--bg-light);
-            --surface: var(--surface-light);
-            --text-primary: var(--text-primary-light);
-            --text-secondary: var(--text-secondary-light);
-            --accent: var(--accent-light);
-            --accent-hover: var(--accent-light-hover);
-            --special-func: var(--special-func-light);
-            --special-func-hover: var(--special-func-light-hover);
-            --shadow: var(--shadow-light);
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text-primary);
-        }
-
-        .calculator {
+        .calculator-container {
             width: 100%;
-            max-width: 400px;
-            height: 100%;
-            max-height: 850px;
-            background-color: var(--surface);
-            border-radius: 24px;
-            box-shadow: 0 10px 30px var(--shadow);
+            max-width: 420px;
+            height: 720px;
+            background-color: var(--bg-calculator);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            transition: background-color 0.3s ease;
+            border: 1px solid var(--border-color);
         }
 
-        @media (max-width: 420px), (max-height: 870px) {
-            .calculator {
-                max-width: 100%;
-                max-height: 100%;
-                border-radius: 0;
-                box-shadow: none;
-            }
-        }
-        
-        .calculator-mode-selector {
-            padding: 1rem 1.5rem 0.5rem;
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            flex-shrink: 0;
         }
 
-        #mode-select {
-            width: 100%;
-            padding: 0.5rem;
-            border-radius: 8px;
-            border: 1px solid var(--special-func);
-            background-color: var(--surface);
-            color: var(--text-primary);
-            font-size: 1rem;
+        .mode-select {
+            background: var(--mode-select-bg);
+            border: 1px solid var(--border-color);
+            color: var(--mode-select-color);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
             outline: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
         }
 
-        .calculator-display {
-            padding: 1rem 1.5rem 1rem;
+        .mode-select:hover {
+            background-color: var(--bg-button-hover);
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--bg-button-hover);
+            transform: rotate(15deg);
+        }
+
+        .theme-toggle svg {
+            width: 26px;
+            height: 26px;
+            fill: currentColor;
+        }
+
+        .display {
+            padding: 16px;
             text-align: right;
+            background-color: var(--bg-display);
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
             flex: 1;
-            min-height: 120px;
+            word-wrap: break-word;
+            word-break: break-all;
+            min-height: 100px;
+        }
+
+        .history {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            min-height: 1.2rem;
+            margin-bottom: 4px;
+        }
+
+        .main-display {
+            font-size: 2.6rem;
+            font-weight: 600;
+            line-height: 1.1;
+        }
+
+        .programmer-bases {
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px 16px;
+            background-color: var(--bg-display);
+            font-family: monospace;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .base-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .base-row:hover {
+            background-color: var(--bg-button-hover);
+        }
+
+        .base-row.active {
+            background-color: var(--active-base-bg);
+            font-weight: bold;
+        }
+
+        .keypad {
+            display: grid;
+            gap: 2px;
+            padding: 2px;
+            background-color: var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .keypad.basic {
+            grid-template-columns: repeat(4, 1fr);
+            height: 420px;
+        }
+
+        .keypad.scientific {
+            grid-template-columns: repeat(5, 1fr);
+            height: 440px;
+        }
+
+        .keypad.programmer {
+            grid-template-columns: repeat(5, 1fr);
+            height: 420px;
+        }
+
+        .keypad.data-grid {
+            grid-template-columns: repeat(3, 1fr);
+            height: 320px;
+        }
+
+        button.btn {
+            background-color: var(--bg-button);
+            color: var(--text-main);
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.1s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 4px;
+            position: relative;
             overflow: hidden;
         }
 
-        #history {
-            min-height: 24px;
-            font-size: 1.2rem;
+        button.btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s ease, height 0.3s ease;
+        }
+
+        button.btn:active::after {
+            width: 200%;
+            height: 200%;
+        }
+
+        /* Digit buttons hover - scale effect */
+        button.btn:not(.operator):not(.accent):hover {
+            background-color: var(--bg-button-hover);
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button.btn:not(.operator):not(.accent):active {
+            background-color: var(--bg-button-active);
+            transform: scale(0.95);
+        }
+
+        /* Operator buttons hover - slight lift effect */
+        button.btn.operator:hover {
+            background-color: var(--bg-operator-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        button.btn.operator:active {
+            background-color: var(--bg-button-active);
+            transform: translateY(0);
+        }
+
+        button.btn.accent {
+            background-color: var(--bg-accent);
+            color: var(--text-accent);
+            font-weight: bold;
+        }
+
+        button.btn.accent:hover {
+            background-color: var(--bg-accent-hover);
+            transform: scale(1.05);
+            box-shadow: 0 4px 16px rgba(0, 120, 215, 0.4);
+        }
+
+        button.btn.accent:active {
+            background-color: var(--bg-accent-active);
+            transform: scale(0.95);
+        }
+
+        button.btn:disabled {
+            background-color: var(--disabled-btn);
             color: var(--text-secondary);
-            font-weight: 300;
-            white-space: nowrap;
-            overflow-x: auto;
-            overflow-y: hidden;
-            scrollbar-width: none;
+            cursor: not-allowed;
+            opacity: 0.5;
         }
-        #history::-webkit-scrollbar { display: none; }
 
-        #expression {
-            font-size: 3rem;
-            font-weight: 400;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow-x: auto;
-            overflow-y: hidden;
-            scrollbar-width: none;
+        button.btn:disabled:hover {
+            transform: none;
+            box-shadow: none;
         }
-        #expression::-webkit-scrollbar { display: none; }
 
-        .programmer-display-conversions {
+        .data-converter {
             display: none;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            padding: 0.5rem 0 0;
-            gap: 5px;
-        }
-        .base-display {
-            flex-basis: calc(50% - 5px); display: flex; align-items: baseline; gap: 8px;
-        }
-        .base-display span { font-size: 0.8rem; color: var(--text-secondary); }
-        .base-display p { font-size: 1rem; color: var(--text-primary); font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-        .calculator-keys {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1px;
-            background-color: var(--special-func);
-            padding-top: 1px;
-            transition: background-color 0.3s ease;
-        }
-
-        .calculator-keys button {
-            position: relative; border: none; background-color: var(--surface);
-            font-size: 1.4rem; font-weight: 400; color: var(--text-primary);
-            padding: 1.2rem 0; cursor: pointer; outline: none; overflow: hidden;
-            transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
-            display: grid; place-items: center; min-height: 65px;
-        }
-        
-        .calculator-keys button:hover {
-            background-color: var(--special-func-hover);
-        }
-
-        .calculator-keys button.operator, .calculator-keys button.function {
-            color: var(--accent); font-weight: 500;
-        }
-
-        .calculator-keys button.special-function { background-color: var(--special-func); }
-        .calculator-keys button.special-function:hover { background-color: var(--special-func-hover); }
-
-        .calculator-keys button.zero { grid-column: span 2; }
-        .calculator-keys button.clear, .calculator-keys button.backspace { grid-column: span 2; }
-
-        .calculator-keys button.equals {
-            background-color: var(--accent); color: white; grid-column: span 4;
-        }
-        .calculator-keys button.equals:hover { background-color: var(--accent-hover); }
-
-        .calculator.basic-mode [data-mode="advanced"],
-        .calculator.basic-mode [data-mode="programmer"] { display: none; }
-        .calculator.advanced-mode [data-mode="programmer"] { display: none; }
-        .calculator.programmer-mode [data-mode="advanced"] { display: none; }
-        .calculator.programmer-mode .programmer-display-conversions { display: flex; }
-
-        .calculator.programmer-mode .num-key.disabled,
-        .calculator.programmer-mode .hex-key.disabled {
-            opacity: 0.4; pointer-events: none;
-        }
-        .calculator.programmer-mode button[data-key="."] {
-            opacity: 0.4; pointer-events: none;
-        }
-        .calculator.programmer-mode .base-selector.active-base {
-            background-color: var(--accent); color: white;
-        }
-        .calculator.programmer-mode .base-selector.active-base:hover {
-            background-color: var(--accent-hover);
-        }
-
-        .ripple {
-            position: absolute; border-radius: 50%;
-            background-color: rgba(0, 0, 0, 0.1);
-            transform: scale(0);
-            animation: ripple 0.25s linear;
-        }
-        @keyframes ripple { to { transform: scale(4); opacity: 0; } }
-
-        .data-calculator-view {
-            display: none;
-            padding: 0;
-            height: 100%;
             flex-direction: column;
-            justify-content: center;
-            gap: 1rem;
+            flex: 1;
         }
 
-        .calculator.data-mode .data-calculator-view { display: flex; }
-        .calculator.data-mode #history,
-        .calculator.data-mode #expression,
-        .calculator.data-mode .programmer-display-conversions { display: none; }
-        .calculator.data-mode .calculator-keys { display: none; }
-        .calculator.data-mode .calculator-display { padding-bottom: 2rem; }
-
-        .data-row {
+        .data-fields {
+            padding: 16px;
             display: flex;
-            gap: 0.5rem;
-            align-items: center;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+            justify-content: center;
+            background-color: var(--bg-display);
         }
-        .data-row input[type="number"], .data-row select {
-            width: 100%;
-            padding: 0.75rem;
-            border-radius: 8px;
-            border: 1px solid var(--special-func);
-            background-color: var(--bg);
-            color: var(--text-primary);
-            font-size: 1.2rem;
+
+        .converter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .converter-group label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .converter-select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-button);
+            color: var(--text-main);
+            font-size: 0.95rem;
             outline: none;
             transition: border-color 0.2s ease;
         }
-        .data-row input[type="number"]:focus, .data-row select:focus {
-            border-color: var(--accent);
-        }
-        .data-row input[type="number"] { flex-grow: 1; }
-        .data-row select { flex-basis: 120px; flex-shrink: 0; }
-        
-        .data-calculator-keys {
-            display: none;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1px;
-            background-color: var(--special-func);
-            padding-top: 1px;
+
+        .converter-select:focus {
+            border-color: var(--bg-accent);
         }
 
-        .calculator.data-mode .data-calculator-keys {
-            display: grid;
+        .data-val-display {
+            font-size: 1.8rem;
+            font-weight: 600;
+            padding: 4px 0;
+            min-height: 2.2rem;
+            word-break: break-all;
         }
 
-        .data-calculator-keys button {
-            position: relative; border: none; background-color: var(--surface);
-            font-size: 1.4rem; font-weight: 400; color: var(--text-primary);
-            padding: 1.2rem 0; cursor: pointer; outline: none; overflow: hidden;
-            transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
-            display: grid; place-items: center; min-height: 65px;
-        }
-        .data-calculator-keys button:hover {
-            background-color: var(--special-func-hover);
-        }
-        .data-calculator-keys button.special-function { background-color: var(--special-func); }
-        .data-calculator-keys button.special-function:hover { background-color: var(--special-func-hover); }
-        .data-calculator-keys button.zero { grid-column: span 2; }
-        .data-calculator-keys button.clear { grid-column: span 3; }
+        @media (max-width: 480px) {
+            html, body {
+                overflow: hidden;
+                height: 100%;
+                height: 100dvh;
+            }
 
+            body {
+                padding: 0;
+                align-items: stretch;
+            }
+
+            .calculator-container {
+                max-width: 100vw;
+                width: 100vw;
+                height: 100vh;
+                height: 100dvh;
+                border-radius: 0;
+                border: none;
+                max-height: 100dvh;
+            }
+
+            .keypad.basic,
+            .keypad.scientific,
+            .keypad.programmer,
+            .keypad.data-grid {
+                height: 60vh;
+                min-height: 0;
+            }
+
+            .display {
+                min-height: 80px;
+                flex: 0 0 auto;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="calculator">
-        <div class="calculator-mode-selector">
-            <select id="mode-select">
-                <option value="advanced">Scientific</option>
-                <option value="basic">Basic</option>
-                <option value="programmer">Programmer</option>
-                <option value="data">Data Calculation</option>
-            </select>
+
+<div class="calculator-container">
+    <header>
+        <select id="modeSelect" class="mode-select" onchange="switchMode(this.value)">
+            <option value="basic">Standard</option>
+            <option value="scientific">Scientific</option>
+            <option value="programmer">Programmer</option>
+            <option value="data">Data Converter</option>
+        </select>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+            <svg viewBox="0 0 24 24" id="theme-icon">
+                <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>
+            </svg>
+        </button>
+    </header>
+
+    <div id="calculatorDisplay" class="display">
+        <div id="history" class="history"></div>
+        <div id="mainDisplay" class="main-display">0</div>
+    </div>
+
+    <!-- Programmer Base Displays -->
+    <div id="programmerBases" class="programmer-bases">
+        <div class="base-row active" id="row-HEX" onclick="setProgrammerBase('HEX')">
+            <span>HEX</span><span id="val-HEX">0</span>
         </div>
-
-        <div class="calculator-display">
-            <div id="history"></div>
-            <div id="expression">0</div>
-            <div class="programmer-display-conversions">
-                <div class="base-display"><span>HEX</span><p id="hex-display">0</p></div>
-                <div class="base-display"><span>DEC</span><p id="dec-display">0</p></div>
-                <div class="base-display"><span>OCT</span><p id="oct-display">0</p></div>
-                <div class="base-display"><span>BIN</span><p id="bin-display">0</p></div>
-            </div>
-            <div class="data-calculator-view">
-                <div class="data-row">
-                    <input type="number" id="data-input" value="1">
-                    <select id="data-input-unit">
-                        <option>Bytes</option>
-                        <option>KB</option>
-                        <option selected>MB</option>
-                        <option>GB</option>
-                        <option>TB</option>
-                        <option>PB</option>
-                        <option>mbit</option>
-                        <option>gbit</option>
-                    </select>
-                </div>
-                <div class="data-row">
-                    <input type="number" id="data-output">
-                    <select id="data-output-unit">
-                        <option>Bytes</option>
-                        <option>KB</option>
-                        <option>MB</option>
-                        <option>GB</option>
-                        <option>TB</option>
-                        <option>PB</option>
-                        <option selected>mbit</option>
-                        <option>gbit</option>
-                    </select>
-                </div>
-            </div>
+        <div class="base-row" id="row-DEC" onclick="setProgrammerBase('DEC')">
+            <span>DEC</span><span id="val-DEC">0</span>
         </div>
-
-        <div class="calculator-keys">
-            <button data-mode="advanced" class="special-function function" data-key="sin">sin</button>
-            <button data-mode="advanced" class="special-function function" data-key="cos">cos</button>
-            <button data-mode="advanced" class="special-function function" data-key="tan">tan</button>
-            <button data-mode="advanced" class="special-function function" data-key="log">log</button>
-
-            <button data-mode="programmer" class="special-function base-selector" data-base="2" data-key="BIN">BIN</button>
-            <button data-mode="programmer" class="special-function base-selector" data-base="8" data-key="OCT">OCT</button>
-            <button data-mode="programmer" class="special-function base-selector" data-base="10" data-key="DEC">DEC</button>
-            <button data-mode="programmer" class="special-function base-selector" data-base="16" data-key="HEX">HEX</button>
-
-            <button data-mode="advanced" class="special-function function" data-key="ln">ln</button>
-            <button data-mode="advanced" class="special-function function" data-key="(">(</button>
-            <button data-mode="advanced" class="special-function function" data-key=")">)</button>
-            <button data-mode="advanced" class="special-function function" data-key="^">x<sup>y</sup></button>
-
-            <button data-mode="programmer" class="special-function hex-key" data-key="A">A</button>
-            <button data-mode="programmer" class="special-function hex-key" data-key="B">B</button>
-            <button data-mode="programmer" class="special-function hex-key" data-key="C">C</button>
-            <button data-mode="programmer" class="special-function operator" data-key="%">%</button>
-            
-            <button data-mode="advanced" class="special-function function" data-key="sqrt">√</button>
-            <button data-mode="advanced" class="special-function" data-key="pi">π</button>
-            <button data-mode="advanced" class="special-function" data-key="e">e</button>
-            <button data-mode="advanced" class="special-function operator" data-key="%">%</button>
-
-            <button data-mode="programmer" class="special-function hex-key" data-key="D">D</button>
-            <button data-mode="programmer" class="special-function hex-key" data-key="E">E</button>
-            <button data-mode="programmer" class="special-function hex-key" data-key="F">F</button>
-            <button data-mode="programmer" class="special-function" data-key="(">(</button>
-
-            <button class="special-function clear" data-key="clear">C</button>
-            <button class="special-function operator backspace" data-key="backspace">⌫</button>
-            
-            <button class="num-key" data-key="7">7</button>
-            <button class="num-key" data-key="8">8</button>
-            <button class="num-key" data-key="9">9</button>
-            <button class="operator" data-key="/">÷</button>
-            
-            <button class="num-key" data-key="4">4</button>
-            <button class="num-key" data-key="5">5</button>
-            <button class="num-key" data-key="6">6</button>
-            <button class="operator" data-key="*">×</button>
-
-            <button class="num-key" data-key="1">1</button>
-            <button class="num-key" data-key="2">2</button>
-            <button class="num-key" data-key="3">3</button>
-            <button class="operator" data-key="-">-</button>
-
-            <button data-key="0" class="zero num-key">0</button>
-            <button data-key=".">.</button>
-            <button class="operator" data-key="+">+</button>
-            
-            <button class="equals" data-key="=">=</button>
+        <div class="base-row" id="row-OCT" onclick="setProgrammerBase('OCT')">
+            <span>OCT</span><span id="val-OCT">0</span>
         </div>
-        <div class="data-calculator-keys">
-            <button class="num-key" data-key="7">7</button>
-            <button class="num-key" data-key="8">8</button>
-            <button class="num-key" data-key="9">9</button>
-            <button class="num-key" data-key="4">4</button>
-            <button class="num-key" data-key="5">5</button>
-            <button class="num-key" data-key="6">6</button>
-            <button class="num-key" data-key="1">1</button>
-            <button class="num-key" data-key="2">2</button>
-            <button class="num-key" data-key="3">3</button>
-            <button class="num-key" data-key="0">0</button>
-            <button class="num-key" data-key=".">.</button>
-            <button class="special-function backspace" data-key="backspace">⌫</button>
-            <button class="special-function clear" data-key="clear">C</button>
+        <div class="base-row" id="row-BIN" onclick="setProgrammerBase('BIN')">
+            <span>BIN</span><span id="val-BIN">0</span>
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const calculator = document.querySelector('.calculator');
-            const displayExpression = document.getElementById('expression');
-            const displayHistory = document.getElementById('history');
-            const keys = document.querySelector('.calculator-keys');
-            const modeSelector = document.getElementById('mode-select');
-            const conversionDisplays = {
-                hex: document.getElementById('hex-display'),
-                dec: document.getElementById('dec-display'),
-                oct: document.getElementById('oct-display'),
-                bin: document.getElementById('bin-display'),
-            };
+    <!-- Basic Keypad -->
+    <div id="keypadBasic" class="keypad basic">
+        <button class="btn operator" onclick="clearAll()">CE</button>
+        <button class="btn operator" onclick="clearEntry()">C</button>
+        <button class="btn operator" onclick="backspace()">⌫</button>
+        <button class="btn operator" onclick="handleOp('/')">÷</button>
 
-            const dataInput = document.getElementById('data-input');
-            const dataInputUnit = document.getElementById('data-input-unit');
-            const dataOutput = document.getElementById('data-output');
-            const dataOutputUnit = document.getElementById('data-output-unit');
-            const dataKeys = document.querySelector('.data-calculator-keys');
+        <button class="btn operator" onclick="applyFunc('sqrt')">√x</button>
+        <button class="btn operator" onclick="applyFunc('sqr')">x²</button>
+        <button class="btn operator" onclick="applyFunc('recip')">1/x</button>
+        <button class="btn operator" onclick="handleOp('*')">×</button>
 
-            let currentExpression = '';
-            let isResultDisplayed = false;
-            let currentMode = 'advanced';
-            let currentBase = 10;
-            let activeDataInput = dataInput;
+        <button class="btn" onclick="appendDigit('7')">7</button>
+        <button class="btn" onclick="appendDigit('8')">8</button>
+        <button class="btn" onclick="appendDigit('9')">9</button>
+        <button class="btn operator" onclick="handleOp('-')">-</button>
 
-            const dataConversionFactors = {
-                'Bytes': 1,
-                'KB': 1024,
-                'MB': 1024 ** 2,
-                'GB': 1024 ** 3,
-                'TB': 1024 ** 4,
-                'PB': 1024 ** 5,
-                'mbit': 125000,
-                'gbit': 125000000
-            };
+        <button class="btn" onclick="appendDigit('4')">4</button>
+        <button class="btn" onclick="appendDigit('5')">5</button>
+        <button class="btn" onclick="appendDigit('6')">6</button>
+        <button class="btn operator" onclick="handleOp('+')">+</button>
 
-            const matcher = window.matchMedia('(prefers-color-scheme: dark)');
-            matcher.addEventListener('change', e => toggleDarkMode(e.matches));
-            setMode(modeSelector.value);
+        <button class="btn" onclick="appendDigit('1')">1</button>
+        <button class="btn" onclick="appendDigit('2')">2</button>
+        <button class="btn" onclick="appendDigit('3')">3</button>
+        <button class="btn operator" onclick="handleOp('%')">%</button>
 
-            keys.addEventListener('click', event => {
-                if (!event.target.matches('button')) return;
-                createRipple(event);
-                handleKeyPress(event.target.dataset.key);
-            });
+        <button class="btn" onclick="toggleSign()">+/-</button>
+        <button class="btn" onclick="appendDigit('0')">0</button>
+        <button class="btn" onclick="appendDot()">.</button>
+        <button class="btn accent" onclick="calculate()">=</button>
+    </div>
 
-            document.addEventListener('keydown', event => {
-                if (currentMode === 'data') return;
-                let key = event.key;
-                let dataKey;
+    <!-- Scientific Keypad -->
+    <div id="keypadScientific" class="keypad scientific" style="display: none;">
+        <button class="btn operator" id="degRadBtn" onclick="toggleDegRad()">DEG</button>
+        <button class="btn operator" onclick="applyFunc('sin')">sin</button>
+        <button class="btn operator" onclick="applyFunc('cos')">cos</button>
+        <button class="btn operator" onclick="applyFunc('tan')">tan</button>
+        <button class="btn operator" onclick="clearAll()">C</button>
 
-                const keyMap = {
-                    'Enter': '=', 'Backspace': 'backspace', 'Escape': 'clear',
-                    'c': 'clear', 'C': 'clear', '*': '*', 'x': '*', 'X': '*',
-                    '/': '/', '+': '+', '-': '-', '.': '.', '%': '%', '^': '^',
-                    '(': '(', ')': ')', 's': 'sin', 't': 'tan', 'l': 'log', 'p': 'pi', 'e': 'e'
-                };
+        <button class="btn operator" onclick="appendConstant('pi')">π</button>
+        <button class="btn operator" onclick="applyFunc('asin')">asin</button>
+        <button class="btn operator" onclick="applyFunc('acos')">acos</button>
+        <button class="btn operator" onclick="applyFunc('atan')">atan</button>
+        <button class="btn operator" onclick="backspace()">⌫</button>
 
-                if (keyMap[key]) {
-                    dataKey = keyMap[key];
-                } else if (currentMode === 'programmer' && /^[a-fA-F0-9]$/.test(key)) {
-                    dataKey = key.toUpperCase();
-                } else if (/^[0-9]$/.test(key)) {
-                    dataKey = key;
-                } else {
-                    return;
-                }
-                
-                const buttons = document.querySelectorAll(`button[data-key='${dataKey}']`);
-                let targetButton = null;
-                for (const btn of buttons) {
-                    if (btn.offsetParent !== null) {
-                        targetButton = btn;
-                        break;
-                    }
-                }
+        <button class="btn operator" onclick="appendConstant('e')">e</button>
+        <button class="btn operator" onclick="applyFunc('ln')">ln</button>
+        <button class="btn operator" onclick="applyFunc('log')">log</button>
+        <button class="btn operator" onclick="handleOp('^')">x^y</button>
+        <button class="btn operator" onclick="handleOp('/')">÷</button>
 
-                if (targetButton && !targetButton.classList.contains('disabled')) {
-                    event.preventDefault();
-                    targetButton.click();
-                }
-            });
+        <button class="btn operator" onclick="applyFunc('fact')">n!</button>
+        <button class="btn" onclick="appendDigit('7')">7</button>
+        <button class="btn" onclick="appendDigit('8')">8</button>
+        <button class="btn" onclick="appendDigit('9')">9</button>
+        <button class="btn operator" onclick="handleOp('*')">×</button>
 
-            modeSelector.addEventListener('change', (e) => setMode(e.target.value));
+        <button class="btn operator" onclick="applyFunc('abs')">|x|</button>
+        <button class="btn" onclick="appendDigit('4')">4</button>
+        <button class="btn" onclick="appendDigit('5')">5</button>
+        <button class="btn" onclick="appendDigit('6')">6</button>
+        <button class="btn operator" onclick="handleOp('-')">-</button>
 
-            dataInput.addEventListener('input', () => performDataConversion('input'));
-            dataInputUnit.addEventListener('change', () => performDataConversion('input'));
-            dataOutput.addEventListener('input', () => performDataConversion('output'));
-            dataOutputUnit.addEventListener('change', () => performDataConversion('input'));
+        <button class="btn operator" onclick="appendDigit('(')">(</button>
+        <button class="btn" onclick="appendDigit('1')">1</button>
+        <button class="btn" onclick="appendDigit('2')">2</button>
+        <button class="btn" onclick="appendDigit('3')">3</button>
+        <button class="btn operator" onclick="handleOp('+')">+</button>
 
-            dataInput.addEventListener('focus', () => activeDataInput = dataInput);
-            dataOutput.addEventListener('focus', () => activeDataInput = dataOutput);
+        <button class="btn operator" onclick="appendDigit(')')">)</button>
+        <button class="btn" onclick="toggleSign()">+/-</button>
+        <button class="btn" onclick="appendDigit('0')">0</button>
+        <button class="btn" onclick="appendDot()">.</button>
+        <button class="btn accent" onclick="calculate()">=</button>
+    </div>
 
-            dataKeys.addEventListener('click', event => {
-                if (!event.target.matches('button')) return;
-                createRipple(event);
-                const key = event.target.dataset.key;
-                
-                if (key === 'clear') {
-                    activeDataInput.value = '';
-                } else if (key === 'backspace') {
-                    activeDataInput.value = activeDataInput.value.slice(0, -1);
-                } else if (key === '.' && activeDataInput.value.includes('.')) {
-                    return; 
-                } else {
-                    activeDataInput.value += key;
-                }
-                activeDataInput.dispatchEvent(new Event('input', { bubbles: true }));
-            });
+    <!-- Programmer Keypad -->
+    <div id="keypadProgrammer" class="keypad programmer" style="display: none;">
+        <button class="btn operator btn-hex" onclick="appendDigit('A')">A</button>
+        <button class="btn operator btn-hex" onclick="appendDigit('B')">B</button>
+        <button class="btn operator" onclick="handleOp('AND')">AND</button>
+        <button class="btn operator" onclick="handleOp('OR')">OR</button>
+        <button class="btn operator" onclick="clearAll()">C</button>
 
-            function performDataConversion(source = 'input') {
-                if (currentMode !== 'data') return;
+        <button class="btn operator btn-hex" onclick="appendDigit('C')">C</button>
+        <button class="btn operator btn-hex" onclick="appendDigit('D')">D</button>
+        <button class="btn operator" onclick="handleOp('XOR')">XOR</button>
+        <button class="btn operator" onclick="applyFunc('NOT')">NOT</button>
+        <button class="btn operator" onclick="backspace()">⌫</button>
 
-                let value, fromUnit, toUnit, targetElement;
+        <button class="btn operator btn-hex" onclick="appendDigit('E')">E</button>
+        <button class="btn operator btn-hex" onclick="appendDigit('F')">F</button>
+        <button class="btn operator" onclick="handleOp('<<')">&lt;&lt;</button>
+        <button class="btn operator" onclick="handleOp('>>')">&gt;&gt;</button>
+        <button class="btn operator" onclick="handleOp('/')">÷</button>
 
-                if (source === 'input') {
-                    value = parseFloat(dataInput.value);
-                    fromUnit = dataInputUnit.value;
-                    toUnit = dataOutputUnit.value;
-                    targetElement = dataOutput;
-                } else {
-                    value = parseFloat(dataOutput.value);
-                    fromUnit = dataOutputUnit.value;
-                    toUnit = dataInputUnit.value;
-                    targetElement = dataInput;
-                }
+        <button class="btn btn-num" id="p-7" onclick="appendDigit('7')">7</button>
+        <button class="btn btn-num" id="p-8" onclick="appendDigit('8')">8</button>
+        <button class="btn btn-num" id="p-9" onclick="appendDigit('9')">9</button>
+        <button class="btn operator" onclick="handleOp('*')">×</button>
+        <button class="btn operator" onclick="handleOp('%')">MOD</button>
 
-                if (isNaN(value)) {
-                    targetElement.value = '';
-                    return;
-                }
+        <button class="btn btn-num" id="p-4" onclick="appendDigit('4')">4</button>
+        <button class="btn btn-num" id="p-5" onclick="appendDigit('5')">5</button>
+        <button class="btn btn-num" id="p-6" onclick="appendDigit('6')">6</button>
+        <button class="btn operator" onclick="handleOp('-')">-</button>
+        <button class="btn operator" onclick="toggleSign()">+/-</button>
 
-                const valueInBytes = value * dataConversionFactors[fromUnit];
-                const result = valueInBytes / dataConversionFactors[toUnit];
-                
-                if(result === 0 && value !== 0) {
-                     targetElement.value = result.toExponential(9);
-                } else {
-                     targetElement.value = parseFloat(result.toPrecision(15));
-                }
+        <button class="btn btn-num" id="p-1" onclick="appendDigit('1')">1</button>
+        <button class="btn btn-num" id="p-2" onclick="appendDigit('2')">2</button>
+        <button class="btn btn-num" id="p-3" onclick="appendDigit('3')">3</button>
+        <button class="btn operator" onclick="handleOp('+')">+</button>
+        <button class="btn accent" style="grid-row: span 2;" onclick="calculate()">=</button>
+
+        <button class="btn btn-num" id="p-0" style="grid-column: span 4;" onclick="appendDigit('0')">0</button>
+    </div>
+
+    <!-- Data Converter View -->
+    <div id="viewData" class="data-converter">
+        <div class="data-fields">
+            <div class="converter-group">
+                <label>From</label>
+                <select id="dataFrom" class="converter-select" onchange="convertData()">
+                    <option value="b">Bits (b)</option>
+                    <option value="B">Bytes (B)</option>
+                    <option value="Kb">Kilobits (Kb)</option>
+                    <option value="KB" selected>Kilobytes (KB)</option>
+                    <option value="Mb">Megabits (Mb)</option>
+                    <option value="MB">Megabytes (MB)</option>
+                    <option value="Gb">Gigabits (Gb)</option>
+                    <option value="GB">Gigabytes (GB)</option>
+                    <option value="Tb">Terabits (Tb)</option>
+                    <option value="TB">Terabytes (TB)</option>
+                    <option value="Pb">Petabits (Pb)</option>
+                    <option value="PB">Petabytes (PB)</option>
+                </select>
+                <div id="dataInputVal" class="data-val-display">1</div>
+            </div>
+            <div class="converter-group">
+                <label>To</label>
+                <select id="dataTo" class="converter-select" onchange="convertData()">
+                    <option value="b">Bits (b)</option>
+                    <option value="B">Bytes (B)</option>
+                    <option value="Kb">Kilobits (Kb)</option>
+                    <option value="KB">Kilobytes (KB)</option>
+                    <option value="Mb">Megabits (Mb)</option>
+                    <option value="MB" selected>Megabytes (MB)</option>
+                    <option value="Gb">Gigabits (Gb)</option>
+                    <option value="GB">Gigabytes (GB)</option>
+                    <option value="Tb">Terabits (Tb)</option>
+                    <option value="TB">Terabytes (TB)</option>
+                    <option value="Pb">Petabits (Pb)</option>
+                    <option value="PB">Petabytes (PB)</option>
+                </select>
+                <div id="dataOutputVal" class="data-val-display">0.001</div>
+            </div>
+        </div>
+
+        <div class="keypad data-grid">
+            <button class="btn operator" onclick="clearDataInput()">CE</button>
+            <button class="btn operator" onclick="clearDataInput()">C</button>
+            <button class="btn operator" onclick="backspaceData()">⌫</button>
+
+            <button class="btn" onclick="appendDataDigit('7')">7</button>
+            <button class="btn" onclick="appendDataDigit('8')">8</button>
+            <button class="btn" onclick="appendDataDigit('9')">9</button>
+
+            <button class="btn" onclick="appendDataDigit('4')">4</button>
+            <button class="btn" onclick="appendDataDigit('5')">5</button>
+            <button class="btn" onclick="appendDataDigit('6')">6</button>
+
+            <button class="btn" onclick="appendDataDigit('1')">1</button>
+            <button class="btn" onclick="appendDataDigit('2')">2</button>
+            <button class="btn" onclick="appendDataDigit('3')">3</button>
+
+            <button class="btn" style="grid-column: span 2;" onclick="appendDataDigit('0')">0</button>
+            <button class="btn" onclick="appendDataDigit('.')">.</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentMode = 'basic';
+    let currentInput = '0';
+    let historyStr = '';
+    let isDeg = true;
+    let programmerBase = 'DEC';
+    let newNum = true;
+    let dataInputStr = '1';
+
+    // Audio context for click sounds
+    let audioContext = null;
+
+    function initAudio() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function playClickSound() {
+        initAudio();
+
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.05);
+    }
+
+    const mainDisplay = document.getElementById('mainDisplay');
+    const historyDisplay = document.getElementById('history');
+
+    function updateDisplay() {
+        mainDisplay.innerText = currentInput;
+        historyDisplay.innerText = historyStr;
+        if (currentMode === 'programmer') {
+            updateProgrammerBases();
+        }
+    }
+
+    function switchMode(mode) {
+        playClickSound();
+        currentMode = mode;
+        clearAll();
+
+        document.getElementById('calculatorDisplay').style.display = mode === 'data' ? 'none' : 'flex';
+        document.getElementById('programmerBases').style.display = mode === 'programmer' ? 'flex' : 'none';
+        document.getElementById('keypadBasic').style.display = mode === 'basic' ? 'grid' : 'none';
+        document.getElementById('keypadScientific').style.display = mode === 'scientific' ? 'grid' : 'none';
+        document.getElementById('keypadProgrammer').style.display = mode === 'programmer' ? 'grid' : 'none';
+        document.getElementById('viewData').style.display = mode === 'data' ? 'flex' : 'none';
+
+        if (mode === 'programmer') {
+            setProgrammerBase('DEC');
+        } else if (mode === 'data') {
+            clearDataInput();
+        }
+    }
+
+    function toggleTheme() {
+        playClickSound();
+        const body = document.body;
+        if (body.classList.contains('dark-mode')) {
+            body.classList.remove('dark-mode');
+            body.classList.add('light-mode');
+        } else {
+            body.classList.remove('light-mode');
+            body.classList.add('dark-mode');
+        }
+        updateThemeIcon();
+    }
+
+    function updateThemeIcon() {
+        const isDark = document.body.classList.contains('dark-mode');
+        const svg = document.getElementById('theme-icon');
+        if (isDark) {
+            // Moon icon for switching to light mode
+            svg.innerHTML = '<path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>';
+        } else {
+            // Sun icon for switching to dark mode
+            svg.innerHTML = '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>';
+        }
+    }
+
+    function appendDigit(digit) {
+        playClickSound();
+        if (currentInput === 'Error') clearAll();
+        if (newNum) {
+            currentInput = digit === '.' ? '0.' : digit;
+            newNum = false;
+        } else {
+            if (currentInput === '0' && digit !== '.') {
+                currentInput = digit;
+            } else {
+                currentInput += digit;
+            }
+        }
+        updateDisplay();
+    }
+
+    function appendDot() {
+        playClickSound();
+        if (currentInput === 'Error') clearAll();
+        if (newNum) {
+            currentInput = '0.';
+            newNum = false;
+        } else if (!currentInput.includes('.')) {
+            currentInput += '.';
+        }
+        updateDisplay();
+    }
+
+    function appendConstant(c) {
+        playClickSound();
+        if (c === 'pi') currentInput = Math.PI.toString();
+        if (c === 'e') currentInput = Math.E.toString();
+        newNum = true;
+        updateDisplay();
+    }
+
+    function clearAll() {
+        playClickSound();
+        currentInput = '0';
+        historyStr = '';
+        newNum = true;
+        updateDisplay();
+    }
+
+    function clearEntry() {
+        playClickSound();
+        currentInput = '0';
+        newNum = true;
+        updateDisplay();
+    }
+
+    function backspace() {
+        playClickSound();
+        if (newNum || currentInput === 'Error') {
+            if (currentInput === 'Error') clearAll();
+            return;
+        }
+        if (currentInput.length > 1) {
+            currentInput = currentInput.slice(0, -1);
+        } else {
+            currentInput = '0';
+            newNum = true;
+        }
+        updateDisplay();
+    }
+
+    function toggleSign() {
+        playClickSound();
+        if (currentInput === 'Error') return;
+        if (currentMode === 'programmer') {
+            let val = parseCurrentInt();
+            currentInput = ((-val) >>> 0).toString(getRadix()).toUpperCase();
+        } else {
+            currentInput = (parseFloat(currentInput) * -1).toString();
+        }
+        updateDisplay();
+    }
+
+    function handleOp(op) {
+        playClickSound();
+        if (currentInput === 'Error') return;
+
+        // Replace operator if user changes their mind, unless we just completed an equation
+        if (newNum && historyStr !== '') {
+            if (historyStr.endsWith('=') || historyStr.endsWith('= ')) {
+                historyStr = `${currentInput} ${op} `;
+            } else {
+                historyStr = historyStr.replace(/[^\s]+\s*$/, '') + `${op} `;
+            }
+        } else {
+            historyStr += `${currentInput} ${op} `;
+        }
+
+        newNum = true;
+        updateDisplay();
+    }
+
+    function calculate() {
+        playClickSound();
+        if (currentInput === 'Error') return;
+        let fullExpr = historyStr + currentInput;
+
+        // Prevent calculating an empty expression or recalculating unnecessarily
+        if (!fullExpr || historyStr.endsWith('=')) return;
+
+        try {
+            let res;
+            if (currentMode === 'programmer') {
+                res = evalProgrammer(fullExpr);
+            } else {
+                let sanitized = fullExpr
+                    .replace(/×/g, '*')
+                    .replace(/÷/g, '/')
+                    .replace(/\^/g, '**');
+                res = eval(sanitized);
             }
 
-            function setMode(mode) {
-                currentMode = mode;
-                calculator.className = 'calculator';
-                calculator.classList.add(`${mode}-mode`);
-                
-                if (mode === 'data') {
-                    performDataConversion();
-                } else {
-                    resetCalculator();
-                    updateButtonStates();
-                }
-            }
+            if (!isFinite(res) || isNaN(res)) throw new Error("Math Error");
 
-            function handleKeyPress(key) {
-                if (currentMode === 'programmer') {
-                    handleProgrammerKeyPress(key);
-                } else {
-                    handleStandardKeyPress(key);
-                }
+            historyStr = fullExpr + ' =';
+
+            if (currentMode === 'programmer') {
+                currentInput = (Number(res) >>> 0).toString(getRadix()).toUpperCase();
+            } else {
+                // Formatting to handle standard JS floating-point precision issues
+                currentInput = String(parseFloat(Number(res).toPrecision(15)));
+            }
+            newNum = true;
+        } catch (e) {
+            historyStr = '';
+            currentInput = 'Error';
+            newNum = true;
+        }
+        updateDisplay();
+    }
+
+    function applyFunc(func) {
+        playClickSound();
+        if (currentInput === 'Error') return;
+        let val = parseFloat(currentInput);
+        let res = 0;
+
+        switch (func) {
+            case 'sqrt': res = Math.sqrt(val); break;
+            case 'sqr': res = val * val; break;
+            case 'recip': res = 1 / val; break;
+            case 'sin': res = Math.sin(isDeg ? val * Math.PI / 180 : val); break;
+            case 'cos': res = Math.cos(isDeg ? val * Math.PI / 180 : val); break;
+            case 'tan': res = Math.tan(isDeg ? val * Math.PI / 180 : val); break;
+            case 'asin': res = Math.asin(val); if (isDeg) res = res * 180 / Math.PI; break;
+            case 'acos': res = Math.acos(val); if (isDeg) res = res * 180 / Math.PI; break;
+            case 'atan': res = Math.atan(val); if (isDeg) res = res * 180 / Math.PI; break;
+            case 'log': res = Math.log10(val); break;
+            case 'ln': res = Math.log(val); break;
+            case 'abs': res = Math.abs(val); break;
+            case 'fact': res = factorial(val); break;
+            case 'NOT':
+                let intVal = parseCurrentInt();
+                res = ~intVal;
+                currentInput = (res >>> 0).toString(getRadix()).toUpperCase();
+                newNum = true;
                 updateDisplay();
-            }
+                return;
+        }
 
-            function handleStandardKeyPress(key) {
-                if (!isNaN(key) || key === '.') handleNumber(key);
-                else if (['+', '-', '*', '/', '^', '%'].includes(key)) handleOperator(key);
-                else if (['sin', 'cos', 'tan', 'log', 'ln', 'sqrt'].includes(key)) handleFunction(key);
-                else if (['pi', 'e'].includes(key)) handleConstant(key);
-                else handleSpecialKey(key);
-            }
+        if (!isFinite(res) || isNaN(res)) {
+            currentInput = 'Error';
+        } else {
+            currentInput = String(parseFloat(Number(res).toPrecision(15)));
+        }
 
-            function handleProgrammerKeyPress(key) {
-                const baseSelector = document.querySelector(`.base-selector[data-key="${key}"]`);
-                if (baseSelector) {
-                    changeBase(parseInt(baseSelector.dataset.base));
-                    return;
-                }
+        newNum = true;
+        updateDisplay();
+    }
 
-                if (key === '=' || key === 'Enter') calculate();
-                else if (key === 'clear') resetCalculator();
-                else if (key === 'backspace') {
-                    if (currentExpression.length > 0 && !isResultDisplayed) {
-                       currentExpression = currentExpression.slice(0, -1);
-                    }
-                } else if (['+', '-', '*', '/', '%', '(', ')'].includes(key)) {
-                    isResultDisplayed = false;
-                    currentExpression += key;
-                } else {
-                     if (isResultDisplayed) {
-                         currentExpression = '';
-                         isResultDisplayed = false;
-                     }
-                    currentExpression += key;
-                }
-            }
+    function factorial(n) {
+        if (n < 0) return NaN;
+        if (n === 0 || n === 1) return 1;
+        let r = 1;
+        for (let i = 2; i <= n; i++) r *= i;
+        return r;
+    }
 
-            function handleNumber(key) {
-                if (isResultDisplayed) {
-                    currentExpression = (key === '.') ? '0.' : key;
-                    isResultDisplayed = false;
-                } else {
-                    currentExpression = (currentExpression === '0' && key !== '.') ? key : currentExpression + key;
-                }
-            }
-            function handleOperator(key) {
-                isResultDisplayed = false;
-                const lastChar = currentExpression.slice(-1);
-                if (['+', '-', '*', '/', '^', '%'].includes(lastChar)) {
-                    currentExpression = currentExpression.slice(0, -1) + key;
-                } else if (currentExpression !== '') {
-                    currentExpression += key;
-                }
-            }
-            function handleFunction(key) {
-                if (isResultDisplayed) {
-                    currentExpression = '';
-                    isResultDisplayed = false;
-                }
-                currentExpression += key + '(';
-            }
-            function handleConstant(key) {
-                 if (isResultDisplayed) {
-                     currentExpression = '';
-                     isResultDisplayed = false;
-                 }
-                const lastChar = currentExpression.slice(-1);
-                if (currentExpression === '' || ['+', '-', '*', '/', '(', '^', '%'].includes(lastChar)) {
-                    currentExpression += key;
-                }
-            }
-            function handleSpecialKey(key) {
-                switch (key) {
-                    case '=': calculate(); break;
-                    case 'clear': resetCalculator(); break;
-                    case 'backspace':
-                        if (currentExpression.length > 0 && !isResultDisplayed) {
-                            currentExpression = currentExpression.slice(0, -1);
-                        }
-                        break;
-                    case '(': case ')':
-                        isResultDisplayed = false;
-                        currentExpression += key;
-                        break;
-                }
-            }
+    function toggleDegRad() {
+        playClickSound();
+        isDeg = !isDeg;
+        document.getElementById('degRadBtn').innerText = isDeg ? 'DEG' : 'RAD';
+    }
 
-            function calculate() {
-                if (currentExpression === '' || isResultDisplayed) return;
-                
-                try {
-                    let result;
-                    if (currentMode === 'programmer') {
-                        result = calculateProgrammer();
-                    } else {
-                        result = calculateStandard();
-                    }
-                    displayHistory.textContent = currentExpression + ' =';
-                    currentExpression = result.toString();
-                    isResultDisplayed = true;
-                } catch (error) {
-                    displayHistory.textContent = currentExpression + ' =';
-                    currentExpression = 'Error';
-                    isResultDisplayed = true;
-                }
+    /* Programmer Mode Functions */
+    function getRadix() {
+        switch (programmerBase) {
+            case 'HEX': return 16;
+            case 'DEC': return 10;
+            case 'OCT': return 8;
+            case 'BIN': return 2;
+        }
+    }
+
+    function parseCurrentInt() {
+        return parseInt(currentInput, getRadix()) || 0;
+    }
+
+    function setProgrammerBase(base) {
+        playClickSound();
+        let val = parseCurrentInt();
+        programmerBase = base;
+
+        document.querySelectorAll('.base-row').forEach(r => r.classList.remove('active'));
+        document.getElementById(`row-${base}`).classList.add('active');
+
+        currentInput = (val >>> 0).toString(getRadix()).toUpperCase();
+        updateProgrammerKeypad();
+        updateDisplay();
+    }
+
+    function updateProgrammerBases() {
+        let val = parseCurrentInt();
+        document.getElementById('val-HEX').innerText = (val >>> 0).toString(16).toUpperCase();
+        document.getElementById('val-DEC').innerText = (val >>> 0).toString(10);
+        document.getElementById('val-OCT').innerText = (val >>> 0).toString(8);
+        document.getElementById('val-BIN').innerText = (val >>> 0).toString(2);
+    }
+
+    function updateProgrammerKeypad() {
+        const hexBtns = document.querySelectorAll('.btn-hex');
+        const numBtns = {
+            '2': document.getElementById('p-2'),
+            '3': document.getElementById('p-3'),
+            '4': document.getElementById('p-4'),
+            '5': document.getElementById('p-5'),
+            '6': document.getElementById('p-6'),
+            '7': document.getElementById('p-7'),
+            '8': document.getElementById('p-8'),
+            '9': document.getElementById('p-9')
+        };
+
+        const radix = getRadix();
+        hexBtns.forEach(btn => btn.disabled = radix < 16);
+
+        for (let digit in numBtns) {
+            if (numBtns[digit]) {
+                numBtns[digit].disabled = parseInt(digit) >= radix;
             }
+        }
+    }
 
-            function calculateStandard() {
-                let expr = currentExpression;
-                const openParen = (expr.match(/\(/g) || []).length;
-                const closeParen = (expr.match(/\)/g) || []).length;
-                if (openParen > closeParen) {
-                    expr += ')'.repeat(openParen - closeParen);
-                }
+    function evalProgrammer(expr) {
+        let tokens = expr.trim().split(/\s+/);
+        let radix = getRadix();
+        let acc = parseInt(tokens[0], radix);
 
-                let evalExpression = expr
-                    .replace(/×/g, '*').replace(/÷/g, '/')
-                    .replace(/π/g, 'Math.PI').replace(/e/g, 'Math.E')
-                    .replace(/\^/g, '**')
-                    .replace(/sqrt\(/g, 'Math.sqrt(')
-                    .replace(/log\(/g, 'Math.log10(').replace(/ln\(/g, 'Math.log(')
-                    .replace(/sin\(/g, 'Math.sin(Math.PI/180 * ')
-                    .replace(/cos\(/g, 'Math.cos(Math.PI/180 * ')
-                    .replace(/tan\(/g, 'Math.tan(Math.PI/180 * ');
-                
-                const result = parseFloat(eval(evalExpression).toFixed(10));
-                if (isNaN(result) || !isFinite(result)) throw new Error("Invalid calculation");
-                return result;
+        for (let i = 1; i < tokens.length; i += 2) {
+            let op = tokens[i];
+            let nextVal = parseInt(tokens[i + 1], radix);
+
+            switch (op) {
+                case '+': acc += nextVal; break;
+                case '-': acc -= nextVal; break;
+                case '*': acc *= nextVal; break;
+                case '/': acc = Math.floor(acc / nextVal); break;
+                case '%': acc %= nextVal; break;
+                case 'AND': acc &= nextVal; break;
+                case 'OR': acc |= nextVal; break;
+                case 'XOR': acc ^= nextVal; break;
+                case '<<': acc <<= nextVal; break;
+                case '>>': acc >>= nextVal; break;
             }
+        }
+        return acc >>> 0;
+    }
 
-            function calculateProgrammer() {
-                const tokens = currentExpression.match(new RegExp(`[A-F0-9]+|[+\\-*\\/%()]`, 'g')) || [];
-                const decimalTokens = tokens.map(token => {
-                    if (['+', '-', '*', '/', '%', '(', ')'].includes(token)) return token;
-                    return parseInt(token, currentBase);
-                });
-                const resultDecimal = eval(decimalTokens.join(''));
-                return Math.floor(resultDecimal).toString(currentBase).toUpperCase();
-            }
+    /* Data Converter Mode Functions */
+    const dataRates = {
+        b: 1,
+        B: 8,
+        Kb: 1000,
+        KB: 8000,
+        Mb: 1000000,
+        MB: 8000000,
+        Gb: 1000000000,
+        GB: 8000000000,
+        Tb: 1000000000000,
+        TB: 8000000000000,
+        Pb: 1000000000000000,
+        PB: 8000000000000000
+    };
 
-            function changeBase(newBase) {
-                if (currentBase === newBase) return;
-                
-                try {
-                    const lastNumber = currentExpression.match(/[A-F0-9]+$/);
-                    if (lastNumber) {
-                        const decimalValue = parseInt(lastNumber[0], currentBase);
-                        if (!isNaN(decimalValue)) {
-                            currentExpression = currentExpression.substring(0, currentExpression.length - lastNumber[0].length) 
-                                              + decimalValue.toString(newBase).toUpperCase();
-                        }
-                    }
-                } catch (e) { /* Ignore conversion errors */ }
+    function appendDataDigit(d) {
+        playClickSound();
+        if (dataInputStr === '0' && d !== '.') {
+            dataInputStr = d;
+        } else if (d === '.' && dataInputStr.includes('.')) {
+            return;
+        } else {
+            dataInputStr += d;
+        }
+        convertData();
+    }
 
-                currentBase = newBase;
-                updateButtonStates();
-                updateDisplay();
-            }
+    function backspaceData() {
+        playClickSound();
+        if (dataInputStr.length > 1) {
+            dataInputStr = dataInputStr.slice(0, -1);
+        } else {
+            dataInputStr = '0';
+        }
+        convertData();
+    }
 
-            function updateDisplay() {
-                displayExpression.textContent = currentExpression === '' ? '0' : currentExpression;
-                displayExpression.scrollLeft = displayExpression.scrollWidth;
+    function clearDataInput() {
+        playClickSound();
+        dataInputStr = '0';
+        convertData();
+    }
+
+    function convertData() {
+        let val = parseFloat(dataInputStr) || 0;
+        let from = document.getElementById('dataFrom').value;
+        let to = document.getElementById('dataTo').value;
+
+        let bits = val * dataRates[from];
+        let result = bits / dataRates[to];
+
+        document.getElementById('dataInputVal').innerText = dataInputStr;
+        document.getElementById('dataOutputVal').innerText = result.toLocaleString(undefined, { maximumFractionDigits: 6 });
+    }
+
+    /* Physical Keyboard Listener */
+    document.addEventListener('keydown', (e) => {
+        const key = e.key;
+
+        if (key >= '0' && key <= '9') {
+            if (currentMode === 'data') appendDataDigit(key);
+            else {
                 if (currentMode === 'programmer') {
-                    const lastNumber = (currentExpression.match(/[A-F0-9]+$/) || ['0'])[0];
-                    const decimalValue = parseInt(lastNumber, currentBase);
-                    updateConversionDisplays(isNaN(decimalValue) ? 0 : decimalValue);
-                }
-            }
-            
-            function resetCalculator() {
-                currentExpression = '';
-                displayHistory.textContent = '';
-                isResultDisplayed = false;
-                if (currentMode === 'programmer') {
-                    currentBase = 10;
-                    updateButtonStates();
-                }
-                updateDisplay();
-            }
-
-            function updateButtonStates() {
-                if (currentMode !== 'programmer') return;
-
-                const validDigits = '0123456789ABCDEF'.slice(0, currentBase);
-                document.querySelectorAll('.num-key, .hex-key').forEach(btn => {
-                    const key = btn.dataset.key;
-                    if (validDigits.includes(key)) {
-                        btn.classList.remove('disabled');
-                    } else {
-                        btn.classList.add('disabled');
-                    }
-                });
-
-                document.querySelectorAll('.base-selector').forEach(btn => {
-                    btn.classList.remove('active-base');
-                    if (parseInt(btn.dataset.base) === currentBase) {
-                        btn.classList.add('active-base');
-                    }
-                });
-            }
-
-            function updateConversionDisplays(decimalValue) {
-                conversionDisplays.hex.textContent = decimalValue.toString(16).toUpperCase();
-                conversionDisplays.dec.textContent = decimalValue.toString(10);
-                conversionDisplays.oct.textContent = decimalValue.toString(8);
-                conversionDisplays.bin.textContent = decimalValue.toString(2);
-            }
-
-            function toggleDarkMode(isDark) {
-                document.documentElement.classList.toggle('dark-mode', isDark);
-            }
-            
-            function createRipple(event) {
-                const button = event.target;
-                const circle = document.createElement("span");
-                const diameter = Math.max(button.clientWidth, button.clientHeight);
-                const radius = diameter / 2;
-                circle.style.width = circle.style.height = `${diameter}px`;
-
-                if (event.detail > 0) {
-                    const rect = button.getBoundingClientRect();
-                    circle.style.left = `${event.clientX - rect.left - radius}px`;
-                    circle.style.top = `${event.clientY - rect.top - radius}px`;
+                    if (parseInt(key) < getRadix()) appendDigit(key);
                 } else {
-                    circle.style.left = `${(button.offsetWidth / 2) - radius}px`;
-                    circle.style.top = `${(button.offsetHeight / 2) - radius}px`;
+                    appendDigit(key);
                 }
-                
-                circle.classList.add("ripple");
-                circle.addEventListener('animationend', () => circle.remove());
-                button.appendChild(circle);
             }
-        });
-    </script>
+        } else if (key === '.') {
+            if (currentMode === 'data') appendDataDigit('.');
+            else appendDot();
+        } else if (key === '+' || key === '-' || key === '*' || key === '/') {
+            if (currentMode !== 'data') handleOp(key);
+        } else if (key === 'Enter' || key === '=') {
+            e.preventDefault();
+            if (currentMode !== 'data') calculate();
+        } else if (key === 'Backspace') {
+            if (currentMode === 'data') backspaceData();
+            else backspace();
+        } else if (key === 'Escape' || key.toLowerCase() === 'c') {
+            if (currentMode === 'data') clearDataInput();
+            else clearAll();
+        } else if (key === '%') {
+            if (currentMode === 'basic' || currentMode === 'programmer') handleOp('%');
+        } else if (key === '(' || key === ')') {
+            if (currentMode === 'scientific') appendDigit(key);
+        } else if (currentMode === 'programmer') {
+            const hexKey = key.toUpperCase();
+            if (['A', 'B', 'C', 'D', 'E', 'F'].includes(hexKey) && getRadix() === 16) {
+                appendDigit(hexKey);
+            }
+        }
+    });
+
+    // Initialize theme icon
+    updateThemeIcon();
+</script>
 </body>
 </html>
-
-

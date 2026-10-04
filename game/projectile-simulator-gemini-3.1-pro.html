@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projectile Physics Simulator</title>
+    <style>
+        :root {
+            --bg-color: #f5f5f6;
+            --surface-color: #ffffff;
+            --text-primary: rgba(0, 0, 0, 0.87);
+            --text-secondary: rgba(0, 0, 0, 0.60);
+            --divider-color: rgba(0, 0, 0, 0.12);
+            --primary-color: #6200ee;
+            --primary-hover: #7b1fa2;
+            --secondary-color: #03dac6;
+            --error-color: #b00020;
+            --canvas-bg: #eeeeee;
+            --grid-color: #cccccc;
+            --axis-color: #9e9e9e;
+            --vector-color: #ff5722;
+            --trail-color: #1976d2;
+            --font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --shadow-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --shadow-2: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+            --shadow-3: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+            --border-radius: 8px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --surface-color: #1e1e1e;
+                --text-primary: rgba(255, 255, 255, 0.87);
+                --text-secondary: rgba(255, 255, 255, 0.60);
+                --divider-color: rgba(255, 255, 255, 0.12);
+                --primary-color: #bb86fc;
+                --primary-hover: #9c27b0;
+                --secondary-color: #03dac6;
+                --error-color: #cf6679;
+                --canvas-bg: #2c2c2c;
+                --grid-color: #424242;
+                --axis-color: #757575;
+                --vector-color: #ff8a65;
+                --trail-color: #64b5f6;
+            }
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .app-header {
+            background-color: var(--surface-color);
+            padding: 16px 24px;
+            box-shadow: var(--shadow-1);
+            z-index: 10;
+        }
+        .app-header h1 { font-size: 20px; font-weight: 500; }
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            flex-direction: row;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content { flex-direction: column; }
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background-color: var(--canvas-bg);
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+        .zoom-controls {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .fab {
+            background-color: var(--surface-color);
+            color: var(--text-primary);
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            box-shadow: var(--shadow-2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .fab:hover { background-color: var(--divider-color); box-shadow: var(--shadow-3); }
+        .fab:active { box-shadow: var(--shadow-1); }
+        .fab svg { width: 24px; height: 24px; fill: currentColor; }
+
+        .sidebar {
+            width: 350px;
+            background-color: var(--surface-color);
+            box-shadow: var(--shadow-2);
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; max-height: 50vh; }
+        }
+
+        .panel-section { padding: 24px; border-bottom: 1px solid var(--divider-color); }
+        .panel-title { font-size: 14px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 16px; letter-spacing: 1px; }
+        
+        .control-group { margin-bottom: 20px; }
+        .control-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .control-label { font-size: 14px; font-weight: 500; }
+        
+        input[type="number"] {
+            width: 70px;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            border: 1px solid var(--divider-color);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 14px;
+            text-align: right;
+            outline: none;
+            font-family: inherit;
+        }
+        input[type="number"]:focus { border-color: var(--primary-color); border-width: 2px; padding: 3px 7px; }
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; background: var(--divider-color); border-radius: 2px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
+            background: var(--primary-color); margin-top: -6px; cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        input[type="range"]:focus { outline: none; }
+        
+        .btn-container { display: flex; gap: 12px; margin-top: 8px; }
+        .btn {
+            flex: 1; padding: 10px 16px; border: none; border-radius: 4px;
+            font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;
+            cursor: pointer; transition: background-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+        .btn-primary { background-color: var(--primary-color); color: #fff; box-shadow: var(--shadow-1); }
+        .btn-primary:hover { background-color: var(--primary-hover); box-shadow: var(--shadow-2); }
+        .btn-text { background-color: transparent; color: var(--text-primary); border: 1px solid var(--divider-color); }
+        .btn-text:hover { background-color: var(--divider-color); }
+
+        .history-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+        .history-item {
+            background-color: var(--bg-color); border-radius: var(--border-radius);
+            padding: 12px; border-left: 4px solid var(--primary-color);
+            font-size: 13px; line-height: 1.5;
+        }
+        .history-item.active { border-left-color: var(--vector-color); }
+        .history-stat { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .history-stat:last-child { margin-bottom: 0; }
+        .history-label { color: var(--text-secondary); }
+        .history-value { font-weight: 600; font-family: monospace; font-size: 14px; }
+        .empty-state { color: var(--text-secondary); font-size: 14px; font-style: italic; text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <h1>Projectile Physics Simulator</h1>
+    </header>
+
+    <main class="main-content">
+        <section class="canvas-container" id="canvasContainer">
+            <canvas id="simCanvas"></canvas>
+            <div class="zoom-controls">
+                <button class="fab" id="btnZoomIn" title="Zoom In" aria-label="Zoom In">
+                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                </button>
+                <button class="fab" id="btnZoomOut" title="Zoom Out" aria-label="Zoom Out">
+                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
+                </button>
+            </div>
+        </section>
+
+        <aside class="sidebar">
+            <div class="panel-section">
+                <h2 class="panel-title">Parameters</h2>
+                
+                <div class="control-group">
+                    <div class="control-header">
+                        <label class="control-label">Initial Height (y₀)</label>
+                        <input type="number" id="num-y0" value="10" step="1">
+                    </div>
+                    <input type="range" id="slider-y0" min="0" max="100" step="1" value="10">
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-header">
+                        <label class="control-label">Velocity X (vₓ)</label>
+                        <input type="number" id="num-vx" value="15" step="1">
+                    </div>
+                    <input type="range" id="slider-vx" min="-50" max="50" step="1" value="15">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <label class="control-label">Velocity Y (vᵧ)</label>
+                        <input type="number" id="num-vy" value="20" step="1">
+                    </div>
+                    <input type="range" id="slider-vy" min="-50" max="50" step="1" value="20">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <label class="control-label">Gravity (g)</label>
+                        <input type="number" id="num-g" value="9.8" step="0.1" min="1" max="30">
+                    </div>
+                    <input type="range" id="slider-g" min="1" max="30" step="0.1" value="9.8">
+                </div>
+
+                <div class="btn-container">
+                    <button class="btn btn-primary" id="btnStart">Start</button>
+                    <button class="btn btn-text" id="btnClear">Clear</button>
+                </div>
+            </div>
+
+            <div class="panel-section" style="flex: 1; overflow-y: auto;">
+                <h2 class="panel-title">History</h2>
+                <div id="emptyHistory" class="empty-state">No past trajectories.</div>
+                <ul class="history-list" id="historyList">
+                    <!-- History items will be appended here -->
+                </ul>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasContainer = document.getElementById('canvasContainer');
+        
+        const in_y0 = { slider: document.getElementById('slider-y0'), num: document.getElementById('num-y0') };
+        const in_vx = { slider: document.getElementById('slider-vx'), num: document.getElementById('num-vx') };
+        const in_vy = { slider: document.getElementById('slider-vy'), num: document.getElementById('num-vy') };
+        const in_g  = { slider: document.getElementById('slider-g'), num: document.getElementById('num-g') };
+        
+        const btnStart = document.getElementById('btnStart');
+        const btnClear = document.getElementById('btnClear');
+        const btnZoomIn = document.getElementById('btnZoomIn');
+        const btnZoomOut = document.getElementById('btnZoomOut');
+        const historyList = document.getElementById('historyList');
+        const emptyHistory = document.getElementById('emptyHistory');
+
+        let scale = 10;
+        let originX = 150;
+        let originY = 0;
+        
+        let pastProjectiles = [];
+        let currentProjectile = null;
+        let animationId = null;
+        let lastTime = 0;
+
+        const getParams = () => ({
+            y0: parseFloat(in_y0.num.value) || 0,
+            vx: parseFloat(in_vx.num.value) || 0,
+            vy: parseFloat(in_vy.num.value) || 0,
+            g: parseFloat(in_g.num.value) || 9.8
+        });
+
+        const syncInputs = (inputObj) => {
+            inputObj.slider.addEventListener('input', (e) => {
+                inputObj.num.value = e.target.value;
+                if (!currentProjectile) render();
+            });
+            inputObj.num.addEventListener('change', (e) => {
+                inputObj.slider.value = e.target.value;
+                if (!currentProjectile) render();
+            });
+        };
+        
+        syncInputs(in_y0); syncInputs(in_vx); syncInputs(in_vy); syncInputs(in_g);
+
+        function resizeCanvas() {
+            const rect = canvasContainer.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            ctx.scale(dpr, dpr);
+            
+            originY = rect.height - 100;
+            
+            render();
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+
+        btnZoomIn.addEventListener('click', () => { scale *= 1.2; render(); });
+        btnZoomOut.addEventListener('click', () => { scale /= 1.2; if(scale < 1) scale = 1; render(); });
+
+        const toScreen = (x, y) => {
+            return {
+                cx: originX + (x * scale),
+                cy: originY - (y * scale)
+            };
+        };
+
+        function drawGrid() {
+            const width = canvas.width / (window.devicePixelRatio || 1);
+            const height = canvas.height / (window.devicePixelRatio || 1);
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            const styles = getComputedStyle(document.body);
+            ctx.strokeStyle = styles.getPropertyValue('--grid-color').trim();
+            ctx.lineWidth = 1;
+
+            let step = 10;
+            if (scale > 20) step = 1;
+            else if (scale > 10) step = 5;
+            
+            ctx.beginPath();
+            
+            for(let x = 0; x * scale <= width - originX; x += step) {
+                let px = originX + (x * scale);
+                ctx.moveTo(px, 0); ctx.lineTo(px, height);
+            }
+            for(let x = -step; originX + (x * scale) >= 0; x -= step) {
+                let px = originX + (x * scale);
+                ctx.moveTo(px, 0); ctx.lineTo(px, height);
+            }
+            
+            for(let y = 0; y * scale <= originY; y += step) {
+                let py = originY - (y * scale);
+                ctx.moveTo(0, py); ctx.lineTo(width, py);
+            }
+            for(let y = -step; originY - (y * scale) <= height; y -= step) {
+                let py = originY - (y * scale);
+                ctx.moveTo(0, py); ctx.lineTo(width, py);
+            }
+            ctx.stroke();
+
+            ctx.strokeStyle = styles.getPropertyValue('--axis-color').trim();
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, originY); ctx.lineTo(width, originY); // X Axis
+            ctx.moveTo(originX, 0); ctx.lineTo(originX, height); // Y Axis
+            ctx.stroke();
+            
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.font = "12px var(--font-family)";
+            ctx.fillText("0,0", originX - 24, originY + 16);
+        }
+
+        function drawVector() {
+            const p = getParams();
+            const start = toScreen(0, p.y0);
+            
+            const visualMultiplier = 0.5;
+            const endX = 0 + (p.vx * visualMultiplier);
+            const endY = p.y0 + (p.vy * visualMultiplier);
+            const end = toScreen(endX, endY);
+            
+            const styles = getComputedStyle(document.body);
+            ctx.strokeStyle = styles.getPropertyValue('--vector-color').trim();
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.lineWidth = 3;
+            
+            ctx.beginPath();
+            ctx.moveTo(start.cx, start.cy);
+            ctx.lineTo(end.cx, end.cy);
+            ctx.stroke();
+            
+            const angle = Math.atan2(end.cy - start.cy, end.cx - start.cx);
+            const headLen = 10;
+            ctx.beginPath();
+            ctx.moveTo(end.cx, end.cy);
+            ctx.lineTo(end.cx - headLen * Math.cos(angle - Math.PI / 6), end.cy - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(end.cx - headLen * Math.cos(angle + Math.PI / 6), end.cy - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(start.cx, start.cy, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawTrails() {
+            const styles = getComputedStyle(document.body);
+            const pastTrailColor = styles.getPropertyValue('--axis-color').trim();
+            const activeTrailColor = styles.getPropertyValue('--trail-color').trim();
+
+            pastProjectiles.forEach(proj => {
+                drawPath(proj.trail, pastTrailColor, 2, true);
+            });
+
+            if (currentProjectile) {
+                drawPath(currentProjectile.trail, activeTrailColor, 3, false);
+                
+                const lastPoint = currentProjectile.trail[currentProjectile.trail.length - 1];
+                const sc = toScreen(lastPoint.x, lastPoint.y);
+                ctx.beginPath();
+                ctx.arc(sc.cx, sc.cy, 6, 0, Math.PI * 2);
+                ctx.fillStyle = activeTrailColor;
+                ctx.fill();
+            }
+        }
+
+        function drawPath(trail, color, width, drawLanding) {
+            if (trail.length === 0) return;
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.setLineDash([5, 5]);
+            
+            ctx.beginPath();
+            const start = toScreen(trail[0].x, trail[0].y);
+            ctx.moveTo(start.cx, start.cy);
+            
+            for (let i = 1; i < trail.length; i++) {
+                const pt = toScreen(trail[i].x, trail[i].y);
+                ctx.lineTo(pt.cx, pt.cy);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            if (drawLanding) {
+                const last = trail[trail.length - 1];
+                if (last.y <= 0) {
+                    const sc = toScreen(last.x, last.y);
+                    ctx.beginPath();
+                    const s = 6;
+                    ctx.moveTo(sc.cx - s, sc.cy - s); ctx.lineTo(sc.cx + s, sc.cy + s);
+                    ctx.moveTo(sc.cx + s, sc.cy - s); ctx.lineTo(sc.cx - s, sc.cy + s);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function render() {
+            drawGrid();
+            drawTrails();
+            if (!currentProjectile) {
+                drawVector();
+            }
+        }
+
+        function addToHistory(projParams, finalT, finalX, maxH) {
+            emptyHistory.style.display = 'none';
+            
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            
+            li.innerHTML = `
+                <div style="margin-bottom: 8px; font-weight: 500; font-size: 14px;">Trajectory #${pastProjectiles.length}</div>
+                <div class="history-stat">
+                    <span class="history-label">Init (y₀, vₓ, vᵧ)</span>
+                    <span class="history-value">${projParams.y0}m, ${projParams.vx}m/s, ${projParams.vy}m/s</span>
+                </div>
+                <div class="history-stat">
+                    <span class="history-label">Distance (x)</span>
+                    <span class="history-value" style="color: var(--primary-color)">${finalX.toFixed(2)} m</span>
+                </div>
+                <div class="history-stat">
+                    <span class="history-label">Flight Time (t)</span>
+                    <span class="history-value">${finalT.toFixed(2)} s</span>
+                </div>
+                <div class="history-stat">
+                    <span class="history-label">Max Height (h)</span>
+                    <span class="history-value">${maxH.toFixed(2)} m</span>
+                </div>
+            `;
+            
+            historyList.insertBefore(li, historyList.firstChild);
+        }
+
+        function clearHistory() {
+            historyList.innerHTML = '';
+            emptyHistory.style.display = 'block';
+            pastProjectiles = [];
+            render();
+        }
+
+        function startSimulation() {
+            if (currentProjectile) return;
+            
+            const p = getParams();
+            
+            if (p.y0 <= 0 && p.vy <= 0) return;
+
+            currentProjectile = {
+                params: p,
+                t: 0,
+                trail: [{x: 0, y: p.y0}],
+                maxHeight: p.y0
+            };
+            
+            lastTime = performance.now();
+            animationId = requestAnimationFrame(animationLoop);
+            btnStart.disabled = true;
+            btnStart.style.opacity = '0.5';
+        }
+
+        function animationLoop(time) {
+            if (!currentProjectile) return;
+
+            let dt = (time - lastTime) / 1000;
+            if (dt > 0.1) dt = 0.1;
+            lastTime = time;
+
+            currentProjectile.t += dt;
+            const t = currentProjectile.t;
+            const p = currentProjectile.params;
+
+            let x = p.vx * t;
+            let y = p.y0 + (p.vy * t) - (0.5 * p.g * t * t);
+
+            if (y > currentProjectile.maxHeight) currentProjectile.maxHeight = y;
+
+            if (y <= 0) {
+                const exactT = (p.vy + Math.sqrt(p.vy * p.vy + 2 * p.g * p.y0)) / p.g;
+                x = p.vx * exactT;
+                y = 0;
+                
+                currentProjectile.trail.push({x, y});
+                
+                pastProjectiles.push(currentProjectile);
+                addToHistory(p, exactT, x, currentProjectile.maxHeight);
+                
+                currentProjectile = null;
+                btnStart.disabled = false;
+                btnStart.style.opacity = '1';
+                render();
+                return;
+            }
+
+            currentProjectile.trail.push({x, y});
+            render();
+            
+            animationId = requestAnimationFrame(animationLoop);
+        }
+
+        btnStart.addEventListener('click', startSimulation);
+        
+        btnClear.addEventListener('click', () => {
+            if (animationId) cancelAnimationFrame(animationId);
+            currentProjectile = null;
+            btnStart.disabled = false;
+            btnStart.style.opacity = '1';
+            clearHistory();
+        });
+
+        resizeCanvas();
+
+    </script>
+</body>
+</html>

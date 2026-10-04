@@ -1,0 +1,1051 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>雷翼1944 · Thunder Wings</title>
+<style>
+  html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:"Segoe UI","Microsoft JhengHei",system-ui,sans-serif;color:#e8e4d8;-webkit-user-select:none;user-select:none}
+  #app{position:fixed;inset:0}
+  canvas{display:block}
+  .panel{background:rgba(8,14,10,.55);border:1px solid rgba(255,214,140,.25);border-radius:6px;padding:8px 12px;backdrop-filter:blur(3px)}
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+  #tl{position:absolute;top:14px;left:14px;font-size:13px;line-height:1.55;letter-spacing:.5px;text-shadow:0 1px 2px #000}
+  #tl b{color:#ffd27a;font-size:17px}
+  #warn{position:absolute;top:15%;left:50%;transform:translateX(-50%);font-weight:700;color:#ff5b4a;font-size:20px;text-shadow:0 0 8px rgba(255,60,30,.8);animation:blink 1s steps(2) infinite;display:none;letter-spacing:2px}
+  @keyframes blink{50%{opacity:.15}}
+  #radarWrap{position:absolute;top:14px;right:14px;text-align:center}
+  #fps{font-size:11px;opacity:.7;margin-top:2px}
+  #feed{position:absolute;left:14px;bottom:120px;font-size:13px;line-height:1.6}
+  #feed div{background:rgba(8,14,10,.5);padding:2px 8px;border-left:3px solid #ffb347;margin-top:4px;border-radius:3px;transition:opacity .6s;max-width:340px}
+  #bc{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:14px;align-items:flex-end;font-size:12px;text-align:center}
+  .bar{width:150px;height:9px;background:rgba(255,255,255,.12);border-radius:4px;overflow:hidden;margin:3px auto 0;border:1px solid rgba(255,255,255,.2)}
+  .bar>i{display:block;height:100%;width:100%;transition:width .12s}
+  #hpFill{background:linear-gradient(90deg,#67e26b,#cfe36a)}
+  #thrFill{background:#6ec3ff}
+  #heatFill{background:#ff9b4a;width:0}
+  .num{font-size:17px;font-weight:600;color:#ffe9b8;text-shadow:0 1px 2px #000;font-variant-numeric:tabular-nums}
+  /* 准星 */
+  #cross{position:absolute;left:50%;top:50%;width:52px;height:52px;transform:translate(-50%,-50%);opacity:.9}
+  #cross:before{content:"";position:absolute;inset:8px;border:1.6px solid rgba(255,255,255,.85);border-radius:50%}
+  #cross:after{content:"";position:absolute;left:50%;top:50%;width:3px;height:3px;background:#ffd27a;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 4px #ffb347}
+  .tick{position:absolute;background:rgba(255,255,255,.85)}
+  #hitmark{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);font-size:30px;font-weight:900;color:#ff5340;text-shadow:0 0 6px #ff2b1a;opacity:0}
+  #hitmark.show{animation:hm .28s ease-out}
+  @keyframes hm{0%{opacity:1;transform:translate(-50%,-50%) scale(1.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(.7)}}
+  #lead{position:absolute;left:0;top:0;color:#ffd27a;font-size:15px;text-shadow:0 1px 3px #000;display:none;text-align:center;line-height:1.1}
+  #lead small{font-size:10px;color:#ffe9b8;opacity:.9}
+  #popup{position:absolute;left:50%;top:41%;transform:translateX(-50%);font-size:24px;font-weight:800;color:#ffd27a;text-shadow:0 0 10px #ff9b2e;opacity:0;letter-spacing:4px}
+  #popup.show{animation:pp .9s ease-out}
+  @keyframes pp{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-34px)}}
+  #vig{position:fixed;inset:0;pointer-events:none;z-index:6;box-shadow:inset 0 0 140px 40px rgba(255,20,10,.85);opacity:0}
+  #flash{position:fixed;inset:0;background:#dfe9ff;pointer-events:none;z-index:7;opacity:0}
+  .overlay{position:fixed;inset:0;background:rgba(4,8,6,.82);display:flex;align-items:center;justify-content:center;z-index:20}
+  .card{max-width:660px;width:min(92vw,660px);background:linear-gradient(160deg,#101a12,#0a120c);border:1px solid #3a4a35;border-radius:12px;padding:28px 34px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .card h1{margin:0 0 2px;font-size:30px;letter-spacing:6px;color:#ffd27a}
+  .card h2{margin:0 0 14px;font-size:13px;font-weight:400;color:#9fb08e;letter-spacing:3px}
+  .card table{width:100%;font-size:13px;border-collapse:collapse;margin:10px 0}
+  .card td{padding:3px 6px;border-bottom:1px dashed rgba(255,255,255,.08)}
+  kbd{background:#233124;border:1px solid #4a5c44;border-bottom-width:2px;border-radius:4px;padding:1px 7px;font-family:inherit;font-size:12px;color:#ffe9b8;margin:0 1px}
+  .btn{pointer-events:auto;cursor:pointer;margin-top:16px;width:100%;padding:12px;font-size:17px;font-weight:700;letter-spacing:6px;color:#10160e;background:linear-gradient(180deg,#ffd27a,#e8a83e);border:none;border-radius:7px}
+  .btn:hover{filter:brightness(1.1)}
+  .feat{font-size:12px;color:#8fa382;line-height:1.7;margin-top:8px}
+  #stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:14px}
+  #stats div{background:rgba(255,255,255,.05);border-radius:6px;padding:8px 12px}
+  #stats b{color:#ffd27a;font-size:20px;display:block}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="hud">
+  <div id="tl" class="panel">
+    <div>擊落 <b id="score">0</b></div>
+    <div>空域敵機 <span id="nenemy">0</span>　時間 <span id="time">00:00</span></div>
+    <div>天氣 <span id="weather">晴朗</span>　航向 <span id="hdg">000</span>°</div>
+  </div>
+  <div id="radarWrap"><canvas id="radar" width="150" height="150" class="panel" style="border-radius:50%"></canvas><div id="fps">-- FPS</div></div>
+  <div id="warn"></div>
+  <div id="feed"></div>
+  <div id="bc">
+    <div><div class="num" id="spd">0</div>公里/時</div>
+    <div><div class="num" id="alt">0</div>高度 m</div>
+    <div style="width:150px">機體<div class="bar"><i id="hpFill"></i></div></div>
+    <div style="width:150px">節流閥 <span id="thrTxt" style="color:#6ec3ff">100%</span><div class="bar"><i id="thrFill"></i></div>機槍<div class="bar" style="height:5px"><i id="heatFill"></i></div></div>
+  </div>
+  <div id="cross">
+    <div class="tick" style="left:50%;top:0;width:2px;height:9px"></div>
+    <div class="tick" style="left:50%;bottom:0;width:2px;height:9px"></div>
+    <div class="tick" style="top:50%;left:0;height:2px;width:9px"></div>
+    <div class="tick" style="top:50%;right:0;height:2px;width:9px"></div>
+  </div>
+  <div id="hitmark">✕</div>
+  <div id="lead">◆<br><small id="leadD"></small></div>
+  <div id="popup">擊 落 ！</div>
+</div>
+<div id="vig"></div><div id="flash"></div>
+
+<div class="overlay" id="startOv">
+  <div class="card">
+    <h1>雷翼 1944</h1><h2>THUNDER WINGS · 二戰螺旋槳空戰</h2>
+    <table>
+      <tr><td><kbd>↑</kbd>/<kbd>I</kbd> 推桿俯衝　<kbd>↓</kbd>/<kbd>K</kbd> 拉桿爬升</td><td><kbd>←</kbd><kbd>→</kbd>/<kbd>J</kbd><kbd>L</kbd> 滾轉</td></tr>
+      <tr><td><kbd>W</kbd>/<kbd>S</kbd> 節流閥加减　<kbd>A</kbd><kbd>D</kbd> 方向舵</td><td><kbd>Space</kbd> 前置機槍（會過熱卡彈）</td></tr>
+      <tr><td><kbd>C</kbd> 視點切換　<kbd>M</kbd> 靜音　<kbd>P</kbd>/<kbd>Esc</kbd> 暫停</td><td>黃色菱形＝前置量瞄準點（已含彈道下墜）</td></tr>
+    </table>
+    <div class="feat">◈ 無限程序化地形（山脈／平原／海洋）　◈ 六種動態天氣：晴朗・夕陽・夜晚・濃霧・降雨・雷暴（含閃電與雷聲）<br>
+    ◈ 真實飛行物理：升力／失速／誘導阻力／能量機動　◈ 彈道模擬：飞行时间・重力下墜・相對速度<br>
+    ◈ AI 具攻擊意識，會咬尾、預判前置量，也會閃避與保命　◈ 程序化音效（引擎／機槍／爆炸／雷聲）</div>
+    <button class="btn" id="startBtn">出 擊</button>
+  </div>
+</div>
+<div class="overlay" id="pauseOv" style="display:none"><div class="card" style="text-align:center">
+  <h1 style="letter-spacing:10px">任務暫停</h1><h2>按 <kbd>P</kbd> 或下方按鈕繼續</h2>
+  <button class="btn" id="resumeBtn">繼續飛行</button></div>
+</div>
+<div class="overlay" id="overOv" style="display:none"><div class="card">
+  <h1 style="color:#ff7a5c">壯烈成仁</h1><h2>MISSION OVER</h2>
+  <div id="stats"></div>
+  <button class="btn" onclick="location.reload()">再 戰 一 次</button></div>
+</div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+/* ============ 基礎工具 ============ */
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, DEG=Math.PI/180;
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const SEED=(Math.random()*1e9)|0, rng=mulberry32(SEED), rr=(a,b)=>a+rng()*(b-a);
+/* Perlin 噪聲 */
+const perm=new Uint8Array(512),GRAD=[[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+(()=>{const p=[...Array(256).keys()],r=mulberry32(SEED^0x9e37);for(let i=255;i>0;i--){const j=(r()*(i+1))|0;[p[i],p[j]]=[p[j],p[i]]}for(let i=0;i<512;i++)perm[i]=p[i&255]})();
+const fade=t=>t*t*t*(t*(t*6-15)+10);
+function noise2(x,y){const X=Math.floor(x),Y=Math.floor(y);x-=X;y-=Y;const xi=X&255,yi=Y&255,u=fade(x),v=fade(y);
+  const g=(h,dx,dy)=>{const G=GRAD[h%8];return G[0]*dx+G[1]*dy};
+  const aa=perm[perm[xi]+yi],ab=perm[perm[xi]+yi+1],ba=perm[perm[xi+1]+yi],bb=perm[perm[xi+1]+yi+1];
+  return lerp(lerp(g(aa,x,y),g(ba,x-1,y),u),lerp(g(ab,x,y-1),g(bb,x-1,y-1),u),v);}
+function fbm(x,y,oct){let a=.5,f=1,s=0,n=0;for(let i=0;i<oct;i++){s+=a*noise2(x*f,y*f);n+=a;a*=.5;f*=2}return s/n}
+
+/* ============ 地形高度場（全遊戲共用） ============ */
+function terrainHeight(x,z){
+  const c=fbm(x*0.00016+31.7,z*0.00016+87.2,3);          // 大陸遮罩
+  const land=clamp((c+0.15)/0.5,0,1);                     // 0=海洋 1=內陸
+  const m=fbm(x*0.0011+7,z*0.0011+3,5)*0.5+0.5;
+  const h=fbm(x*0.004+17,z*0.004+9,4)*0.5+0.5;
+  return -26+land*72+m*m*270*land+h*16*land-(1-land)*30;
+}
+
+/* ============ 渲染器 / 場景 ============ */
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+$('app').appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0xc2d8e6,0.00005);
+const camera=new THREE.PerspectiveCamera(66,innerWidth/innerHeight,1.2,32000);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const WORLD_UP=new THREE.Vector3(0,1,0);
+const hemi=new THREE.HemisphereLight(0xbfd9ec,0x3a4232,0.75);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff2d0,2.8);scene.add(sun,sun.target);
+scene.add(new THREE.AmbientLight(0x404860,0.35));
+
+/* ============ 天空著色器 ============ */
+const skyUni={zen:{value:new THREE.Color()},hor:{value:new THREE.Color()},
+  sunDir:{value:new THREE.Vector3(0,1,0)},sunI:{value:2},moonDir:{value:new THREE.Vector3(0,1,0)},moonI:{value:0},
+  starAmt:{value:0},flash:{value:0}};
+const sky=new THREE.Mesh(new THREE.SphereGeometry(20000,32,18),new THREE.ShaderMaterial({
+  side:THREE.BackSide,depthWrite:false,depthTest:false,uniforms:skyUni,
+  vertexShader:`varying vec3 vD;void main(){vD=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`varying vec3 vD;uniform vec3 zen,hor,sunDir,moonDir;uniform float sunI,moonI,starAmt,flash;
+  float hash(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+  void main(){vec3 d=normalize(vD);float t=d.y;
+    vec3 col=mix(zen,hor,pow(clamp(1.-max(t,0.),0.,1.),2.2));
+    if(t<0.)col=mix(col,zen*.55,clamp(-t*3.,0.,1.));
+    float sd=max(dot(d,sunDir),0.);
+    col+=vec3(1.,.86,.6)*pow(sd,380.)*3.2*sunI+vec3(1.,.74,.48)*pow(sd,11.)*.3*sunI;
+    float md=max(dot(d,moonDir),0.);
+    col+=vec3(.92,.95,1.)*smoothstep(.99955,.99985,md)*moonI+vec3(.55,.65,1.)*pow(md,40.)*.14*moonI;
+    vec3 sp=floor(d*230.);
+    col+=vec3(step(.9986,hash(sp)))*starAmt*(.4+.6*hash(sp+1.7));
+    col=mix(col,vec3(.88,.92,1.),flash);
+    gl_FragColor=vec4(col,1.);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+  }`}));
+sky.frustumCulled=false;sky.renderOrder=-10;scene.add(sky);
+
+/* ============ 海面 ============ */
+const waterGeo=new THREE.PlaneGeometry(13000,13000,64,64);waterGeo.rotateX(-Math.PI/2);
+const water=new THREE.Mesh(waterGeo,new THREE.MeshPhongMaterial({color:0x0e4a66,transparent:true,opacity:.86,shininess:150,specular:0xbfe8ff}));
+water.frustumCulled=false;scene.add(water);
+const _wpos=waterGeo.attributes.position;
+function updateWater(t,cx,cz){
+  water.position.set(cx,0,cz);
+  for(let i=0;i<_wpos.count;i++){
+    const wx=_wpos.getX(i)+cx,wz=_wpos.getZ(i)+cz;
+    _wpos.setY(i,Math.sin(wx*.045+t*1.5)*.7+Math.sin(wz*.03-t*1.1)*.9+Math.sin((wx+wz)*.011+t*.8)*1.4);
+  }
+  _wpos.needsUpdate=true;waterGeo.computeVertexNormals();
+}
+
+/* ============ 地形區塊串流 ============ */
+const CHUNK=560,SEG=44,RADIUS=4,chunks=new Map();
+const cSand=new THREE.Color('#cdbb8d'),cGrass1=new THREE.Color('#4c6b35'),cGrass2=new THREE.Color('#71914a'),
+  cRock=new THREE.Color('#6f6a5e'),cSnow=new THREE.Color('#e3e9ee'),cShal=new THREE.Color('#3b6d7a'),cDeep=new THREE.Color('#14344a');
+const _cc=new THREE.Color();
+function buildChunk(cx,cz){
+  const geo=new THREE.PlaneGeometry(CHUNK,CHUNK,SEG,SEG);geo.rotateX(-Math.PI/2);
+  const ox=cx*CHUNK,oz=cz*CHUNK,p=geo.attributes.position,n=p.count,col=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const wx=p.getX(i)+ox,wz=p.getZ(i)+oz,h=terrainHeight(wx,wz);p.setY(i,h);
+    if(h<0)_cc.lerpColors(cShal,cDeep,clamp(-h/55,0,1));
+    else if(h<3)_cc.copy(cSand);
+    else{_cc.lerpColors(cGrass1,cGrass2,fbm(wx*.015,wz*.015,2)*.5+.5);
+      const jr=fbm(wx*.002,wz*.002,2)*10;
+      if(h>150+jr)_cc.copy(cRock);if(h>215+jr)_cc.copy(cSnow);}
+    col[i*3]=_cc.r;col[i*3+1]=_cc.g;col[i*3+2]=_cc.b;}
+  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true,flatShading:true}));
+  m.position.set(ox,0,oz);scene.add(m);return m;
+}
+let chunkTick=0;
+function updateChunks(px,pz,force){
+  const ccx=Math.round(px/CHUNK),ccz=Math.round(pz/CHUNK);
+  for(const[k,m]of chunks){const[cx,cz]=k.split(',').map(Number);
+    if(Math.abs(cx-ccx)>RADIUS+1||Math.abs(cz-ccz)>RADIUS+1){scene.remove(m);m.geometry.dispose();chunks.delete(k)}}
+  const need=[];
+  for(let dx=-RADIUS;dx<=RADIUS;dx++)for(let dz=-RADIUS;dz<=RADIUS;dz++){
+    const k=(ccx+dx)+','+(ccz+dz);if(!chunks.has(k))need.push([dx*dx+dz*dz,ccx+dx,ccz+dz])}
+  need.sort((a,b)=>a[0]-b[0]);
+  let budget=force?99:2;
+  for(const[,cx,cz]of need){if(budget--<=0)break;chunks.set(cx+','+cz,buildChunk(cx,cz))}
+}
+updateChunks(0,0,true);
+
+/* ============ 雲 / 雨 / 閃電 ============ */
+const cloudMat=new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:.88,depthWrite:false});
+const puffGeo=new THREE.IcosahedronGeometry(1,0),clouds=[];
+for(let i=0;i<15;i++){const g=new THREE.Group();
+  for(let j=0;j<5;j++){const s=new THREE.Mesh(puffGeo,cloudMat);
+    s.position.set(rr(-55,55),rr(-10,14),rr(-45,45));s.scale.set(rr(28,60),rr(11,19),rr(24,44));g.add(s)}
+  const a=rng()*Math.PI*2,d=rr(500,5200);
+  g.position.set(Math.cos(a)*d,rr(950,1350),Math.sin(a)*d);
+  g.userData={baseY:g.position.y};clouds.push(g);scene.add(g)}
+/* 雨 */
+const RAIN_N=1500,rainPos=new Float32Array(RAIN_N*6),rainVel=new Float32Array(RAIN_N*3);
+for(let i=0;i<RAIN_N;i++){rainVel[i*3]=rr(-2,2);rainVel[i*3+1]=-rr(80,105);rainVel[i*3+2]=rr(-2,2)}
+const rainGeo=new THREE.BufferGeometry();rainGeo.setAttribute('position',new THREE.BufferAttribute(rainPos,3));
+const rainMat=new THREE.LineBasicMaterial({color:0xaac4dd,transparent:true,opacity:0});
+const rain=new THREE.LineSegments(rainGeo,rainMat);rain.frustumCulled=false;scene.add(rain);
+/* 閃電 */
+let bolt=null,boltLife=0,skyFlash=0,strikeT=rr(2,6);
+const boltLight=new THREE.PointLight(0xcfe0ff,0,7000,1.6);scene.add(boltLight);
+const explLight=new THREE.PointLight(0xffa040,0,500,1.5);scene.add(explLight);
+function spawnStrike(){
+  const a=rng()*Math.PI*2,d=rr(500,2600),sx=player.phys.pos.x+Math.cos(a)*d,sz=player.phys.pos.z+Math.sin(a)*d;
+  const gy=Math.max(terrainHeight(sx,sz),0),pts=[];
+  let x=sx,y=1250,z=sz;
+  for(let i=0;i<9;i++){const nx=i==8?sx:x+rr(-30,30),ny=y-(1250-gy)/9,nz=i==8?sz:z+rr(-30,30);
+    pts.push(x,y,z,nx,ny,nz);x=nx;y=ny;z=nz}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pts),3));
+  if(bolt){bolt.geometry.dispose();scene.remove(bolt)}
+  bolt=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0xeaf2ff,transparent:true,opacity:1}));
+  scene.add(bolt);boltLife=.22;
+  boltLight.position.set(sx,gy+300,sz);
+  skyFlash=1;strikeT=rr(2.5,8);
+  const dist=camera.position.distanceTo(new THREE.Vector3(sx,gy,sz));
+  sfx.thunder(dist/340,clamp(900/dist,.12,.85));
+}
+
+/* ============ 天氣系統 ============ */
+const WDEF={
+ CLEAR:{name:'晴朗',zen:'#3f7ad1',hor:'#bfd9ec',fog:'#c2d8e6',fd:.00005,sunI:2.8,sunC:'#fff2d0',elev:52,azim:.6,hemi:.75,stars:0,rain:0,storm:0,cloudC:'#ffffff',cloudY:1150,skySun:1,moonI:0},
+ SUNSET:{name:'夕陽',zen:'#33355f',hor:'#ff9e63',fog:'#dfa07c',fd:.00009,sunI:2.0,sunC:'#ffb066',elev:7,azim:2.2,hemi:.5,stars:.12,rain:0,storm:0,cloudC:'#ffc9a2',cloudY:950,skySun:1,moonI:0},
+ NIGHT:{name:'夜晚',zen:'#04070f',hor:'#0c1424',fog:'#0a111e',fd:.00028,sunI:.5,sunC:'#aebfff',elev:38,azim:4,hemi:.16,stars:1,rain:0,storm:0,cloudC:'#2a3345',cloudY:1250,skySun:0,moonI:1},
+ FOG:{name:'濃霧',zen:'#98a2ab',hor:'#c6ccd0',fog:'#c6ccd0',fd:.0021,sunI:.7,sunC:'#e8e8e8',elev:38,azim:1.4,hemi:.8,stars:0,rain:0,storm:0,cloudC:'#b9c1c7',cloudY:520,skySun:1,moonI:0},
+ RAIN:{name:'降雨',zen:'#4c5b69',hor:'#8d99a4',fog:'#8b98a3',fd:.00072,sunI:.9,sunC:'#cdd6dd',elev:35,azim:2.8,hemi:.6,stars:0,rain:.65,storm:.15,cloudC:'#7f8a94',cloudY:800,skySun:1,moonI:0},
+ STORM:{name:'雷暴',zen:'#20262d',hor:'#39424b',fog:'#353e47',fd:.0011,sunI:.55,sunC:'#aab4bd',elev:34,azim:3.4,hemi:.42,stars:0,rain:1,storm:1,cloudC:'#4c565f',cloudY:720,skySun:1,moonI:0}};
+const weather={key:'CLEAR',timer:45,cur:null,init(){
+    this.cur=JSON.parse(JSON.stringify(WDEF.CLEAR));
+    for(const k in this.cur)if(typeof this.cur[k]==='string'&&this.cur[k][0]==='#')this.cur[k]=new THREE.Color(this.cur[k]);
+  },update(dt){
+    this.timer-=dt;
+    if(this.timer<=0){const keys=Object.keys(WDEF).filter(k=>k!==this.key);
+      this.key=keys[(rng()*keys.length)|0];this.timer=rr(55,105);
+      feed('天氣轉為「'+WDEF[this.key].name+'」');}
+    const t=WDEF[this.key],c=this.cur,k=1-Math.exp(-dt*.22);
+    for(const key in t){const tv=t[key];
+      if(typeof tv==='string'&&tv[0]==='#')c[key].lerp(new THREE.Color(tv),k);
+      else if(typeof tv==='number')c[key]+= (tv-c[key])*k;}
+    // 套用
+    skyUni.zen.value.copy(c.zen);skyUni.hor.value.copy(c.hor);
+    const er=c.elev*DEG,ar=c.azim+performance.now()*4e-6;
+    const sd=skyUni.sunDir.value.set(Math.cos(er)*Math.sin(ar),Math.sin(er),Math.cos(er)*Math.cos(ar));
+    skyUni.sunI.value=c.skySun*(.35+c.sunI*.35);skyUni.starAmt.value=c.stars;skyUni.moonI.value=c.moonI;
+    const mer=38*DEG;skyUni.moonDir.value.set(Math.cos(mer)*Math.sin(ar+2.5),Math.sin(mer),Math.cos(mer)*Math.cos(ar+2.5));
+    scene.fog.color.copy(c.fog);scene.fog.density=c.fd;
+    hemi.intensity=c.hemi;hemi.color.copy(c.hor);
+    sun.intensity=c.sunI;sun.color.copy(c.sunC);
+    cloudMat.color.copy(c.cloudC);
+    for(const g of clouds)g.userData.baseY+=(c.cloudY-g.userData.baseY)*k*.5;
+    // 閃電
+    if(c.storm>.5){strikeT-=dt;if(strikeT<=0)spawnStrike()}
+    skyFlash*=Math.exp(-dt*6);skyUni.flash.value=skyFlash*.75;
+    $('flash').style.opacity=skyFlash*.45;
+    if(bolt){boltLife-=dt;bolt.material.opacity=Math.max(0,boltLife/.22);
+      boltLight.intensity=6e4*Math.max(0,boltLife/.22);
+      if(boltLife<=0){scene.remove(bolt);bolt.geometry.dispose();bolt=null;boltLight.intensity=0}}
+    // 雨
+    rainMat.opacity=c.rain*.55;rain.visible=c.rain>.02;
+    if(rain.visible)updateRain(dt,c);
+  }};
+weather.init();
+function updateRain(dt,c){
+  const cx=camera.position.x,cy=camera.position.y,cz=camera.position.z,wx=windX*dt,wz=windZ*dt;
+  for(let i=0;i<RAIN_N;i++){const o=i*6;
+    let x=rainPos[o]+rainVel[i*3]*dt+wx,y=rainPos[o+1]+rainVel[i*3+1]*dt,z=rainPos[o+2]+rainVel[i*3+2]*dt+wz;
+    if(y<cy-50)y+=110;if(y>cy+60)y-=110;
+    let dx=x-cx;if(dx>80)x-=160;else if(dx<-80)x+=160;
+    let dz=z-cz;if(dz>80)z-=160;else if(dz<-80)z+=160;
+    rainPos[o]=x;rainPos[o+1]=y;rainPos[o+2]=z;
+    rainPos[o+3]=x+rainVel[i*3]*.02+wx;rainPos[o+4]=y+rainVel[i*3+1]*.02;rainPos[o+5]=z+rainVel[i*3+2]*.02+wz;}
+  rainGeo.attributes.position.needsUpdate=true;
+}
+let windA=rng()*6.28,windX=3,windZ=2;
+
+/* ============ 貼圖小工具 ============ */
+function canvasTex(fn,s=128){const cv=document.createElement('canvas');cv.width=cv.height=s;fn(cv.getContext('2d'),s);
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;return t}
+const softTex=canvasTex((c,s)=>{const g=c.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.4,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=g;c.fillRect(0,0,s,s)},64);
+const xTex=canvasTex((c,s)=>{c.lineCap='round';
+  const draw=(w,st)=>{c.strokeStyle=st;c.lineWidth=w;c.beginPath();
+    c.moveTo(s*.22,s*.22);c.lineTo(s*.78,s*.78);c.moveTo(s*.78,s*.22);c.lineTo(s*.22,s*.78);c.stroke()};
+  draw(22,'#101010');draw(12,'#ffffff')});
+function insigniaTex(type){return canvasTex((c,s)=>{
+  if(type==='us'){c.fillStyle='#20356e';c.beginPath();c.arc(s/2,s/2,s*.46,0,7);c.fill();
+    c.fillStyle='#eee';c.beginPath();for(let i=0;i<5;i++){const a=-Math.PI/2+i*4*Math.PI/5;
+      c[i?'lineTo':'moveTo'](s/2+Math.cos(a)*s*.34,s/2+Math.sin(a)*s*.34)}c.closePath();c.fill();}
+  else{c.fillStyle='#ddd';c.fillRect(s*.1,s*.36,s*.8,s*.28);c.fillRect(s*.36,s*.1,s*.28,s*.8);
+    c.fillStyle='#141414';c.fillRect(s*.14,s*.4,s*.72,s*.2);c.fillRect(s*.4,s*.14,s*.2,s*.72);}})}
+
+/* ============ 飛機模型工廠（二戰螺旋槳戰機） ============ */
+function planeTemplate(pal){
+  const bodyG=[],wingG=[],accG=[];
+  const add=(arr,geo,x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1)=>{
+    geo.rotateX(rx);geo.rotateY(ry);geo.rotateZ(rz);geo.scale(sx,sy,sz);geo.translate(x,y,z);arr.push(geo)};
+  // 機身（機鼻朝 -Z）
+  add(bodyG,new THREE.CylinderGeometry(.30,.52,5.6,10),0,0,0,Math.PI/2);       // 主機身
+  add(bodyG,new THREE.CylinderGeometry(.5,.55,1.0,10),0,-.02,-3.2,Math.PI/2);  // 引擎罩
+  add(bodyG,new THREE.BoxGeometry(.14,.14,1.1),.55,.1,-3.1);                   // 排氣管
+  add(bodyG,new THREE.BoxGeometry(.14,.14,1.1),-.55,.1,-3.1);
+  // 起落架（固定式）
+  add(bodyG,new THREE.CylinderGeometry(.05,.05,1.0,6),1.15,-.72,-.7,0,0,.35);
+  add(bodyG,new THREE.CylinderGeometry(.05,.05,1.0,6),-1.15,-.72,-.7,0,0,-.35);
+  add(bodyG,new THREE.CylinderGeometry(.27,.27,.2,10),1.32,-1.2,-.7,0,0,Math.PI/2);
+  add(bodyG,new THREE.CylinderGeometry(.27,.27,.2,10),-1.32,-1.2,-.7,0,0,Math.PI/2);
+  add(bodyG,new THREE.BoxGeometry(.1,1.15,.9),0,.62,2.6);                      // 垂尾
+  // 主翼（帶上反角）
+  add(wingG,new THREE.BoxGeometry(4.9,.13,1.75),2.75,-.05,-.35,0,0,.09);
+  add(wingG,new THREE.BoxGeometry(4.9,.13,1.75),-2.75,-.05,-.35,0,0,-.09);
+  add(wingG,new THREE.BoxGeometry(2.1,.09,.85),0,.12,2.55);                    // 平尾
+  add(accG,new THREE.ConeGeometry(.27,.7,10),0,-.02,-3.95,-Math.PI/2);         // 螺旋槳整流罩
+  const mk=list=>mergeGeometries(list.map(g=>g.toNonIndexed()));
+  const root=new THREE.Group();
+  root.add(new THREE.Mesh(mk(bodyG),new THREE.MeshLambertMaterial({color:pal.body})));
+  root.add(new THREE.Mesh(mk(wingG),new THREE.MeshLambertMaterial({color:pal.wing})));
+  root.add(new THREE.Mesh(mk(accG),new THREE.MeshLambertMaterial({color:pal.accent})));
+  // 座艙
+  const can=new THREE.Mesh(new THREE.SphereGeometry(.42,10,8),
+    new THREE.MeshPhongMaterial({color:0x27424e,shininess:120,transparent:true,opacity:.85}));
+  can.scale.set(1,.75,1.9);can.position.set(0,.52,-.9);root.add(can);
+  // 螺旋槳＋高速模糊盤
+  const prop=new THREE.Group();prop.name='prop';
+  for(let i=0;i<3;i++)prop.add(new THREE.Mesh(new THREE.BoxGeometry(.16,2.7,.05),new THREE.MeshLambertMaterial({color:pal.accent})));
+  prop.children.forEach((b,i)=>b.rotation.z=i*Math.PI*2/3);
+  prop.position.set(0,-.02,-3.6);root.add(prop);
+  const blur=new THREE.Mesh(new THREE.CircleGeometry(1.4,24),
+    new THREE.MeshBasicMaterial({color:0x1a1a1a,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));
+  blur.name='blur';blur.position.set(0,-.02,-3.58);root.add(blur);
+  // 塗裝
+  const insTex=insigniaTex(pal.mark);
+  [[3.3,1],[-3.3,-1]].forEach(([mx])=>{
+    const d=new THREE.Mesh(new THREE.CircleGeometry(.6,20),
+      new THREE.MeshBasicMaterial({map:insTex,transparent:true,polygonOffset:true,polygonOffsetFactor:-2}));
+    d.rotation.x=-Math.PI/2;d.rotation.z=rng()*0;d.position.set(mx,-.05+Math.abs(mx)*.09+.06,-.35);root.add(d)});
+  // 可動舵面
+  const surf=(name,x,y,z,w,ry)=>{const g=new THREE.Group();g.name=name;g.position.set(x,y,z);
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,.06,.4),new THREE.MeshLambertMaterial({color:pal.wing}));
+    m.position.z=.17;g.add(m);root.add(g);return g};
+  surf('el',0,.12,3.0,2.0);surf('ru',0,.62,3.05,.09);
+  const al=surf('alR',3.6,.17,.55,1.5),ar=surf('alL',-3.6,.17,.55,1.5);
+  al.name='alR';ar.name='alL';
+  return root;
+}
+const PAL_PLAYER={body:0x566339,wing:0x5e6d3f,accent:0xa33b31,mark:'us'};
+const PAL_ENEMY={body:0x565d66,wing:0x4c525a,accent:0x7e2f28,mark:'de'};
+const tplPlayer=planeTemplate(PAL_PLAYER),tplEnemy=planeTemplate(PAL_ENEMY);
+
+/* ============ 飛行物理（真實空氣動力簡化模型） ============ */
+const GRAV=9.81,WING_A=24,CL_SLOPE=4.8,CL_MAX=1.45,STALL_AOA=.30,CD0=.028,K_IND=.055,
+  MAX_PITCH=1.15,MAX_ROLL=2.6,MAX_YAW=.5,THRUST=16500,MASS=3100,BULLET_V=780;
+const VX=new THREE.Vector3(1,0,0),VY=new THREE.Vector3(0,1,0),VZN=new THREE.Vector3(0,0,-1);
+const _q1=new THREE.Quaternion(),_q2=new THREE.Quaternion(),_m1=new THREE.Matrix4(),
+  _a=new THREE.Vector3(),_b=new THREE.Vector3(),_c=new THREE.Vector3(),_d=new THREE.Vector3(),
+  _e=new THREE.Vector3(),_f=new THREE.Vector3(),_g=new THREE.Vector3(),_qi=new THREE.Quaternion();
+function newPhys(x,y,z,q){return{pos:new THREE.Vector3(x,y,z),vel:new THREE.Vector3(0,0,-60),quat:q||new THREE.Quaternion(),
+  rate:{p:0,r:0,y:0},throttle:.8,hp:100,id:rng()*100,aoa:0,spd:60,stall:false,stallSev:0,dead:false,gone:false,deadT:0}}
+function stepFlight(P,ctl,dt){
+  const q=P.quat,fwd=_a.set(0,0,-1).applyQuaternion(q),up=_b.set(0,1,0).applyQuaternion(q);
+  const spd=P.vel.length(),rho=1.225*Math.exp(-Math.max(P.pos.y,0)/9500);
+  const vl=_c.copy(P.vel).applyQuaternion(_qi.copy(q).invert());
+  const aoa=Math.atan2(-vl.y,Math.max(.5,-vl.z));
+  const stallSev=clamp((Math.abs(aoa)-STALL_AOA)/.25,0,1);
+  let CL=CL_SLOPE*aoa;
+  if(stallSev>0)CL=CL_SLOPE*STALL_AOA*Math.sign(aoa||1)*(1-stallSev*.7);
+  CL=clamp(CL,-.9,CL_MAX);
+  const dyn=.5*rho*spd*spd,L=dyn*WING_A*CL,D=dyn*WING_A*(CD0+K_IND*CL*CL);
+  const liftDir=_d.copy(up),vn=_e.copy(P.vel).normalize();
+  if(spd>1)liftDir.addScaledVector(vn,-up.dot(vn)).normalize();
+  const acc=_f.set(0,-GRAV,0);
+  let th=ctl.throttle*THRUST/MASS;
+  if(P.pos.y>4200)th*=Math.exp(-(P.pos.y-4200)/800);
+  if(!P.dead)acc.addScaledVector(fwd,th);
+  if(spd>.5){acc.addScaledVector(liftDir,L/MASS);acc.addScaledVector(vn,-D/MASS)}
+  P.vel.addScaledVector(acc,dt);
+  // 側滑對正（未失速時速度向量向機頭收斂，並按能量守恆扣速）
+  const alignK=(1-stallSev*.85)*clamp(spd/45,0,1);
+  if(alignK>.02){const ff=fwd.dot(P.vel);
+    _g.copy(fwd).multiplyScalar(ff);_e.copy(P.vel).sub(_g);
+    const lm=_e.length();
+    if(lm>.01){const k=Math.min(1,dt*3*alignK);
+      P.vel.addScaledVector(_e,-k);
+      P.vel.multiplyScalar(Math.max(.2,1-.4*k*lm/Math.max(spd,5)))}}
+  P.pos.addScaledVector(P.vel,dt);
+  // 角速度控制（操縱效率隨動壓變化）
+  const eff=Math.pow(clamp(spd/58,0,1),1.35)*(1-stallSev*.5);
+  let tp=ctl.pitch*MAX_PITCH*eff,tr=ctl.roll*MAX_ROLL*(.35+.65*eff),ty=ctl.yaw*MAX_YAW*eff;
+  if(Math.abs(ctl.pitch)<.05)tp+=-aoa*.5*eff;         // 縱向靜穩定
+  if(stallSev>0)tp-=stallSev*.8*eff;                  // 失速低頭
+  if(weather.cur.storm>.05&&!P.dead){const tb=weather.cur.storm;  // 風暴亂流
+    tp+=Math.sin(nowT*2.3+P.id*7)*tb*.35*eff;tr+=Math.sin(nowT*3.1+P.id*13)*tb*.5*eff}
+  const sm=1-Math.exp(-dt*6.5);
+  P.rate.p+=(tp-P.rate.p)*sm;P.rate.r+=(tr-P.rate.r)*sm;P.rate.y+=(ty-P.rate.y)*sm;
+  _q1.setFromAxisAngle(VX,P.rate.p*dt);q.multiply(_q1);
+  _q1.setFromAxisAngle(VY,-P.rate.y*dt);q.multiply(_q1);
+  _q1.setFromAxisAngle(VZN,P.rate.r*dt);q.multiply(_q1);q.normalize();
+  if(stallSev>0&&spd>8){_m1.lookAt(new THREE.Vector3(),vn,up);_q2.setFromRotationMatrix(_m1);
+    q.slerp(_q2,Math.min(1,dt*1.1*stallSev))}
+  P.aoa=aoa;P.spd=spd;P.stallSev=stallSev;P.stall=stallSev>0;
+}
+function stepDead(P,dt){ // 被擊落後螺旋墜毀
+  P.deadT+=dt;P.vel.y-=GRAV*dt;P.vel.multiplyScalar(1-dt*.22);
+  P.pos.addScaledVector(P.vel,dt);
+  _q1.setFromAxisAngle(VX,.7*dt);P.quat.multiply(_q1);
+  _q1.setFromAxisAngle(VZN,P.id>50?-2.4*dt:2.4*dt);P.quat.multiply(_q1);
+}
+
+/* ============ 特效：粒子 / 火球 / X標記 / 曳光 ============ */
+function makePS(cap,tex,additive){
+  const g=new THREE.BufferGeometry();
+  const pos=new Float32Array(cap*3),col=new Float32Array(cap*4),siz=new Float32Array(cap);
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  g.setAttribute('aColor',new THREE.BufferAttribute(col,4));
+  g.setAttribute('aSize',new THREE.BufferAttribute(siz,1));
+  const mat=new THREE.ShaderMaterial({
+    uniforms:{tex:{value:tex}},transparent:true,depthWrite:false,
+    blending:additive?THREE.AdditiveBlending:THREE.NormalBlending,
+    vertexShader:`attribute float aSize;attribute vec4 aColor;varying vec4 vC;
+      void main(){vC=aColor;vec4 mv=modelViewMatrix*vec4(position,1.);
+      gl_PointSize=aSize*(340./max(1.,-mv.z));gl_Position=projectionMatrix*mv;}`,
+    fragmentShader:`uniform sampler2D tex;varying vec4 vC;
+      void main(){vec4 t=texture2D(tex,gl_PointCoord);gl_FragColor=vC*t;
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>}`});
+  const pts=new THREE.Points(g,mat);pts.frustumCulled=false;scene.add(pts);
+  const P=[];for(let i=0;i<cap;i++)P.push({life:0});let cursor=0;
+  return{
+    spawn(x,y,z,vx,vy,vz,life,size,r,gc,b2,a,grow=0,grav=0,drag=0){
+      // 找死槽（輪詢）
+      for(let tries=0;tries<cap;tries++){cursor=(cursor+1)%cap;if(P[cursor].life<=0)break}
+      const p=P[cursor];Object.assign(p,{x,y,z,vx,vy,vz,life,maxLife:life,size,grow,grav,drag,r,gc,b2,a});
+      p.idx=cursor},
+    update(dt){
+      for(let i=0;i<cap;i++){const p=P[i],i3=i*3,i4=i*4;
+        if(p.life>0){p.life-=dt;p.vy+=p.grav*dt;const dg=1-p.drag*dt;
+          p.vx*=dg;p.vy*=dg;p.vz*=dg;
+          p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;
+          const t=Math.max(p.life/p.maxLife,0);
+          pos[i3]=p.x;pos[i3+1]=p.y;pos[i3+2]=p.z;
+          col[i4]=p.r;col[i4+1]=p.gc;col[i4+2]=p.b2;col[i4+3]=p.a*t;
+          siz[i]=(p.size+p.grow*(1-t))*(p.life>0?1:0);}
+        else{siz[i]=0;col[i4+3]=0}}
+      g.attributes.position.needsUpdate=true;g.attributes.aColor.needsUpdate=true;g.attributes.aSize.needsUpdate=true;}
+  };
+}
+const sparks=makePS(800,softTex,true),smoke=makePS(700,softTex,false);
+function fxHit(p){ // 命中火花＋火焰動畫
+  for(let i=0;i<9;i++)sparks.spawn(p.x,p.y,p.z,rr(-14,14),rr(-4,18),rr(-14,14),rr(.15,.4),rr(1.5,3),1,.72,.3,1,0,-9.8,1);
+  for(let i=0;i<4;i++)smoke.spawn(p.x,p.y,p.z,rr(-2,2),rr(1,4),rr(-2,2),rr(.5,.9),rr(2,4),.25,.23,.2,.8,6,1,1);
+  flashAt(p,1.6,.09,0xffc070);
+}
+function fxExplode(p,big){
+  const n=big?30:16;
+  for(let i=0;i<n;i++){const a=rng()*6.28,b=rng()*3.14,s=big?rr(8,34):rr(6,20);
+    sparks.spawn(p.x,p.y,p.z,Math.cos(a)*Math.sin(b)*s,Math.cos(b)*s+6,Math.sin(a)*Math.sin(b)*s,rr(.4,1.1),rr(2,5),1,rr(.4,.75),.22,1,2,-6,.8)}
+  for(let i=0;i<(big?16:8);i++)smoke.spawn(p.x+rr(-2,2),p.y+rr(-1,2),p.z+rr(-2,2),rr(-3,3),rr(2,7),rr(-3,3),rr(1.2,2.4),rr(4,8),.16,.15,.14,.85,rr(8,16),.6,1.2);
+  flashAt(p,big?16:8,.5,0xff9040);
+  explLight.position.copy(p);explLight.intensity=big?5000:2200;
+  const d=camera.position.distanceTo(p);shake(clamp(60/(d+10),0,.8));
+  sfx.expl(d,big);
+}
+function fxSplash(p){for(let i=0;i<14;i++)smoke.spawn(p.x+rr(-2,2),p.y,p.z+rr(-2,2),rr(-5,5),rr(6,16),rr(-5,5),rr(.4,.9),rr(1.5,3),.85,.9,.95,.9,-2,-22,0.5)}
+/* 火球/閃光 sprite 池 */
+const fireballs=[];const fbMat=()=>new THREE.SpriteMaterial({map:softTex,color:0xffffff,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});
+for(let i=0;i<8;i++){const sp=new THREE.Sprite(fbMat());sp.visible=false;scene.add(sp);fireballs.push({sp,life:0})}
+function flashAt(p,size,life,color){for(const f of fireballs)if(f.life<=0){
+  f.life=life;f.max=life;f.size=size;f.sp.material.color.setHex(color);
+  f.sp.position.copy(p);f.sp.visible=true;return}}
+function updFireballs(dt){for(const f of fireballs)if(f.life>0){f.life-=dt;const t=1-f.life/f.max;
+  const s=f.size*(0.4+t*1.8);f.sp.scale.set(s,s,1);f.sp.material.opacity=1-t;
+  if(f.life<=0)f.sp.visible=false}}
+/* 世界空間 X 命中標記池 */
+const xmarks=[];
+for(let i=0;i<24;i++){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:xTex,transparent:true,depthWrite:false}));
+  sp.visible=false;scene.add(sp);xmarks.push({sp,life:0})}
+function showX(p){for(const m of xmarks)if(m.life<=0){
+  m.life=.9;m.sp.position.copy(p).add(_a.set(rr(-1,1),rr(0,2),rr(-1,1)));
+  m.sp.material.rotation=rng()*6.28;m.sp.visible=true;return}}
+function updX(dt){for(const m of xmarks)if(m.life>0){m.life-=dt;const t=1-m.life/.9;
+  const s=2+t*1.6;m.sp.scale.set(s,s,1);m.sp.material.opacity=t<.55?1:(1-(t-.55)/.45);
+  if(m.life<=0)m.sp.visible=false}}
+
+/* ============ 子彈（曳光） ============ */
+const BULLETS=380;
+const bulPos=[],bulVel=[],bulLife=new Float32Array(BULLETS),bulOwner=new Array(BULLETES_FIX(BULLETS)),bulCol=[];
+function BULLETES(){}
+function BULLETEX(){}
+function BULLETES_FIX(n){return n}
+for(let i=0;i<BULLETS;i++){bulPos.push(new THREE.Vector3());bulVel.push(new THREE.Vector3());bulCol.push(new THREE.Color());bulOwner[i]=null}
+const trGeo=new THREE.BufferGeometry();
+const trPos=new Float32Array(BULLETS*6),trCol=new Float32Array(BULLETS*6);
+trGeo.setAttribute('position',new THREE.BufferAttribute(trPos,3));
+trGeo.setAttribute('color',new THREE.BufferAttribute(trCol,3));
+const tracers=new THREE.LineSegments(trGeo,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,fog:false}));
+tracers.frustumCulled=false;scene.add(tracers);
+let bulCursor=0,statShots=0,statHits=0;
+function fireBullet(owner,muzzle,dir,color){
+  for(let t=0;t<BULLETS;t++){bulCursor=(bulCursor+1)%BULLETS;if(bulLife[bulCursor]<=0)break}
+  const i=bulCursor;
+  bulPos[i].copy(muzzle);bulVel[i].copy(dir).multiplyScalar(BULLET_V).add(owner.phys.vel);
+  bulLife[i]=3.2;bulOwner[i]=owner;bulCol[i].setHex(color);
+  if(owner.isPlayer)statShots++;
+}
+function segSphere(p0,p1,c,r,out){
+  _a.subVectors(p1,p0);_b.subVectors(p0,c);
+  const aa=_a.lengthSq();if(aa<1e-8){out.copy(p0);return _b.lengthSq()<r*r}
+  const t=clamp(-_b.dot(_a)/aa*-1*-1,0,1);// 展開避免混淆：
+  const tt=clamp((_b.dot(_a))/aa*-1,0,1);
+  out.copy(p0).addScaledVector(_a,tt);
+  return out.distanceToSquared(c)<=r*r;
+}
+const _hp=new THREE.Vector3(),_tail=new THREE.Vector3(),_mz=new THREE.Vector3();
+function updateBullets(dt){
+  for(let i=0;i<BULLETS;i++){
+    if(bulLife[i]<=0)continue;
+    bulLife[i]-=dt;
+    const p=bulPos[i],v=bulVel[i];
+    _hp.copy(p);
+    v.y-=GRAV*dt;v.multiplyScalar(1-.015*dt);
+    p.addScaledVector(v,dt);
+    let consumed=false;
+    for(const pl of allPlanes()){
+      if(pl===bulOwner[i]||pl.phys.gone)continue;
+      _tail.copy(pl.phys.pos).addScaledVector(_a.set(0,0,-1).applyQuaternion(pl.phys.quat),3.2).negate().multiplyScalar(0); // 尾球心
+      _tail.copy(pl.phys.pos).addScaledVector(_a,3.2);
+      if(segSphere(_hp,p,pl.phys.pos,4.3,_c)||segSphere(_hp,p,_tail,2.2,_c)){
+        registerHit(bulOwner[i],pl,_c);consumed=true;break}
+    }
+    if(consumed){bulLife[i]=0;continue}
+    const gm=Math.max(terrainHeight(p.x,p.z),0);
+    if(p.y<gm+.3){if(gm>0)fxHit(p);else fxSplash(p);bulLife[i]=0;continue}
+    if(bulLife[i]<=0)continue;
+    // 寫入曳光頂點
+    const o=i*6,dir=v.length()>0?1:0;
+    _a.copy(v).normalize().multiplyScalar(-8);
+    trPos[o]=p.x;trPos[o+1]=p.y;trPos[o+2]=p.z;
+    trPos[o+3]=p.x+_a.x;trPos[o+4]=p.y+_a.y;trPos[o+5]=p.z+_a.z;
+    const fade=clamp(bulLife[i]/3.2,0,1),c=bulCol[i];
+    trCol[o]=c.r;trCol[o+1]=c.g;trCol[o+2]=c.b;
+    trCol[o+3]=c.r*.15;trCol[o+4]=c.g*.15;trCol[o+5]=c.b*.15;
+  }
+  trGeo.attributes.position.needsUpdate=true;trGeo.attributes.color.needsUpdate=true;
+}
+function registerHit(shooter,victim,at){
+  const dmg=shooter.isPlayer?9+rng()*7:6+rng()*6;
+  victim.phys.hp-=dmg;
+  victim.lastHitBy=shooter;victim.lastHitT=nowT;
+  fxHit(at);
+  if(shooter.isPlayer){statHits++;showX(at);
+    $('hitmark').classList.remove('show');void $('hitmark').offsetWidth;$('hitmark').classList.add('show');sfx.hit()}
+  if(victim.isPlayer){damageFlash();sfx.thud()}
+  if(victim.phys.hp<=0&&!victim.phys.dead)killPlane(victim,shooter);
+}
+function killPlane(pl,by){
+  pl.phys.dead=true;pl.phys.hp=0;pl.ctl={pitch:0,roll:0,yaw:0,throttle:0,fire:false};
+  if(!pl.isPlayer){
+    if(by&&by.isPlayer||(pl.lastHitBy===player&&nowT-pl.lastHitT<4)){
+      if(by&&by.isPlayer){score++;streak++;repairPlayer(14);
+        feed('擊落敵機！'+(streak>=3?'（'+streak+' 連殺）':''),'kill');
+        pop('擊 落 ！');sfx.kill()}
+      else{score++;feed('敵機遭友軍火力誤擊墜毀，仍計入戰果')}}
+    else feed('敵機墜毀')}
+  else{feed('座機中彈起火！','bad')}
+}
+
+/* ============ 音效（WebAudio 全程序化） ============ */
+const sfx={on:false,muted:false,gunBudget:4,
+init(){if(this.on)return;const C=this.ctx=new(window.AudioContext||window.webkitAudioContext)();
+  this.master=C.createGain();this.master.gain.value=.6;
+  const comp=C.createDynamicsCompressor();this.master.connect(comp);comp.connect(C.destination);
+  const len=C.sampleRate*2,buf=C.createBuffer(1,len,C.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<len;i++)d[i]=Math.random()*2-1;this.noise=buf;
+  // 引擎聲部池
+  this.voices=[];for(let i=0;i<4;i++){const o1=C.createOscillator(),o2=C.createOscillator(),
+    lfo=C.createOscillator(),lg=C.createGain(),f=C.createBiquadFilter(),g=C.createGain(),p=C.createStereoPanner();
+    o1.type='sawtooth';o2.type='square';lfo.type='sine';lg.gain.value=5;
+    lfo.connect(lg);lg.connect(o1.frequency);
+    f.type='lowpass';g.gain.value=0;
+    o1.connect(f);o2.connect(f);f.connect(g);g.connect(p);p.connect(this.master);
+    o1.start();o2.start();lfo.start();
+    this.voices.push({o1,o2,lfo,f,g,p})}
+  const loop=(freq,type)=>{const s=C.createBufferSource();s.buffer=this.noise;s.loop=true;
+    const f=C.createBiquadFilter();f.type=type;f.frequency.value=freq;
+    const g=C.createGain();g.gain.value=0;s.connect(f);f.connect(g);g.connect(this.master);s.start();return g};
+  this.windG=loop(400,'bandpass');this.rainG=loop(3200,'highpass');this.on=true},
+att(d){return clamp(55/(55+d),0,1)},
+engine(i,rpm,dist,pan){if(!this.on)return;const v=this.voices[i],C=this.ctx,t=C.currentTime;
+  const f=42+rpm*78,att=i===0?.95:this.att(dist);
+  v.o1.frequency.setTargetAtTime(f,t,.06);v.o2.frequency.setTargetAtTime(f*.5,t,.06);
+  v.lfo.frequency.setTargetAtTime(14+rpm*30,t,.1);
+  v.f.frequency.setTargetAtTime(260+rpm*1200,t,.08);
+  v.g.gain.setTargetAtTime(att*(0.035+rpm*.12),t,.09);
+  v.p.pan.setTargetAtTime(clamp(pan,-1,1),t,.1)},
+burst(bp,fq,q,vol,dur,when=0,type='bandpass'){const C=this.ctx;if(!C)return;const t=C.currentTime+when;
+  const s=C.createBufferSource();s.buffer=this.noise;s.loopStart=rng();s.loop=true;
+  const f=C.createBiquadFilter();f.type=type;f.frequency.setValueAtTime(fq,t);f.Q.value=q;
+  const g=C.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  s.connect(f);f.connect(g);g.connect(this.master);s.start(t);s.stop(t+dur+.05)},
+gun(dist,pan){if(!this.on||this.gunBudget<=0)return;this.gunBudget--;
+  const v=this.att(dist)*(dist<80?1:.7);
+  this.burst(0,900+rng()*1200,.8,.4*v,.09);this.burst(0,140,.7,.3*v,.06)},
+hit(){if(!this.on)return;const C=this.ctx,t=C.currentTime,o=C.createOscillator(),g=C.createGain();
+  o.type='triangle';o.frequency.setValueAtTime(1250,t);o.frequency.exponentialRampToValueAtTime(650,t+.06);
+  g.gain.setValueAtTime(.22,t);g.gain.exponentialRampToValueAtTime(.001,t+.07);
+  o.connect(g);g.connect(this.master);o.start(t);o.stop(t+.08)},
+thud(){this.burst(0,220,.8,.5,.13,0,'lowpass')},
+kill(){if(!this.on)return;const C=this.ctx,t=C.currentTime,o=C.createOscillator(),g=C.createGain();
+  o.type='square';o.frequency.setValueAtTime(520,t);o.frequency.setValueAtTime(780,t+.09);o.frequency.setValueAtTime(1040,t+.18);
+  g.gain.setValueAtTime(.14,t);g.gain.setValueAtTime(.0001,t+.3);
+  o.connect(g);g.connect(this.master);o.start(t);o.stop(t+.3)},
+expl(dist,big){if(!this.on)return;const v=this.att(dist)*(big?1:.6);
+  this.burst(0,700,.5,v,.9,0,'lowpass');this.burst(0,90,.8,v*.9,1.4,0,'lowpass')},
+thunder(delay,vol){this.burst(0,130,.5,vol,2.8,delay,'lowpass')},
+frame(dt,spd,rain){if(!this.on)return;this.gunBudget=4;const t=this.ctx.currentTime;
+  this.windG.gain.setTargetAtTime(clamp(spd/220,0,1)*.12*(1+rain),t,.2);
+  this.rainG.gain.setTargetAtTime(rain*.14,t,.4)},
+mute(m){if(this.on)this.master.gain.setTargetAtTime(m?0:.6,this.ctx.currentTime,.05)}};
+
+/* ============ 玩家 & 輸入 ============ */
+let camMode=0; // 0追尾 1座艙
+const pq=new THREE.Quaternion();
+pq.setFromAxisAngle(VY,0);
+const player={isPlayer:true,phys:newPhys(0,340,0,pq),root:tplPlayer.clone(true),ctl:{pitch:0,roll:0,yaw:0,throttle:.8,fire:false},
+  heat:0,jam:false,shotT:0,side:0,lastHitBy:null,lastHitT:0};
+player.root.traverse(o=>{});
+scene.add(player.root);
+const keys={};
+addEventListener('keydown',e=>{
+  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+  keys[e.code]=true;
+  if(e.repeat)return;
+  if(e.code==='KeyC')camMode=1-camMode;
+  if(e.code==='KeyM'){sfx.muted=!sfx.muted;sfx.mute(sfx.muted);feed(sfx.muted?'音效：關':'音效：開')}
+  if((e.code==='KeyP'||e.code==='Escape')&&started&&!gameOver)togglePause();
+});
+addEventListener('keyup',e=>keys[e.code]=false);
+function playerInput(dt){
+  const c=player.ctl;
+  const tp=(keys.KeyS||false?1:0)-(keys.KeyW?1:0);
+  c.throttle=clamp(c.throttle+tp*dt*.55,0,2);
+  const tg=((keys.ArrowDown||keys.KeyK)?1:0)-((keys.ArrowUp||keys.KeyI)?1:0);
+  const rg=((keys.ArrowRight||keys.KeyL)?1:0)-((keys.ArrowLeft||keys.KeyJ)?1:0);
+  const yg=((keys.KeyD?1:0)-(keys.KeyA?1:0));
+  const sm=1-Math.exp(-dt*8);
+  c.pitch+=(tg-c.pitch)*sm;c.roll+=(rg-c.roll)*sm;c.yaw+=(yg*.7-c.yaw)*sm;
+  c.fire=!!keys.Space;
+}
+function repairPlayer(v){player.phys.hp=clamp(player.phys.hp+v,0,100)}
+
+/* ============ AI 敵機 ============ */
+const enemies=[];let score=0,streak=0,lastSpawn=0;
+function maxEnemies(){return Math.min(3+Math.floor(score/3),8)}
+function spawnEnemy(){
+  const a=rng()*6.28,d=rr(900,1600),pp=player.phys.pos;
+  let x=pp.x+Math.cos(a)*d,z=pp.z+Math.sin(a)*d;
+  const gh=Math.max(terrainHeight(x,z),0),y=Math.max(gh+rr(120,380),pp.y+rr(-100,150));
+  const q=new THREE.Quaternion();_m1.lookAt(new THREE.Vector3(),_a.subVectors(pp,new THREE.Vector3(x,y,z)).normalize(),WORLD_UP);
+  q.setFromRotationMatrix(_m1);
+  const e={isPlayer:false,phys:newPhys(x,y,z,q),root:tplEnemy.clone(true),
+    ctl:{pitch:0,roll:0,yaw:0,throttle:1,fire:false},
+    state:'PURSUE',think:0,timer:0,evadeDir:rng()<.5?-1:1,err:new THREE.Vector3(),
+    burstT:rr(.3,.8),restT:0,lastHitBy:null,lastHitT:0,emitT:0};
+  scene.add(e.root);enemies.push(e);feed('偵測到敵機接近！');
+}
+const _lv=new THREE.Vector3(),_lt=new THREE.Vector3(),_rw=new THREE.Vector3(),_uw=new THREE.Vector3(),_fw=new THREE.Vector3();
+function steerTo(P,tgt,ctl){
+  _lv.subVectors(tgt,P.pos).applyQuaternion(_qi.copy(P.quat).invert());
+  const yawErr=Math.atan2(_lv.x,-_lv.z),pitchErr=Math.atan2(_lv.y,Math.hypot(_lv.x,_lv.z));
+  _rw.set(1,0,0).applyQuaternion(P.quat);_uw.set(0,1,0).applyQuaternion(P.quat);
+  const bank=Math.atan2(_rw.y,_uw.y);
+  const urg=clamp(Math.abs(yawErr)/.6,0,1);
+  let roll=bank*1.4*(1-urg)+clamp(yawErr*2.4,-1,1)*urg+clamp(_lv.x*.15,-.3,.3)*urg;
+  let pitch=clamp(pitchErr*2.6,-1,1)+urg*.5*Math.min(1,Math.abs(bank)/1.2);
+  if(P.spd<52)pitch-=.55;
+  if(P.pos.y>3300)pitch-=.4;
+  ctl.pitch=clamp(pitch,-1,1);ctl.roll=clamp(roll,-1,1);ctl.yaw=clamp(yawErr*.4,-.35,.35);
+}
+function leadPoint(sp,sv,tp,tv,out){
+  let t=sp.distanceTo(tp)/BULLET_V;
+  for(let i=0;i<3;i++){out.set(tp.x+tv.x*t,tp.y+tv.y*t,tp.z+tv.z*t);
+    t=sp.distanceTo(out)/BULLET_V}
+  out.set(tp.x+tv.x*t,tp.y+tv.y*t+.5*GRAV*t*t,tp.z+tv.z*t);
+  return out;
+}
+function aiUpdate(e,dt){
+  const P=e.phys,c=e.ctl,tp=player.phys;
+  c.throttle=1;
+  if(player.phys.dead){ // 玩家墜毀後敵機盤旋
+    _lt.set(tp.pos.x+Math.cos(nowT*.4+e.phys.id)*300,tp.pos.y+120,tp.pos.z+Math.sin(nowT*.4+e.phys.id)*300);
+    steerTo(P,_lt,c);c.fire=false;return}
+  e.think-=dt;
+  if(e.think<=0){e.think=.13+rng()*.1;
+    _fw.subVectors(P.pos,tp.pos);const distBack=_fw.length();
+    _fw.normalize();_b.set(0,0,-1).applyQuaternion(tp.quat);
+    if(_fw.dot(_b)>.72&&distBack<680&&e.state==='PURSUE'&&rng()<.5){ // 被咬尾→迴避
+      e.state='EVADE';e.timer=rr(1.8,3.2);e.man=['BREAK','DIVE','SPIRAL'][(rng()*3)|0]}
+    if(e.phys.hp<20&&e.state==='PURSUE'&&rng()<.3){e.state='RUN';e.timer=rr(4,7)} // 保命撤離
+    if(e.state==='EVADE'||e.state==='RUN'){e.timer-=.15;if(e.timer<=0)e.state='PURSUE'}}
+  // 目標點
+  if(e.state==='PURSUE'){
+    e.err.lerp(_a.set(rr(-1,1),rr(-1,1),rr(-1,1)).normalize().multiplyScalar(Math.max(3.5,13-score*.5)),dt*2);
+    leadPoint(P.pos,P.vel,tp.pos,tp.vel,_lt).add(e.err);
+    const dist=P.pos.distanceTo(tp.pos);
+    if(dist<140)c.throttle=.45;
+    steerTo(P,_lt,c);
+    // 開火判定
+    _a.set(0,0,-1).applyQuaternion(P.quat);_b.copy(_lt).sub(P.pos).normalize();
+    const aim=_a.angleTo(_b);
+    c.fire=false;
+    if(e.restT>0)e.restT-=dt;
+    else{e.burstT-=dt;
+      if(aim<.06&&dist<820&&dist>50)c.fire=true;
+      if(e.burstT<=0){e.restT=rr(.6,1.3);e.burstT=rr(.5,1)}}}
+  else if(e.state==='RUN'){
+    _a.subVectors(P.pos,tp.pos).normalize();
+    _lt.copy(P.pos).addScaledVector(_a,600);
+    _lt.y+=80+_b.set(Math.sin(nowT*.7+P.id)*120,0,0).y;
+    steerTo(P,_lt,c);c.fire=false}
+  else{ // EVADE
+    c.fire=false;c.throttle=1;
+    if(e.man==='BREAK'){c.roll=e.evadeDir;c.pitch=.85}
+    else if(e.man==='DIVE'){c.pitch=-.75;c.roll=e.evadeDir*.4;
+      if(P.pos.y-Math.max(terrainHeight(P.pos.x,P.pos.z),0)<160)e.man='SPIRAL'}
+    else{c.roll=e.evadeDir;c.pitch=.55}}
+  // 地形回避（最高優先權）
+  _a.copy(P.vel).multiplyScalar(2).add(P.pos);
+  const floor=Math.max(terrainHeight(_a.x,_a.z),0);
+  if(_a.y<floor+45||P.pos.y<floor+30){
+    _uw.set(0,1,0).applyQuaternion(P.quat);_rw.set(1,0,0).applyQuaternion(P.quat);
+    const bank=Math.atan2(_rw.y,_uw.y);
+    c.pitch=1;c.roll=clamp(bank*3,-1,1);c.fire=false}
+  // 開火執行
+  if(c.fire){e.shotT=(e.shotT||0)-dt;
+    if(e.shotT<=0){e.shotT=1/9;aiShoot(e)}}
+}
+function aiShoot(e){
+  const P=e.phys;
+  e.side=!e.side;
+  _mz.set(e.side?.34:-.34,-.02,-3.6).applyQuaternion(P.quat).add(P.pos);
+  _a.set(0,0,-1).applyQuaternion(P.quat);
+  _b.copy(P.pos).addScaledVector(_a,340);
+  _c.subVectors(_b,_mz).normalize();
+  _c.x+=rr(-.004,.004);_c.y+=rr(-.004,.004);_c.z+=rr(-.004,.004);_c.normalize();
+  fireBullet(e,_mz,_c,0xff7a5c);
+  const d=camera.position.distanceTo(_mz);
+  _d.copy(_mz).sub(camera.position).normalize();
+  _e.set(1,0,0).applyQuaternion(camera.quaternion);
+  sfx.gun(d,_d.dot(_e));
+}
+
+/* ============ 所有飛機集合 / 同步 ============ */
+function allPlanes(){return[player,...enemies]}
+function syncPlane(pl,dt){
+  const P=pl.phys,r=pl.root;
+  r.position.copy(P.pos);r.quaternion.copy(P.quat);
+  const rpm=pl.phys.gone?0:(pl.phys.dead?.15:(.25+pl.ctl.throttle*.75));
+  const pr=r.getObjectByName('prop');if(pr)pr.rotation.z-=rpm*dt*55;
+  const bl=r.getObjectByName('blur');if(bl)bl.material.opacity=rpm*.16;
+  const el=r.getObjectByName('el');if(el)el.rotation.x=-pl.ctl.pitch*.5;
+  const ru=r.getObjectByName('ru');if(ru)ru.rotation.y=-pl.ctl.yaw*.5;
+  const al=r.getObjectByName('alR');if(al)al.rotation.x=pl.ctl.roll*.45;
+  const ar=r.getObjectByName('alL');if(ar)ar.rotation.x=-pl.ctl.roll*.45;
+}
+function groundCheck(pl){
+  const P=pl.phys;if(P.gone)return;
+  const gh=Math.max(terrainHeight(P.pos.x,P.pos.z),0);
+  if(P.pos.y<gh+1.5){
+    if(P.dead){finishPlane(pl)}
+    else{ // 直接撞地
+      if(!pl.isPlayer&&(pl.lastHitBy===player&&nowT-pl.lastHitT<4)){score++;streak++;pop('擊 落 ！');sfx.kill()}
+      fxExplode(P.pos,true);P.gone=true;pl.root.visible=false;
+      if(pl.isPlayer)gameOverSeq()}
+  }
+}
+function finishPlane(pl){
+  fxExplode(pl.phys.pos,true);pl.phys.gone=true;pl.root.visible=false;
+  if(pl.isPlayer)gameOverSeq();
+}
+function updateDead(pl,dt){
+  const P=pl.phys;stepDead(P,dt);
+  pl.emitT-=dt;
+  if(pl.emitT<=0){pl.emitT=.05;
+    _a.set(0,.3,-2.5).applyQuaternion(P.quat).add(P.pos);
+    smoke.spawn(_a.x,_a.y,_a.z,rr(-1,1),rr(1,3),rr(-1,1),rr(.8,1.6),rr(2.5,4.5),.13,.12,.11,.8,7,1,1);
+    sparks.spawn(_a.x,_a.y,_a.z,rr(-3,3),rr(0,4),rr(-3,3),rr(.2,.5),rr(1.5,3),1,rr(.4,.7),.2,1,0,0,0)}
+  if(P.deadT>7)groundCheckForce(pl);
+}
+function groundCheckForce(pl){const P=pl.phys;
+  const gh=Math.max(terrainHeight(P.pos.x,P.pos.z),0);
+  if(P.pos.y<gh+2)finishPlane(pl)}
+
+/* ============ 玩家開火 ============ */
+function playerFire(dt){
+  const c=player.ctl,P=player.phys;
+  player.heat=clamp(player.heat-dt*.15,0,1);
+  if(player.jam&&player.heat<.35)player.jam=false;
+  if(!c.fire||player.jam||P.dead)return;
+  player.shotT-=dt;
+  while(player.shotT<=0){
+    player.shotT+=1/13;player.side^=1;
+    _mz.set(player.side?.34:-.34,-.02,-3.6).applyQuaternion(P.quat).add(P.pos);
+    _a.set(0,0,-1).applyQuaternion(P.quat);
+    _b.copy(P.pos).addScaledVector(_a,340);   // 340m 匯聚點
+    _c.subVectors(_b,_mz).normalize();
+    _c.x+=rr(-.004,.004);_c.y+=rr(-.004,.004);_c.z+=rr(-.004,.004);
+    fireBullet(player,_mz,_c.normalize(),0xffd27a);
+    flashAt(_mz,1.1,.05,0xffd28a);
+    shake(.05);
+    _d.copy(_mz).sub(camera.position).normalize();
+    _e.set(1,0,0).applyQuaternion(camera.quaternion);
+    sfx.gun(camera.position.distanceTo(_mz),-_d.dot(_e));
+    player.heat+=.0165;
+    if(player.heat>=1){player.jam=true;feed('機槍過熱卡彈！','bad')}}
+}
+
+/* ============ 攝影機 ============ */
+let camPos=new THREE.Vector3(0,345,15),shakeAmt=0,fov=66;
+function shake(v){shakeAmt=Math.min(shakeAmt+v,1.2)}
+function damageFlash(){$('vig').style.opacity=.9;shake(.35)}
+function updateCamera(dt){
+  const P=player.phys;
+  const fwd=_a.set(0,0,-1).applyQuaternion(P.quat),up=_b.set(0,1,0).applyQuaternion(P.quat);
+  let targetFov;
+  if(gameOver&&player.phys.gone){ // 死亡環繞鏡頭
+    const a=nowT*.5;camPos.lerp(_c.set(deathPos.x+Math.cos(a)*60,deathPos.y+25,deathPos.z+Math.sin(a)*60),1-Math.exp(-dt*2));
+    camera.position.copy(camPos);camera.up.set(0,1,0);camera.lookAt(deathPos);
+  }else if(camMode===0){
+    _c.set(0,3.4,13.5).applyQuaternion(P.quat).add(P.pos);
+    camPos.lerp(_c,1-Math.exp(-dt*5));
+    camera.position.copy(camPos);
+    camera.up.copy(WORLD_UP).lerp(up,.85).normalize();
+    _d.copy(P.pos).addScaledVector(fwd,22).addScaledVector(up,2);
+    camera.lookAt(_d);
+    targetFov=66+clamp(P.spd-60,0,140)*.08;
+  }else{
+    _c.set(0,.85,-.25).applyQuaternion(P.quat).add(P.pos);
+    camera.position.copy(_c);camPos.copy(_c);
+    camera.quaternion.slerp(P.quat,1-Math.exp(-dt*28));
+    targetFov=74;
+  }
+  shakeAmt*=Math.exp(-dt*4);
+  if(shakeAmt>.002){camera.position.x+=rr(-1,1)*shakeAmt;camera.position.y+=rr(-1,1)*shakeAmt;camera.position.z+=rr(-1,1)*shakeAmt}
+  fov+=(targetFov-fov)*1-Math.exp(-dt*3);camera.fov=clamp(fov,60,84);camera.updateProjectionMatrix();
+}
+
+/* ============ HUD / 雷達 ============ */
+const radar=$('radar').getContext('2d');let sweep=0,hudT=0,fpsT=0,fpsN=0,fpsV=60;
+function feed(msg,cls){const d=document.createElement('div');d.textContent=msg;
+  if(cls==='bad')d.style.borderColor='#ff5b4a';if(cls==='kill')d.style.borderColor='#7ce27c';
+  const f=$('feed');f.prepend(d);while(f.children.length>6)f.lastChild.remove();
+  setTimeout(()=>{d.style.opacity=0;setTimeout(()=>d.remove(),700)},4200)}
+function pop(t){const p=$('popup');p.textContent=t;p.classList.remove('show');void p.offsetWidth;p.classList.add('show')}
+function fmtTime(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0')}
+let leadEl=$('lead'),leadD=$('leadD');
+function updateHUD(dt){
+  const P=player.phys;
+  hudT-=dt;if(hudT<=0){hudT=.12;
+    $('score').textContent=score;$('nenemy').textContent=enemies.filter(e=>!e.phys.dead).length;
+    $('time').textContent=fmtTime(nowT);$('weather').textContent=WDEF[weather.key].name;
+    $('spd').textContent=Math.round(P.spd*3.6);$('alt').textContent=Math.round(P.pos.y);
+    $('hdg').textContent=String((((Math.atan2(fwdH.x,fwdH.z)*180/Math.PI)+360)%360)|0).padStart(3,'0');
+    $('hpFill').style.width=P.hp+'%';
+    $('hpFill').style.background=P.hp>50?'linear-gradient(90deg,#67e26b,#cfe36a)':P.hp>25?'#ffb347':'#ff5340';
+    $('thrFill').style.width=(player.ctl.throttle*100)+'%';
+    $('thrTxt').textContent=Math.round(player.ctl.throttle*100)+'%';
+    $('heatFill').style.width=(player.jam?100:player.heat*100)+'%';
+    $('heatFill').style.background=player.jam?'#ff4030':'#ff9b4a';
+    // 警告
+    const warns=[];
+    if(P.stallSev>0)warns.push('失  速');
+    const agl=P.pos.y-Math.max(terrainHeight(P.pos.x,P.pos.z),0);
+    if(agl<75&&P.vel.y<-6)warns.push('注意地形');
+    if(player.jam)warns.push('機槍卡彈');
+    $('warn').style.display=warns.length?'block':'none';$('warn').textContent=warns.join('　');
+    fpsN=0;
+  }
+  fpsT+=dt;fpsN++;
+  if(fpsT>.5){fpsV=Math.round(fpsN/fpsT);fpsT=0;$('fps').textContent=fpsV+' FPS'}
+  const vig=$('vig');if(vig.style.opacity>0)vig.style.opacity=Math.max(0,vig.style.opacity-dt*1.4);
+  // 前置量指示
+  let best=null,bestA=.18;
+  _fw.set(0,0,-1).applyQuaternion(P.quat);
+  for(const e of enemies){if(e.phys.dead)continue;
+    _a.subVectors(e.phys.pos,P.pos);const d=_a.length();
+    if(d>1500)continue;const ang=_fw.angleTo(_a.normalize());
+    if(ang<bestA){bestA=ang;best=e}}
+  if(best&&!player.phys.dead){
+    leadPoint(P.pos,P.vel,best.phys.pos,best.phys.vel,_a);
+    _b.copy(_a).project(camera);
+    if(_b.z<1&&_b.z>-1){leadEl.style.display='block';
+      leadEl.style.left=((_b.x*.5+.5)*innerWidth-8)+'px';
+      leadEl.style.top=((-_b.y*.5+.5)*innerHeight-16)+'px';
+      leadD.textContent=Math.round(P.pos.distanceTo(best.phys.pos))+'m'}
+    else leadEl.style.display='none';
+  }else leadEl.style.display='none';
+  drawRadar();
+}
+const fwdH=new THREE.Vector3(0,0,-1);
+function drawRadar(){
+  const s=150,cx=s/2,cyy=s/2,R=70,range=2500;
+  radar.clearRect(0,0,s,s);
+  radar.strokeStyle='rgba(120,200,140,.35)';radar.fillStyle='rgba(8,20,12,.6)';
+  radar.beginPath();radar.arc(cx,cyy,R,0,7);radar.fill();
+  radar.beginPath();radar.arc(cx,cyy,R*.5,0,7);radar.stroke();
+  sweep+=.03;
+  radar.strokeStyle='rgba(140,255,170,.5)';
+  radar.beginPath();radar.moveTo(cx,cyy);radar.lineTo(cx+Math.cos(sweep)*R,cyy+Math.sin(sweep)*R);radar.stroke();
+  const P=player.phys;
+  fwdH.set(0,0,-1).applyQuaternion(P.quat);fwdH.y=0;fwdH.normalize();
+  _e.set(-fwdH.z,0,fwdH.x); // 右方
+  radar.fillStyle='#ff5340';
+  for(const en of enemies){if(en.phys.dead)continue;
+    _a.subVectors(en.phys.pos,P.pos);
+    const sx=_a.dot(_e),sy=_a.dot(fwdH);
+    if(sx*sx+sy*sy>range*range)continue;
+    radar.beginPath();radar.arc(cx+sx/R*range*R/s* (R/range)*range/ (R/range) *0+ cx+(sx/range)*R, cyy-(sy/range)*R,3.2,0,7);radar.fill()}
+  radar.fillStyle='#9fe8a8';
+  radar.beginPath();radar.moveTo(cx,cyy-6);radar.lineTo(cx-4,cyy+5);radar.lineTo(cx+4,cyy+5);radar.closePath();radar.fill();
+}
+
+/* ============ 遊戲流程 ============ */
+let started=false,paused=false,gameOver=false,nowT=0,deathPos=new THREE.Vector3();
+$('startBtn').onclick=()=>{sfx.init();sfx.ctx.resume();$('startOv').style.display='none';started=true;
+  feed('作戰開始！擊落敵機取得分數。');lastSpawn=-2};
+$('resumeBtn').onclick=()=>togglePause();
+function togglePause(){paused=!paused;$('pauseOv').style.display=paused?'flex':'none';
+  if(sfx.on)(paused?sfx.ctx.suspend():sfx.ctx.resume())}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&started&&!gameOver&&!paused)togglePause()});
+function gameOverSeq(){
+  if(gameOver)return;gameOver=true;deathPos.copy(player.phys.pos);
+  setTimeout(()=>{
+    const acc=statShots>0?(statHits/statShots*100).toFixed(1):'0.0';
+    $('stats').innerHTML=`<div><b>${score}</b>擊落敵機</div><div><b>${acc}%</b>命中率</div>
+      <div><b>${fmtTime(nowT)}</b>存活時間</div><div><b>#${SEED}</b>地形種子</div>`;
+    $('overOv').style.display='flex';
+  },1600);
+}
+
+/* ============ 主循環 ============ */
+const clock=new THREE.Clock();
+let flareSpr=null;
+{const sp=new THREE.Sprite(fbMat());sp.scale.set(2600,2600,1);scene.add(sp);flareSpr=sp}
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),.05);
+  if(started&&!paused){
+    nowT+=dt;
+    // 風
+    windA+=dt*.05*Math.sin(nowT*.13);
+    const ws=2+weather.cur.storm*16+weather.cur.rain*4;
+    windX=Math.cos(windA)*ws;windZ=Math.sin(windA)*ws;
+    weather.update(dt);
+    updateChunks(player.phys.pos.x,player.phys.pos.z,false);
+    updateWater(nowT,player.phys.pos.x,player.phys.pos.z);
+    // 雲飄移
+    for(const g of clouds){g.position.x+=windX*.35*dt;g.position.z+=windZ*.35*dt;
+      g.position.y+=(g.userData.baseY-g.position.y)*dt*.3;
+      _a.subVectors(g.position,player.phys.pos);_a.y=0;
+      if(_a.length()>5800)g.position.addScaledVector(_a.normalize(),-11200)}
+    // 玩家
+    if(!player.phys.dead){playerInput(dt);playerFire(dt)}
+    if(!player.phys.gone){stepFlight(player.phys,player.phys.dead?{pitch:0,roll:0,yaw:0,throttle:0}:player.ctl,dt);
+      if(player.phys.dead)updateDead(player,dt);groundCheck(player)}
+    // 敵機
+    for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];
+      if(e.phys.gone){scene.remove(e.root);enemies.splice(i,1);continue}
+      if(!e.phys.dead)aiUpdate(e,dt);
+      else updateDead(e,dt);
+      stepFlight(e.phys,e.phys.dead?{pitch:0,roll:0,yaw:0,throttle:0}:e.ctl,dt);
+      groundCheck(e)}
+    // 補充敵機
+    if(!gameOver&&enemies.length<maxEnemies()&&nowT-lastSpawn>3.2){lastSpawn=nowT;spawnEnemy()}
+    updateBullets(dt);
+    sparks.update(dt);smoke.update(dt);updFireballs(dt);updX(dt);
+    explLight.intensity*=Math.exp(-dt*7);
+    // 同步外觀
+    for(const pl of allPlanes())if(!pl.phys.gone)syncPlane(pl,dt);
+    // 太陽光跟隨
+    sun.position.copy(player.phys.pos).addScaledVector(skyUni.sunDir.value,4000);
+    sun.target.position.copy(player.phys.pos);
+    sky.position.copy(camera.position);
+    flareSpr.position.copy(camera.position).addScaledVector(skyUni.sunDir.value,15000);
+    flareSpr.material.opacity=clamp(skyUni.sunI.value*.4,0,1)*clamp(skyUni.sunDir.value.y*3,0,1);
+    // 音效引擎聲
+    const planes=allPlanes().filter(p=>!p.phys.gone&&!p.phys.dead)
+      .sort((a,b)=>a.phys.pos.distanceToSquared(camera.position)-b.phys.pos.distanceToSquared(camera.position)).slice(0,4);
+    for(let i=0;i<4;i++){const v=sfx.voices[i];
+      if(!sfx.on)break;
+      if(i<planes.length){const p=planes[i];
+        _a.copy(p.phys.pos).sub(camera.position);const d=_a.length();
+        _b.set(1,0,0).applyQuaternion(camera.quaternion);
+        sfx.engine(i,.25+p.ctl.throttle*.75,d,_a.normalize().dot(_b))}
+      else v.g.gain.setTargetAtTime(0,sfx.ctx.currentTime,.1)}
+    sfx.frame(dt,player.phys.spd,weather.cur.rain);
+    updateCamera(dt);
+    updateHUD(dt);
+  }
+  renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>

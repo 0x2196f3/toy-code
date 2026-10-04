@@ -9,8 +9,7 @@ import time
 def clean():
     dirs = [Path("./input"), Path("./output")]
     exts = {".png", ".jpg", ".jpeg"}
-
-    # brief pause to let processes release handles
+let
     time.sleep(0.2)
 
     for d in dirs:
@@ -22,8 +21,8 @@ def clean():
                 continue
             tmp = p.with_name(p.stem + "__touch" + p.suffix)
             try:
-                p.replace(tmp)   # atomic rename away from original name
-                tmp.replace(p)   # move name back
+                p.replace(tmp)
+                tmp.replace(p)
             except Exception as e:
                 print(f"Could not touch {p}: {e}")
 
@@ -39,21 +38,18 @@ def clear_dir(path: Path):
             child.unlink()
 
 def main():
-    # fixed paths
     src = Path("./input").resolve()
     dst = Path("./output").resolve()
 
     if not src.exists() or not src.is_dir():
         err(f"src directory not found: {src}")
 
-    # create dst if needed
     if not dst.exists():
         dst.mkdir(parents=True, exist_ok=True)
     else:
         if any(dst.iterdir()):
             clear_dir(dst)
 
-    # tool paths (relative to script's working directory)
     waifu = Path("./waifu2x-ncnn-vulkan/waifu2x-ncnn-vulkan.exe")
     magick = Path("./ImageMagick-full/magick.exe")
 
@@ -62,7 +58,6 @@ def main():
     if not magick.exists():
         err(f"{magick} not found.")
 
-    # Call waifu2x
     waifu_cmd = [
         str(waifu),
         "-i", str(src),
@@ -76,12 +71,10 @@ def main():
     except subprocess.CalledProcessError as e:
         err(f"waifu2x failed with exit code {e.returncode}")
 
-    # Ensure there are png files in dst
     pngs = list(dst.glob("*.png"))
     if not pngs:
         err("No PNG files found in dst after waifu2x run.")
 
-    # Call ImageMagick mogrify to create JPGs
     mogrify_cmd = [
         str(magick),
         "mogrify",
@@ -95,7 +88,6 @@ def main():
     except subprocess.CalledProcessError as e:
         err(f"ImageMagick mogrify failed with exit code {e.returncode}")
 
-    # Remove PNGs
     for p in dst.glob("*.png"):
         try:
             p.unlink()
@@ -115,7 +107,6 @@ def main():
             new_name = name[len("modified_"):]
             target = dst / new_name
             try:
-                # If a target exists, choose a non-colliding name by appending a counter
                 if target.exists():
                     base = target.stem
                     ext = target.suffix

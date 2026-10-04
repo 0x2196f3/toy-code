@@ -1,13 +1,3 @@
-"""
-normalize_archives.py
-
-Usage:
-  python normalize_archives.py [--path PATH] [--dry-run]
-
-- --path PATH : directory to scan for .zip and .7z (default: current dir)
-- --dry-run : show actions without replacing archives
-"""
-
 import argparse
 import os
 import shutil

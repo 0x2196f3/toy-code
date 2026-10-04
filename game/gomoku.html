@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gomoku — AI Mode</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: #18212f;
+      color: #edf2fa;
+      font-family: system-ui, sans-serif;
+    }
+
+    main { width: min(100%, 580px); text-align: center; }
+    h1 { margin: 0 0 8px; font-size: 2.2rem; }
+    .instructions { margin: 0 0 20px; color: #bac5d6; }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    button, select {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    select { background: #2c3a50; color: #edf2fa; }
+
+    button {
+      background: #80d4b5;
+      color: #102a22;
+      font-weight: 700;
+    }
+
+    button:hover { background: #a2e5cd; }
+
+    button:focus-visible, select:focus-visible {
+      outline: 3px solid white;
+      outline-offset: 3px;
+    }
+
+    #status {
+      min-height: 24px;
+      margin: 16px 0;
+      font-weight: 600;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      background: #dfb879;
+      border-radius: 12px;
+      box-shadow: 0 12px 35px #0005;
+      touch-action: manipulation;
+      cursor: crosshair;
+    }
+
+    .note { color: #bac5d6; font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Gomoku</h1>
+    <p class="instructions">Five in a row · Black goes first</p>
+
+    <div class="controls">
+      <select id="mode" aria-label="Game mode">
+        <option value="ai">You (Black) vs AI (White)</option>
+        <option value="local">Two players</option>
+      </select>
+      <button id="restart" type="button">New game</button>
+    </div>
+
+    <div id="status" role="status" aria-live="polite"></div>
+
+    <canvas id="board"
+      aria-label="Gomoku board: click an intersection to place a stone">
+      Your browser does not support canvas.
+    </canvas>
+
+    <p class="note">
+      Connect five or more horizontally, vertically, or diagonally.
+    </p>
+  </main>
+
+  <script>
+    const SIZE = 15;
+    const DIRECTIONS = [[1, 0], [0, 1], [1, 1], [1, -1]];
+
+    const canvas = document.getElementById("board");
+    const ctx = canvas.getContext("2d");
+    const status = document.getElementById("status");
+    const mode = document.getElementById("mode");
+
+    let board, player, finished, moves, lastMove, winningLine;
+    let aiTimer = null;
+    let width = 0;
+    let cell = 0;
+
+    const inside = (x, y) =>
+      x >= 0 && y >= 0 && x < SIZE && y < SIZE;
+
+    const position = n => (n + 1) * cell;
+    const isAITurn = () => mode.value === "ai" && player === 2;
+
+    function updateStatus() {
+      if (finished) {
+        status.textContent = winningLine
+          ? `${player === 1 ? "Black" : "White"} wins!${
+              mode.value === "ai" ? (player === 1 ? " You win!" : " AI wins.") : ""
+            }`
+          : "It's a draw!";
+      } else {
+        status.textContent = isAITurn()
+          ? "White (AI) is thinking…"
+          : `${player === 1 ? "Black" : "White"}'s turn${
+              mode.value === "ai" ? " — your move" : ""
+            }`;
+      }
+
+      canvas.style.cursor =
+        finished || isAITurn() ? "default" : "crosshair";
+    }
+
+    function newGame() {
+      clearTimeout(aiTimer);
+      aiTimer = null;
+      board = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+      player = 1;
+      finished = false;
+      moves = 0;
+      lastMove = null;
+      winningLine = null;
+      updateStatus();
+      draw();
+    }
+
+    function resize() {
+      width = canvas.getBoundingClientRect().width;
+      const dpr = window.devicePixelRatio || 1;
+
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(width * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      cell = width / (SIZE + 1);
+      draw();
+    }
+
+    function draw() {
+      if (!board || !width) return;
+
+      ctx.clearRect(0, 0, width, width);
+      ctx.strokeStyle = "#79572f";
+      ctx.lineWidth = 1;
+
+      // Grid
+      ctx.beginPath();
+      for (let i = 0; i < SIZE; i++) {
+        const p = position(i);
+        ctx.moveTo(position(0), p);
+        ctx.lineTo(position(SIZE - 1), p);
+        ctx.moveTo(p, position(0));
+        ctx.lineTo(p, position(SIZE - 1));
+      }
+      ctx.stroke();
+
+      // Star points
+      ctx.fillStyle = "#79572f";
+      for (const [x, y] of [[3, 3], [11, 3], [7, 7], [3, 11], [11, 11]]) {
+        ctx.beginPath();
+        ctx.arc(position(x), position(y), cell * .1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Stones
+      for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+          if (!board[y][x]) continue;
+
+          const px = position(x);
+          const py = position(y);
+          const radius = cell * .43;
+          const black = board[y][x] === 1;
+
+          const gradient = ctx.createRadialGradient(
+            px - radius * .35, py - radius * .35, radius * .1,
+            px, py, radius
+          );
+          gradient.addColorStop(0, black ? "#555" : "#fff");
+          gradient.addColorStop(1, black ? "#111" : "#d6d6d6");
+
+          ctx.beginPath();
+          ctx.arc(px, py, radius, 0, Math.PI * 2);
+          ctx.fillStyle = gradient;
+          ctx.shadowColor = "#0005";
+          ctx.shadowBlur = 3;
+          ctx.shadowOffsetY = 2;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetY = 0;
+
+          if (lastMove && lastMove.x === x && lastMove.y === y) {
+            ctx.beginPath();
+            ctx.arc(px, py, radius * .25, 0, Math.PI * 2);
+            ctx.strokeStyle = "#e4674c";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+        }
+      }
+
+      if (winningLine) {
+        const [start, end] = winningLine;
+        ctx.beginPath();
+        ctx.moveTo(position(start.x), position(start.y));
+        ctx.lineTo(position(end.x), position(end.y));
+        ctx.strokeStyle = "#e4674c";
+        ctx.lineWidth = 4;
+        ctx.lineCap = "round";
+        ctx.stroke();
+        ctx.lineCap = "butt";
+      }
+    }
+
+    function findWin(x, y, who) {
+      for (const [dx, dy] of DIRECTIONS) {
+        let count = 1;
+        const ends = [];
+
+        for (const sign of [-1, 1]) {
+          let nx = x;
+          let ny = y;
+
+          while (
+            inside(nx + dx * sign, ny + dy * sign) &&
+            board[ny + dy * sign][nx + dx * sign] === who
+          ) {
+            nx += dx * sign;
+            ny += dy * sign;
+            count++;
+          }
+
+          ends.push({ x: nx, y: ny });
+        }
+
+        if (count >= 5) return ends;
+      }
+
+      return null;
+    }
+
+    function placeStone(x, y) {
+      if (finished || !inside(x, y) || board[y][x]) return;
+
+      board[y][x] = player;
+      lastMove = { x, y };
+      moves++;
+      winningLine = findWin(x, y, player);
+
+      if (winningLine || moves === SIZE * SIZE) {
+        finished = true;
+      } else {
+        player = 3 - player;
+      }
+
+      updateStatus();
+      draw();
+
+      if (!finished && isAITurn()) {
+        aiTimer = setTimeout(() => {
+          aiTimer = null;
+          if (finished || !isAITurn()) return;
+
+          const move = chooseAIMove();
+          if (move) placeStone(move.x, move.y);
+        }, 300);
+      }
+    }
+
+    // Only consider empty cells near existing stones.
+    function getCandidates() {
+      const candidates = [];
+
+      for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+          if (board[y][x]) continue;
+
+          let nearby = false;
+          for (let dy = -2; dy <= 2 && !nearby; dy++) {
+            for (let dx = -2; dx <= 2; dx++) {
+              if (inside(x + dx, y + dy) && board[y + dy][x + dx]) {
+                nearby = true;
+                break;
+              }
+            }
+          }
+
+          if (nearby) candidates.push({ x, y });
+        }
+      }
+
+      return candidates;
+    }
+
+    // Score every five-cell window containing a hypothetical move.
+    // Windows with opposing stones cannot become a winning line.
+    function evaluateMove(x, y, who) {
+      board[y][x] = who;
+
+      if (findWin(x, y, who)) {
+        board[y][x] = 0;
+        return { wins: true, score: 0 };
+      }
+
+      const weights = [0, 2, 20, 200, 4000, 1000000];
+      let score = 0;
+
+      for (const [dx, dy] of DIRECTIONS) {
+        for (let offset = -4; offset <= 0; offset++) {
+          const startX = x + offset * dx;
+          const startY = y + offset * dy;
+          const endX = startX + 4 * dx;
+          const endY = startY + 4 * dy;
+
+          if (!inside(startX, startY) || !inside(endX, endY)) continue;
+
+          let count = 0;
+          let blocked = false;
+
+          for (let i = 0; i < 5; i++) {
+            const value = board[startY + i * dy][startX + i * dx];
+            if (value === who) count++;
+            else if (value !== 0) {
+              blocked = true;
+              break;
+            }
+          }
+
+          if (!blocked) score += weights[count];
+        }
+      }
+
+      board[y][x] = 0;
+      return { wins: false, score };
+    }
+
+    function chooseAIMove() {
+      if (moves === 0) return { x: 7, y: 7 };
+
+      const candidates = getCandidates();
+      let bestScore = -Infinity;
+      let bestMoves = [];
+
+      for (const move of candidates) {
+        const { x, y } = move;
+        const attack = evaluateMove(x, y, 2);
+        const defense = evaluateMove(x, y, 1);
+
+        // Take a win before blocking the opponent.
+        let score;
+        if (attack.wins) {
+          score = 1e12;
+        } else if (defense.wins) {
+          score = 1e10 + attack.score;
+        } else {
+          score = attack.score + defense.score * 1.15;
+          score += (14 - Math.abs(x - 7) - Math.abs(y - 7)) * .1;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMoves = [move];
+        } else if (score === bestScore) {
+          bestMoves.push(move);
+        }
+      }
+
+      return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+    }
+
+    canvas.addEventListener("pointerdown", event => {
+      if (finished || isAITurn() || event.button !== 0 || !cell) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.round((event.clientX - rect.left) / cell) - 1;
+      const y = Math.round((event.clientY - rect.top) / cell) - 1;
+
+      placeStone(x, y);
+    });
+
+    document.getElementById("restart").addEventListener("click", newGame);
+    mode.addEventListener("change", newGame);
+    new ResizeObserver(resize).observe(canvas);
+
+    newGame();
+    resize();
+  </script>
+</body>
+</html>

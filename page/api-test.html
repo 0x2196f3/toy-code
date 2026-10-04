@@ -71,7 +71,7 @@
         @media (min-width: 1024px) {
             .container { padding: 2rem; }
         }
-        
+
         header {
             text-align: center;
             margin-bottom: 2rem;
@@ -80,13 +80,6 @@
             font-size: 2.25rem;
             font-weight: 700;
             color: var(--text-color);
-        }
-        header p {
-            color: #6b7280;
-            margin-top: 0.5rem;
-        }
-        @media (prefers-color-scheme: dark) {
-             header p { color: #9ca3af; }
         }
 
         .card {
@@ -115,7 +108,7 @@
             box-sizing: border-box;
             transition: border-color 0.2s;
         }
-        
+
         select {
             -webkit-appearance: none;
             -moz-appearance: none;
@@ -150,7 +143,7 @@
             .request-bar input { flex-grow: 1; }
             .request-bar button { width: auto; }
         }
-        
+
         .btn {
             font-weight: 700;
             padding: 0.625rem 1.5rem;
@@ -163,7 +156,7 @@
             justify-content: center;
             font-size: 1rem;
         }
-        
+
         .btn-primary {
             background-color: var(--primary-btn-bg);
             color: white;
@@ -187,7 +180,7 @@
         }
         .kv-pair .key-input { width: 33.333%; }
         .kv-pair .value-input { flex-grow: 1; }
-        
+
         .remove-btn {
             background-color: #fee2e2;
             color: #dc2626;
@@ -205,7 +198,7 @@
 
         .tabs-container { border-top: 1px solid var(--border-color); padding-top: 1rem; }
         .tab-nav { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
-        .tab-btn, .resp-tab-btn {
+        .tab-btn {
             padding: 0.5rem 1rem;
             font-weight: 500;
             color: #6b7280;
@@ -215,7 +208,7 @@
             cursor: pointer;
             margin-bottom: -1px;
         }
-        .tab-btn.active, .resp-tab-btn.active {
+        .tab-btn.active {
             border-color: var(--tab-active-border);
             color: var(--tab-active-color);
             background-color: var(--tab-active-bg);
@@ -233,7 +226,7 @@
             white-space: pre-wrap;
             word-break: break-all;
         }
-        
+
         pre::-webkit-scrollbar { width: 8px; height: 8px; }
         pre::-webkit-scrollbar-track { background: #4b5563; border-radius: 10px; }
         pre::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 10px; }
@@ -251,10 +244,15 @@
         .mb-2 { margin-bottom: 0.5rem; }
         .mb-4 { margin-bottom: 1rem; }
         .mt-4 { margin-top: 1rem; }
-        .space-y-2 > *:not([hidden]) ~ *:not([hidden]) { margin-top: 0.5rem; }
+        .space-y-2 > * + * { margin-top: 0.5rem; }
         .font-bold { font-weight: 700; }
-        
-        .loader-container { justify-content: center; align-items: center; padding: 1.5rem; }
+
+        .loader-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
         .loader {
             border: 4px solid #e5e7eb;
             border-top: 4px solid var(--border-focus-color);
@@ -268,7 +266,7 @@
             100% { transform: rotate(360deg); }
         }
 
-        #cors-warning {
+        #network-warning {
             background-color: var(--warning-bg);
             border-left: 4px solid var(--warning-border);
             color: var(--warning-text);
@@ -276,9 +274,8 @@
             margin-bottom: 2rem;
             border-radius: 0.25rem;
         }
-        #cors-warning p { margin: 0; }
-        #cors-warning .font-bold { font-weight: 700; }
-        
+        #network-warning p { margin: 0; }
+
     </style>
 </head>
 <body>
@@ -290,7 +287,7 @@
 
         <div class="card">
             <h2>Request</h2>
-            
+
             <div class="request-bar">
                 <select id="method">
                     <option>GET</option>
@@ -309,7 +306,7 @@
             </div>
 
             <div class="tabs-container">
-                <div class="tab-nav">
+                <div id="request-tabs" class="tab-nav">
                     <button class="tab-btn" data-tab="params">URL Params</button>
                     <button class="tab-btn" data-tab="headers">Headers</button>
                     <button class="tab-btn" data-tab="body">Body</button>
@@ -319,7 +316,7 @@
                     <div id="params-container" class="space-y-2"></div>
                     <button id="add-param-btn" class="mt-4 btn btn-secondary">+ Add Param</button>
                 </div>
-                
+
                 <div id="headers-content" class="tab-content hidden">
                      <div id="headers-container" class="space-y-2"></div>
                     <button id="add-header-btn" class="mt-4 btn btn-secondary">+ Add Header</button>
@@ -330,10 +327,10 @@
                 </div>
             </div>
         </div>
-        
-        <div id="cors-warning" class="hidden">
-            <p class="font-bold">CORS Error</p>
-            <p>The request was blocked by the browser's Cross-Origin Resource Sharing (CORS) policy. This is a security feature. The server at the requested URL does not allow requests from this origin.</p>
+
+        <div id="network-warning" class="hidden">
+            <p class="font-bold">Request Failed</p>
+            <p>The request could not be completed. Common causes: the server disallows cross-origin requests (CORS), the URL is unreachable, DNS resolution failed, or you are offline.</p>
         </div>
 
         <div id="response-section" class="hidden card">
@@ -346,25 +343,25 @@
             </div>
 
             <div>
-                 <div class="tab-nav">
-                    <button class="resp-tab-btn" data-tab="resp-body">Body</button>
-                    <button class="resp-tab-btn" data-tab="resp-headers">Headers</button>
+                 <div id="response-tabs" class="tab-nav">
+                    <button class="tab-btn" data-tab="resp-body">Body</button>
+                    <button class="tab-btn" data-tab="resp-headers">Headers</button>
                 </div>
 
-                <div id="resp-body-content" class="resp-tab-content hidden">
+                <div id="resp-body-content" class="tab-content hidden">
                     <div class="flex justify-end mb-2">
                         <button id="format-json-btn" class="btn btn-secondary">Format JSON</button>
                     </div>
                     <pre id="response-body"></pre>
                 </div>
-                
-                <div id="resp-headers-content" class="resp-tab-content hidden">
+
+                <div id="resp-headers-content" class="tab-content hidden">
                     <pre id="response-headers"></pre>
                 </div>
             </div>
         </div>
-        
-        <div id="loader-container" class="hidden flex loader-container">
+
+        <div id="loader-container" class="hidden loader-container">
              <div class="loader"></div>
         </div>
 
@@ -372,217 +369,195 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const methodSelect = document.getElementById('method');
-            const urlInput = document.getElementById('url');
-            const sendBtn = document.getElementById('send-btn');
-            
-            const paramsContainer = document.getElementById('params-container');
-            const addParamBtn = document.getElementById('add-param-btn');
-            
-            const headersContainer = document.getElementById('headers-container');
-            const addHeaderBtn = document.getElementById('add-header-btn');
-            
-            const bodyInput = document.getElementById('body-input');
+            const $ = (id) => document.getElementById(id);
 
-            const responseSection = document.getElementById('response-section');
-            const loaderContainer = document.getElementById('loader-container');
-            const corsWarning = document.getElementById('cors-warning');
-            
-            const statusCodeEl = document.getElementById('status-code');
-            const responseTimeEl = document.getElementById('response-time');
-            
-            const responseBodyEl = document.getElementById('response-body');
-            const responseHeadersEl = document.getElementById('response-headers');
-            const formatJsonBtn = document.getElementById('format-json-btn');
-            
-            const requestTabs = document.querySelectorAll('.tab-btn');
-            const requestTabContents = document.querySelectorAll('.tab-content');
-            
-            const responseTabs = document.querySelectorAll('.resp-tab-btn');
-            const responseTabContents = document.querySelectorAll('.resp-tab-content');
+            const methodSelect = $('method');
+            const urlInput = $('url');
+            const sendBtn = $('send-btn');
+            const paramsContainer = $('params-container');
+            const headersContainer = $('headers-container');
+            const bodyInput = $('body-input');
+            const responseSection = $('response-section');
+            const loaderContainer = $('loader-container');
+            const networkWarning = $('network-warning');
+            const statusCodeEl = $('status-code');
+            const responseTimeEl = $('response-time');
+            const responseBodyEl = $('response-body');
+            const responseHeadersEl = $('response-headers');
 
-            function setupTabs(tabs, contents, defaultTab) {
-                tabs.forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        tabs.forEach(item => item.classList.remove('active'));
-                        tab.classList.add('active');
-                        
-                        contents.forEach(content => {
-                            content.classList.add('hidden');
-                            if (content.id === `${tab.dataset.tab}-content`) {
-                                content.classList.remove('hidden');
-                            }
+            const REMOVE_ICON =
+                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+
+            function setupTabs(navId) {
+                const btns = [...$(navId).querySelectorAll('.tab-btn')];
+                const panels = btns.map(btn => $(`${btn.dataset.tab}-content`));
+                btns.forEach((btn, i) => {
+                    btn.addEventListener('click', () => {
+                        btns.forEach((b, j) => {
+                            b.classList.toggle('active', j === i);
+                            panels[j].classList.toggle('hidden', j !== i);
                         });
                     });
                 });
-                const defaultTabEl = document.querySelector(`.tab-btn[data-tab='${defaultTab}']`) || document.querySelector(`.resp-tab-btn[data-tab='${defaultTab}']`);
-                if (defaultTabEl) defaultTabEl.click();
+                btns[0].click();
             }
 
-            setupTabs(requestTabs, requestTabContents, 'params');
-            setupTabs(responseTabs, responseTabContents, 'resp-body');
+            setupTabs('request-tabs');
+            setupTabs('response-tabs');
 
-            function createKeyValuePair(container, type) {
-                const div = document.createElement('div');
-                div.className = 'kv-pair';
-                div.innerHTML = `
-                    <input type="text" class="input key-input" placeholder="Key">
-                    <input type="text" class="input value-input" placeholder="Value">
-                    <button class="remove-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
-                `;
-                container.appendChild(div);
+            function createRow(container, { key = '', value = '' } = {}, onChange = null) {
+                const row = document.createElement('div');
+                row.className = 'kv-pair';
 
-                div.querySelector('.remove-btn').addEventListener('click', () => {
-                    div.remove();
-                    if (type === 'param') updateUrlParams();
+                const keyInput = document.createElement('input');
+                keyInput.type = 'text';
+                keyInput.className = 'input key-input';
+                keyInput.placeholder = 'Key';
+                keyInput.value = key;
+
+                const valueInput = document.createElement('input');
+                valueInput.type = 'text';
+                valueInput.className = 'input value-input';
+                valueInput.placeholder = 'Value';
+                valueInput.value = value;
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'remove-btn';
+                removeBtn.setAttribute('aria-label', 'Remove row');
+                removeBtn.innerHTML = REMOVE_ICON;
+
+                removeBtn.addEventListener('click', () => {
+                    row.remove();
+                    onChange?.();
                 });
 
-                if (type === 'param') {
-                    div.querySelectorAll('input').forEach(input => {
-                        input.addEventListener('input', updateUrlParams);
-                    });
+                if (onChange) {
+                    keyInput.addEventListener('input', onChange);
+                    valueInput.addEventListener('input', onChange);
+                }
+
+                row.append(keyInput, valueInput, removeBtn);
+                container.appendChild(row);
+            }
+
+            function splitUrl(raw) {
+                const hashIdx = raw.indexOf('#');
+                const frag = hashIdx === -1 ? '' : raw.slice(hashIdx);
+                const noHash = hashIdx === -1 ? raw : raw.slice(0, hashIdx);
+                const qIdx = noHash.indexOf('?');
+                return {
+                    base: qIdx === -1 ? noHash : noHash.slice(0, qIdx),
+                    query: qIdx === -1 ? '' : noHash.slice(qIdx + 1),
+                    frag,
+                };
+            }
+
+            let lastQuery = null;
+
+            function renderRowsFromQuery(query) {
+                paramsContainer.innerHTML = '';
+                const entries = [...new URLSearchParams(query).entries()];
+                if (entries.length === 0) {
+                    createRow(paramsContainer, {}, updateUrlFromRows);
+                } else {
+                    entries.forEach(([k, v]) =>
+                        createRow(paramsContainer, { key: k, value: v }, updateUrlFromRows));
                 }
             }
 
-            addParamBtn.addEventListener('click', () => createKeyValuePair(paramsContainer, 'param'));
-            addHeaderBtn.addEventListener('click', () => createKeyValuePair(headersContainer, 'header'));
-
-            createKeyValuePair(paramsContainer, 'param');
-            createKeyValuePair(headersContainer, 'header');
-
-            function updateUrlParams() {
-                try {
-                    const baseUrl = urlInput.value.split('?')[0];
-                    const params = new URLSearchParams();
-                    const paramRows = paramsContainer.querySelectorAll('.kv-pair');
-                    paramRows.forEach(row => {
-                        const key = row.querySelector('.key-input').value.trim();
-                        const value = row.querySelector('.value-input').value.trim();
-                        if (key) {
-                            params.append(key, value);
-                        }
-                    });
-                    const queryString = params.toString();
-                    urlInput.value = queryString ? `${baseUrl}?${queryString}` : baseUrl;
-                } catch (e) {
-                }
+            function collectRows(container) {
+                const pairs = [];
+                container.querySelectorAll('.kv-pair').forEach(row => {
+                    const k = row.querySelector('.key-input').value.trim();
+                    const v = row.querySelector('.value-input').value.trim();
+                    if (k) pairs.push([k, v]);
+                });
+                return pairs;
             }
-            
+
+            function updateUrlFromRows() {
+                const { base, frag } = splitUrl(urlInput.value);
+                const params = new URLSearchParams(collectRows(paramsContainer));
+                const qs = params.toString();
+                urlInput.value = qs ? `${base}?${qs}${frag}` : `${base}${frag}`;
+                lastQuery = qs;
+            }
+
             urlInput.addEventListener('input', () => {
-                try {
-                    const url = new URL(urlInput.value);
-                    const params = url.searchParams;
-                    paramsContainer.innerHTML = '';
-                    if (params.toString() === '') {
-                        createKeyValuePair(paramsContainer, 'param');
-                    } else {
-                         for (const [key, value] of params.entries()) {
-                            const div = document.createElement('div');
-                            div.className = 'kv-pair';
-                            div.innerHTML = `
-                                <input type="text" class="input key-input" value="${key}">
-                                <input type="text" class="input value-input" value="${value}">
-                                <button class="remove-btn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </button>
-                            `;
-                            paramsContainer.appendChild(div);
-                             div.querySelector('.remove-btn').addEventListener('click', () => {
-                                div.remove();
-                                updateUrlParams();
-                            });
-                            div.querySelectorAll('input').forEach(input => {
-                                input.addEventListener('input', updateUrlParams);
-                            });
-                         }
-                    }
-                } catch(e) {
-                    paramsContainer.innerHTML = '';
-                    createKeyValuePair(paramsContainer, 'param');
+                const { query } = splitUrl(urlInput.value);
+                if (query !== lastQuery) {
+                    lastQuery = query;
+                    renderRowsFromQuery(query);
                 }
             });
 
-            sendBtn.addEventListener('click', async () => {
+            $('add-param-btn').addEventListener('click', () => createRow(paramsContainer, {}, updateUrlFromRows));
+            $('add-header-btn').addEventListener('click', () => createRow(headersContainer));
+
+            createRow(paramsContainer, {}, updateUrlFromRows);
+            createRow(headersContainer);
+
+            async function sendRequest() {
                 const url = urlInput.value.trim();
                 if (!url) {
                     urlInput.style.borderColor = 'var(--error-color)';
-                    setTimeout(() => { urlInput.style.borderColor = 'var(--border-color)'; }, 2000);
+                    setTimeout(() => { urlInput.style.borderColor = ''; }, 2000);
                     return;
                 }
 
                 loaderContainer.classList.remove('hidden');
                 responseSection.classList.add('hidden');
-                corsWarning.classList.add('hidden');
+                networkWarning.classList.add('hidden');
                 sendBtn.disabled = true;
 
                 const startTime = Date.now();
-                const method = methodSelect.value;
-                
-                const headers = new Headers();
-                const headerRows = headersContainer.querySelectorAll('.kv-pair');
-                headerRows.forEach(row => {
-                    const key = row.querySelector('.key-input').value.trim();
-                    const value = row.querySelector('.value-input').value.trim();
-                    if (key) {
-                        headers.append(key, value);
-                    }
-                });
 
-                const requestOptions = {
-                    method: method,
-                    headers: headers,
-                    mode: 'cors',
-                };
-                
-                if (method !== 'GET' && method !== 'HEAD') {
-                   requestOptions.body = bodyInput.value;
-                }
-                
                 try {
-                    const response = await fetch(url, requestOptions);
-                    const endTime = Date.now();
-                    
-                    responseSection.classList.remove('hidden');
-                    
-                    const statusText = `${response.status} ${response.statusText}`;
-                    statusCodeEl.textContent = statusText;
+                    const headers = new Headers();
+                    collectRows(headersContainer).forEach(([k, v]) => headers.append(k, v));
+
+                    const method = methodSelect.value;
+                    const options = { method, headers, mode: 'cors' };
+                    if (method !== 'GET' && method !== 'HEAD') {
+                        options.body = bodyInput.value;
+                    }
+
+                    const response = await fetch(url, options);
+
+                    statusCodeEl.textContent = response.statusText
+                        ? `${response.status} ${response.statusText}`
+                        : String(response.status);
                     statusCodeEl.className = `font-bold ${response.ok ? 'ok' : 'error'}`;
-                    responseTimeEl.textContent = `${endTime - startTime} ms`;
-                    
-                    let headersText = '';
-                    for (const [key, value] of response.headers.entries()) {
-                        headersText += `${key}: ${value}\n`;
-                    }
-                    responseHeadersEl.textContent = headersText || 'No headers received.';
+                    responseTimeEl.textContent = `${Date.now() - startTime} ms`;
 
-                    const bodyText = await response.text();
-                    responseBodyEl.textContent = bodyText || 'No body content.';
+                    const headersText = [...response.headers.entries()]
+                        .map(([k, v]) => `${k}: ${v}`)
+                        .join('\n');
+                    responseHeadersEl.textContent = headersText || '(No headers exposed to JavaScript.)';
 
+                    responseBodyEl.textContent = (await response.text()) || '(Empty body.)';
+
+                    responseSection.classList.remove('hidden');
                 } catch (error) {
-                    console.error('Fetch error:', error);
-                    if (error instanceof TypeError) {
-                        corsWarning.classList.remove('hidden');
-                    } else {
-                        responseSection.classList.remove('hidden');
-                        statusCodeEl.textContent = 'Error';
-                        statusCodeEl.className = 'font-bold error';
-                        responseBodyEl.textContent = error.message;
-                        responseHeadersEl.textContent = 'N/A';
-                    }
+                    console.error('Fetch failed:', error);
+                    networkWarning.classList.remove('hidden');
                 } finally {
                     loaderContainer.classList.add('hidden');
                     sendBtn.disabled = false;
                 }
+            }
+
+            sendBtn.addEventListener('click', sendRequest);
+            urlInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') sendRequest();
             });
-            
-            formatJsonBtn.addEventListener('click', () => {
+
+            $('format-json-btn').addEventListener('click', () => {
                 try {
-                    const currentBody = responseBodyEl.textContent;
-                    const parsedJson = JSON.parse(currentBody);
-                    responseBodyEl.textContent = JSON.stringify(parsedJson, null, 2);
-                } catch (e) {
+                    const parsed = JSON.parse(responseBodyEl.textContent);
+                    responseBodyEl.textContent = JSON.stringify(parsed, null, 2);
+                } catch {
                 }
             });
         });

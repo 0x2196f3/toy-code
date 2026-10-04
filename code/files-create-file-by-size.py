@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-# create-empty-file.py
-# Usage: python create-empty-file.py filename size
-# Examples:
-#   python create-empty-file.py test1.flac 10mb
-#   python create-empty-file.py test2.flac 512kb
-#   python create-empty-file.py test3.flac 1g
-# Size accepts suffixes: b, kb, mb, gb (case-insensitive). Default unit is bytes if no suffix.
-
 import sys
 from pathlib import Path
 import re
