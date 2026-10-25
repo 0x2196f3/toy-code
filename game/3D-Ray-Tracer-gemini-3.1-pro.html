@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D CPU Real-Time Ray Tracer & Benchmark</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030712;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #f3f4f6;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #0b0f19 0%, #030712 100%);
+        }
+
+        canvas#rayCanvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 243, 255, 0.15);
+            border-radius: 4px;
+            cursor: grab;
+        }
+
+        canvas#rayCanvas:active {
+            cursor: grabbing;
+        }
+
+        /* Glassmorphism HUD Panels */
+        .hud-panel {
+            position: absolute;
+            background: rgba(10, 16, 31, 0.78);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(0, 243, 255, 0.22);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 14px 18px;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        #stats-panel {
+            top: 16px;
+            left: 16px;
+            min-width: 250px;
+        }
+
+        .title-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #00f3ff;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+            padding-bottom: 6px;
+        }
+
+        .title-badge .indicator {
+            width: 8px;
+            height: 8px;
+            background-color: #00f3ff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00f3ff;
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+
+            100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+        }
+
+        .stat-label {
+            color: #9ca3af;
+        }
+
+        .stat-value {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .stat-value.highlight {
+            color: #00f3ff;
+            font-size: 1.05rem;
+        }
+
+        .stat-value.score {
+            color: #ff0077;
+            font-size: 1.2rem;
+            text-shadow: 0 0 12px rgba(255, 0, 119, 0.6);
+        }
+
+        #control-panel {
+            top: 16px;
+            right: 16px;
+            width: 270px;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: #9ca3af;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        .btn-grid.quad {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .hud-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #d1d5db;
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .hud-btn:hover {
+            background: rgba(0, 243, 255, 0.15);
+            border-color: #00f3ff;
+            color: #ffffff;
+        }
+
+        .hud-btn.active {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.4), rgba(112, 0, 255, 0.4));
+            border-color: #00f3ff;
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+        }
+
+        .hud-btn.action-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 0.85rem;
+            background: linear-gradient(135deg, #ff0077, #7000ff);
+            border: none;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(255, 0, 119, 0.4);
+            margin-top: 8px;
+        }
+
+        .hud-btn.action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(255, 0, 119, 0.6);
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin-bottom: 6px;
+            font-size: 0.75rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 36px;
+            height: 18px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle-switch.on {
+            background: #00f3ff;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .toggle-switch.on::after {
+            transform: translateX(18px);
+        }
+
+        #graph-panel {
+            bottom: 16px;
+            left: 16px;
+            padding: 10px;
+        }
+
+        #graphCanvas {
+            display: block;
+            border-radius: 6px;
+            background: rgba(4, 7, 15, 0.9);
+        }
+
+        #hint-banner {
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: #6b7280;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            pointer-events: none;
+            background: rgba(10, 16, 31, 0.6);
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Benchmark Progress Bar */
+        #benchmark-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 20;
+            display: none;
+        }
+
+        #benchmark-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00f3ff, #ff0077);
+            box-shadow: 0 0 12px #00f3ff;
+            transition: width 0.1s linear;
+        }
+
+        /* Benchmark Modal */
+        #benchmark-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 7, 18, 0.88);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        #benchmark-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(0, 243, 255, 0.4);
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.25);
+            border-radius: 16px;
+            padding: 28px;
+            max-width: 440px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        #benchmark-modal.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #ffffff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .modal-subtitle {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            margin-bottom: 20px;
+        }
+
+        .score-circle {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            margin: 0 auto 20px auto;
+            background: radial-gradient(circle, rgba(255, 0, 119, 0.2) 0%, rgba(112, 0, 255, 0.1) 100%);
+            border: 3px solid #ff0077;
+            box-shadow: 0 0 25px rgba(255, 0, 119, 0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .score-circle .rank-grade {
+            font-size: 2.4rem;
+            font-weight: 900;
+            color: #00f3ff;
+            text-shadow: 0 0 12px #00f3ff;
+            line-height: 1;
+        }
+
+        .score-circle .score-num {
+            font-size: 0.85rem;
+            color: #ff0077;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .modal-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+            text-align: left;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .modal-stat-item {
+            font-size: 0.8rem;
+        }
+
+        .modal-stat-item span {
+            display: block;
+            color: #9ca3af;
+            font-size: 0.7rem;
+        }
+
+        .modal-stat-item strong {
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        @media (max-width: 640px) {
+            #control-panel {
+                width: 210px;
+                padding: 10px;
+            }
+
+            #stats-panel {
+                min-width: 190px;
+                padding: 10px;
+            }
+
+            #graph-panel {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="benchmark-progress">
+        <div id="benchmark-progress-bar"></div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="rayCanvas"></canvas>
+    </div>
+
+    <!-- HUD Overlay Panels -->
+    <div id="stats-panel" class="hud-panel">
+        <div class="title-badge">
+            <div class="indicator"></div>
+            <span>CPU Ray Tracer Benchmark</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Framerate:</span>
+            <span id="val-fps" class="stat-value highlight">0 FPS</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Frame Time:</span>
+            <span id="val-frametime" class="stat-value">0.0 ms</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Resolution:</span>
+            <span id="val-res" class="stat-value">240x180</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Rays Cast / Frame:</span>
+            <span id="val-rays" class="stat-value">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Ray Throughput:</span>
+            <span id="val-throughput" class="stat-value">0 M/s</span>
+        </div>
+        <div class="stat-row" style="margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px;">
+            <span class="stat-label">Ray Score:</span>
+            <span id="val-score" class="stat-value score">0</span>
+        </div>
+    </div>
+
+    <div id="control-panel" class="hud-panel">
+        <div class="control-group">
+            <div class="control-label">Resolution Scale</div>
+            <div class="btn-grid quad">
+                <button class="hud-btn" data-res="160">160p</button>
+                <button class="hud-btn active" data-res="240">240p</button>
+                <button class="hud-btn" data-res="320">320p</button>
+                <button class="hud-btn" data-res="400">400p</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="toggle-row">
+                <span>Dynamic Shadows</span>
+                <div id="toggle-shadows" class="toggle-switch on"></div>
+            </div>
+            <div class="toggle-row">
+                <span>Mirror Reflections</span>
+                <div id="toggle-reflections" class="toggle-switch on"></div>
+            </div>
+            <div class="toggle-row">
+                <span>Orbiting Light</span>
+                <div id="toggle-light-orbit" class="toggle-switch on"></div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-label">Camera Orbit</div>
+            <div class="btn-grid">
+                <button class="hud-btn active" id="btn-cam-auto">Auto Rotate</button>
+                <button class="hud-btn" id="btn-cam-manual">Manual Drag</button>
+            </div>
+        </div>
+
+        <button class="hud-btn action-btn" id="btn-run-benchmark">RUN RAY BENCHMARK</button>
+    </div>
+
+    <div id="graph-panel" class="hud-panel">
+        <div class="control-label" style="margin-bottom: 4px;">Frametime Graph (ms)</div>
+        <canvas id="graphCanvas" width="220" height="45"></canvas>
+    </div>
+
+    <div id="hint-banner">Drag to Rotate Camera | Scroll to Zoom</div>
+
+    <!-- Benchmark Results Modal -->
+    <div id="benchmark-modal">
+        <div class="modal-card">
+            <div class="modal-title">RAY TRACER BENCHMARK</div>
+            <div class="modal-subtitle">Pure JavaScript CPU Ray Tracing Performance</div>
+
+            <div class="score-circle">
+                <div id="modal-rank" class="rank-grade">S</div>
+                <div id="modal-score" class="score-num">82,400 PTS</div>
+            </div>
+
+            <div class="modal-stats">
+                <div class="modal-stat-item">
+                    <span>Average FPS</span>
+                    <strong id="modal-avg-fps">58 FPS</strong>
+                </div>
+                <div class="modal-stat-item">
+                    <span>1% Low FPS</span>
+                    <strong id="modal-min-fps">42 FPS</strong>
+                </div>
+                <div class="modal-stat-item">
+                    <span>Rays per Frame</span>
+                    <strong id="modal-rays-frame">43,200</strong>
+                </div>
+                <div class="modal-stat-item">
+                    <span>Ray Throughput</span>
+                    <strong id="modal-peak-tp">2.50 MRays/s</strong>
+                </div>
+            </div>
+
+            <button class="hud-btn action-btn" id="btn-close-modal">CLOSE REPORT</button>
+        </div>
+    </div>
+
+    <script>
+        const Vec3 = {
+            create: (x = 0, y = 0, z = 0) => new Float32Array([x, y, z]),
+            set: (out, x, y, z) => {out[0] = x; out[1] = y; out[2] = z; return out;},
+            copy: (out, a) => {out[0] = a[0]; out[1] = a[1]; out[2] = a[2]; return out;},
+            add: (out, a, b) => {out[0] = a[0] + b[0]; out[1] = a[1] + b[1]; out[2] = a[2] + b[2]; return out;},
+            sub: (out, a, b) => {out[0] = a[0] - b[0]; out[1] = a[1] - b[1]; out[2] = a[2] - b[2]; return out;},
+            scale: (out, a, s) => {out[0] = a[0] * s; out[1] = a[1] * s; out[2] = a[2] * s; return out;},
+            multiply: (out, a, b) => {out[0] = a[0] * b[0]; out[1] = a[1] * b[1]; out[2] = a[2] * b[2]; return out;},
+            dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+            cross: (out, a, b) => {
+                const ax = a[0], ay = a[1], az = a[2];
+                const bx = b[0], by = b[1], bz = b[2];
+                out[0] = ay * bz - az * by;
+                out[1] = az * bx - ax * bz;
+                out[2] = ax * by - ay * bx;
+                return out;
+            },
+            length: (a) => Math.hypot(a[0], a[1], a[2]),
+            normalize: (out, a) => {
+                const len = Math.hypot(a[0], a[1], a[2]);
+                if (len > 0.00001) {
+                    out[0] = a[0] / len;
+                    out[1] = a[1] / len;
+                    out[2] = a[2] / len;
+                } else {
+                    out[0] = 0; out[1] = 0; out[2] = 0;
+                }
+                return out;
+            },
+            reflect: (out, incident, normal) => {
+                const d = Vec3.dot(incident, normal) * 2;
+                out[0] = incident[0] - d * normal[0];
+                out[1] = incident[1] - d * normal[1];
+                out[2] = incident[2] - d * normal[2];
+                return out;
+            }
+        };
+
+        class Ray {
+            constructor() {
+                this.ox = 0; this.oy = 0; this.oz = 0;
+                this.dx = 0; this.dy = 0; this.dz = 0;
+            }
+        }
+
+        class Material {
+            constructor(color, reflectivity = 0, specular = 32, isCheckerboard = false) {
+                this.color = Float32Array.from(color);
+                this.reflectivity = reflectivity;
+                this.specular = specular;
+                this.isCheckerboard = isCheckerboard;
+            }
+        }
+
+        class Sphere {
+            constructor(center, radius, material) {
+                this.type = 'sphere';
+                this.cx = center[0];
+                this.cy = center[1];
+                this.cz = center[2];
+                this.radius = radius;
+                this.radiusSq = radius * radius;
+                this.invRadius = 1.0 / radius;
+                this.material = material;
+            }
+
+            intersect(ray, hit) {
+                const ocX = ray.ox - this.cx;
+                const ocY = ray.oy - this.cy;
+                const ocZ = ray.oz - this.cz;
+
+                const b = ocX * ray.dx + ocY * ray.dy + ocZ * ray.dz;
+                const c = (ocX * ocX + ocY * ocY + ocZ * ocZ) - this.radiusSq;
+                const disc = b * b - c;
+
+                if (disc > 0) {
+                    const sqrtD = Math.sqrt(disc);
+                    let t = -b - sqrtD;
+                    if (t < 0.001) t = -b + sqrtD;
+
+                    if (t > 0.001 && t < hit.t) {
+                        hit.t = t;
+                        hit.material = this.material;
+                        hit.px = ray.ox + t * ray.dx;
+                        hit.py = ray.oy + t * ray.dy;
+                        hit.pz = ray.oz + t * ray.dz;
+
+                        hit.nx = (hit.px - this.cx) * this.invRadius;
+                        hit.ny = (hit.py - this.cy) * this.invRadius;
+                        hit.nz = (hit.pz - this.cz) * this.invRadius;
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            testIntersect(ray, maxT) {
+                const ocX = ray.ox - this.cx, ocY = ray.oy - this.cy, ocZ = ray.oz - this.cz;
+                const b = ocX * ray.dx + ocY * ray.dy + ocZ * ray.dz;
+                const disc = b * b - ((ocX * ocX + ocY * ocY + ocZ * ocZ) - this.radiusSq);
+
+                if (disc > 0) {
+                    const sqrtD = Math.sqrt(disc);
+                    let t = -b - sqrtD;
+                    if (t < 0.001) t = -b + sqrtD;
+                    return t > 0.001 && t < maxT;
+                }
+                return false;
+            }
+        }
+
+        class Plane {
+            constructor(point, normal, material) {
+                this.type = 'plane';
+                this.px = point[0]; this.py = point[1]; this.pz = point[2];
+                const len = Math.sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
+                const invLen = 1.0 / len;
+                this.nx = normal[0] * invLen; this.ny = normal[1] * invLen; this.nz = normal[2] * invLen;
+                this.material = material;
+            }
+
+            intersect(ray, hit) {
+                const denom = this.nx * ray.dx + this.ny * ray.dy + this.nz * ray.dz;
+                if (denom > 0.0001 || denom < -0.0001) {
+                    const t = ((this.px - ray.ox) * this.nx + (this.py - ray.oy) * this.ny + (this.pz - ray.oz) * this.nz) / denom;
+                    if (t > 0.001 && t < hit.t) {
+                        hit.t = t; hit.material = this.material;
+                        hit.px = ray.ox + t * ray.dx; hit.py = ray.oy + t * ray.dy; hit.pz = ray.oz + t * ray.dz;
+                        hit.nx = denom > 0 ? -this.nx : this.nx;
+                        hit.ny = denom > 0 ? -this.ny : this.ny;
+                        hit.nz = denom > 0 ? -this.nz : this.nz;
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            testIntersect(ray, maxT) {
+                const denom = this.nx * ray.dx + this.ny * ray.dy + this.nz * ray.dz;
+                if (denom > 0.0001 || denom < -0.0001) {
+                    const t = ((this.px - ray.ox) * this.nx + (this.py - ray.oy) * this.ny + (this.pz - ray.oz) * this.nz) / denom;
+                    return t > 0.001 && t < maxT;
+                }
+                return false;
+            }
+        }
+
+        class Cylinder {
+            constructor(center, radius, height, material) {
+                this.type = 'cylinder';
+                this.cx = center[0]; this.cy = center[1]; this.cz = center[2];
+                this.radiusSq = radius * radius;
+                this.invRadius = 1.0 / radius;
+                this.halfH = height * 0.5;
+                this.material = material;
+            }
+
+            intersect(ray, hit) {
+                const dx = ray.dx, dz = ray.dz;
+                const ox = ray.ox - this.cx, oz = ray.oz - this.cz;
+                const a = dx * dx + dz * dz;
+                if (a < 0.00001) return false;
+
+                const b = 2 * (ox * dx + oz * dz);
+                const disc = b * b - 4 * a * (ox * ox + oz * oz - this.radiusSq);
+                if (disc < 0) return false;
+
+                const sqrtD = Math.sqrt(disc);
+                const inv2a = 0.5 / a;
+                const t1 = (-b - sqrtD) * inv2a;
+                const t2 = (-b + sqrtD) * inv2a;
+
+                let hitFound = false;
+                let selectedT = Infinity;
+                let nx = 0, ny = 0, nz = 0;
+
+                if (t1 > 0.001 && t1 < hit.t && Math.abs(ray.oy + t1 * ray.dy - this.cy) <= this.halfH) {
+                    selectedT = t1; hitFound = true;
+                    nx = (ray.ox + t1 * dx - this.cx) * this.invRadius;
+                    nz = (ray.oz + t1 * dz - this.cz) * this.invRadius;
+                } else if (t2 > 0.001 && t2 < hit.t && Math.abs(ray.oy + t2 * ray.dy - this.cy) <= this.halfH) {
+                    selectedT = t2; hitFound = true;
+                    nx = (ray.ox + t2 * dx - this.cx) * this.invRadius;
+                    nz = (ray.oz + t2 * dz - this.cz) * this.invRadius;
+                }
+
+                const invDy = 1.0 / ray.dy;
+                const tTop = (this.cy + this.halfH - ray.oy) * invDy;
+                if (tTop > 0.001 && tTop < hit.t && tTop < selectedT) {
+                    const px = ray.ox + tTop * dx - this.cx, pz = ray.oz + tTop * dz - this.cz;
+                    if (px * px + pz * pz <= this.radiusSq) {selectedT = tTop; hitFound = true; nx = 0; ny = 1; nz = 0;}
+                }
+
+                const tBot = (this.cy - this.halfH - ray.oy) * invDy;
+                if (tBot > 0.001 && tBot < hit.t && tBot < selectedT) {
+                    const px = ray.ox + tBot * dx - this.cx, pz = ray.oz + tBot * dz - this.cz;
+                    if (px * px + pz * pz <= this.radiusSq) {selectedT = tBot; hitFound = true; nx = 0; ny = -1; nz = 0;}
+                }
+
+                if (hitFound && selectedT < hit.t) {
+                    hit.t = selectedT; hit.material = this.material;
+                    hit.px = ray.ox + selectedT * dx; hit.py = ray.oy + selectedT * ray.dy; hit.pz = ray.oz + selectedT * dz;
+                    hit.nx = nx; hit.ny = ny; hit.nz = nz;
+                    return true;
+                }
+                return false;
+            }
+
+            testIntersect(ray, maxT) {
+                const dx = ray.dx, dz = ray.dz;
+                const ox = ray.ox - this.cx, oz = ray.oz - this.cz;
+                const a = dx * dx + dz * dz;
+                if (a >= 0.00001) {
+                    const b = 2 * (ox * dx + oz * dz);
+                    const disc = b * b - 4 * a * (ox * ox + oz * oz - this.radiusSq);
+                    if (disc >= 0) {
+                        const sqrtD = Math.sqrt(disc), inv2a = 0.5 / a;
+                        const t1 = (-b - sqrtD) * inv2a;
+                        if (t1 > 0.001 && t1 < maxT && Math.abs(ray.oy + t1 * ray.dy - this.cy) <= this.halfH) return true;
+                        const t2 = (-b + sqrtD) * inv2a;
+                        if (t2 > 0.001 && t2 < maxT && Math.abs(ray.oy + t2 * ray.dy - this.cy) <= this.halfH) return true;
+                    }
+                }
+                const invDy = 1.0 / ray.dy;
+                const tTop = (this.cy + this.halfH - ray.oy) * invDy;
+                if (tTop > 0.001 && tTop < maxT) {
+                    const px = ray.ox + tTop * dx - this.cx, pz = ray.oz + tTop * dz - this.cz;
+                    if (px * px + pz * pz <= this.radiusSq) return true;
+                }
+                const tBot = (this.cy - this.halfH - ray.oy) * invDy;
+                if (tBot > 0.001 && tBot < maxT) {
+                    const px = ray.ox + tBot * dx - this.cx, pz = ray.oz + tBot * dz - this.cz;
+                    if (px * px + pz * pz <= this.radiusSq) return true;
+                }
+                return false;
+            }
+        }
+
+        class Triangle {
+            constructor(v0, v1, v2, material) {
+                this.type = 'triangle';
+                this.v0x = v0[0]; this.v0y = v0[1]; this.v0z = v0[2];
+                this.e1x = v1[0] - v0[0]; this.e1y = v1[1] - v0[1]; this.e1z = v1[2] - v0[2];
+                this.e2x = v2[0] - v0[0]; this.e2y = v2[1] - v0[1]; this.e2z = v2[2] - v0[2];
+                this.material = material;
+
+                const nx = this.e1y * this.e2z - this.e1z * this.e2y;
+                const ny = this.e1z * this.e2x - this.e1x * this.e2z;
+                const nz = this.e1x * this.e2y - this.e1y * this.e2x;
+                const invLen = 1.0 / Math.sqrt(nx * nx + ny * ny + nz * nz);
+                this.nx = nx * invLen; this.ny = ny * invLen; this.nz = nz * invLen;
+            }
+
+            intersect(ray, hit) {
+                const hx = ray.dy * this.e2z - ray.dz * this.e2y;
+                const hy = ray.dz * this.e2x - ray.dx * this.e2z;
+                const hz = ray.dx * this.e2y - ray.dy * this.e2x;
+                const a = this.e1x * hx + this.e1y * hy + this.e1z * hz;
+
+                if (a > -0.00001 && a < 0.00001) return false;
+
+                const f = 1.0 / a;
+                const sx = ray.ox - this.v0x, sy = ray.oy - this.v0y, sz = ray.oz - this.v0z;
+                const u = f * (sx * hx + sy * hy + sz * hz);
+
+                if (u < 0.0 || u > 1.0) return false;
+
+                const qx = sy * this.e1z - sz * this.e1y;
+                const qy = sz * this.e1x - sx * this.e1z;
+                const qz = sx * this.e1y - sy * this.e1x;
+                const v = f * (ray.dx * qx + ray.dy * qy + ray.dz * qz);
+
+                if (v < 0.0 || u + v > 1.0) return false;
+
+                const t = f * (this.e2x * qx + this.e2y * qy + this.e2z * qz);
+                if (t > 0.001 && t < hit.t) {
+                    hit.t = t; hit.material = this.material;
+                    hit.px = ray.ox + t * ray.dx; hit.py = ray.oy + t * ray.dy; hit.pz = ray.oz + t * ray.dz;
+                    hit.nx = this.nx; hit.ny = this.ny; hit.nz = this.nz;
+                    return true;
+                }
+                return false;
+            }
+
+            testIntersect(ray, maxT) {
+                const hx = ray.dy * this.e2z - ray.dz * this.e2y;
+                const hy = ray.dz * this.e2x - ray.dx * this.e2z;
+                const hz = ray.dx * this.e2y - ray.dy * this.e2x;
+                const a = this.e1x * hx + this.e1y * hy + this.e1z * hz;
+
+                if (a > -0.00001 && a < 0.00001) return false;
+
+                const f = 1.0 / a;
+                const sx = ray.ox - this.v0x, sy = ray.oy - this.v0y, sz = ray.oz - this.v0z;
+                const u = f * (sx * hx + sy * hy + sz * hz);
+
+                if (u < 0.0 || u > 1.0) return false;
+
+                const qx = sy * this.e1z - sz * this.e1y;
+                const qy = sz * this.e1x - sx * this.e1z;
+                const qz = sx * this.e1y - sy * this.e1x;
+                const v = f * (ray.dx * qx + ray.dy * qy + ray.dz * qz);
+
+                if (v < 0.0 || u + v > 1.0) return false;
+
+                const t = f * (this.e2x * qx + this.e2y * qy + this.e2z * qz);
+                return t > 0.001 && t < maxT;
+            }
+        }
+
+        class Scene {
+            constructor() {
+                this.objects = [];
+                this.lightPos = Vec3.create(0, 18, 0);
+                this.lightColor = Vec3.create(1, 0.95, 0.85);
+                this.lightRadius = 0.5;
+                this.ambientColor = Vec3.create(0.08, 0.1, 0.16);
+
+                this.setupScene();
+            }
+
+            setupScene() {
+                const mirrorMat = new Material([0.9, 0.9, 0.95], 0.82, 128);
+                const goldMat = new Material([1.0, 0.78, 0.2], 0.45, 64);
+                const cyanMat = new Material([0.0, 0.9, 1.0], 0.25, 32);
+                const magentaMat = new Material([1.0, 0.0, 0.47], 0.35, 48);
+                const limeMat = new Material([0.1, 0.95, 0.4], 0.15, 16);
+                const checkerMat = new Material([0.8, 0.8, 0.8], 0.25, 16, true);
+
+                this.objects.push(new Plane([0, -4, 0], [0, 1, 0], checkerMat));
+
+                this.objects.push(new Sphere([0, 1, 0], 5.0, mirrorMat));
+
+                this.objects.push(new Sphere([-9, -0.5, 6], 3.2, goldMat));
+
+                this.objects.push(new Cylinder([9, 0, 5], 2.8, 7.0, magentaMat));
+
+                const top = [-7, 6, -7];
+                const b0 = [-11, -4, -4];
+                const b1 = [-3, -4, -4];
+                const b2 = [-7, -4, -11];
+                this.objects.push(new Triangle(top, b0, b1, cyanMat));
+                this.objects.push(new Triangle(top, b1, b2, cyanMat));
+                this.objects.push(new Triangle(top, b2, b0, cyanMat));
+
+                this.objects.push(new Sphere([7, 4, -6], 2.2, limeMat));
+            }
+
+            updateLight(time, isOrbiting) {
+                if (isOrbiting) {
+                    const angle = time * 0.0012;
+                    this.lightPos[0] = Math.cos(angle) * 18;
+                    this.lightPos[1] = 14 + Math.sin(angle * 2) * 4;
+                    this.lightPos[2] = Math.sin(angle) * 18;
+                }
+            }
+        }
+
+        class RayTracerEngine {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d', {alpha: false, willReadFrequently: false});
+                this.targetWidth = 240; this.targetHeight = 180;
+                this.imageData = this.ctx.createImageData(this.targetWidth, this.targetHeight);
+                this.pixelBuffer = this.imageData.data;
+                this.enableShadows = true; this.enableReflections = true;
+                this.maxRecursionDepth = 2;
+                this.camera = {yaw: 0.5, pitch: 0.3, distance: 38, fov: 55 * (Math.PI / 180)};
+
+                this.primaryRay = new Ray(); this.shadowRay = new Ray();
+                this.reflectRays = [new Ray(), new Ray(), new Ray(), new Ray()];
+                this.hits = Array.from({length: 4}, () => ({t: Infinity, px: 0, py: 0, pz: 0, nx: 0, ny: 0, nz: 0, material: null}));
+                this.tempColors = [new Float32Array(3), new Float32Array(3), new Float32Array(3), new Float32Array(3)];
+                this.raysCastCount = 0;
+            }
+
+            setResolution(width) {
+                const aspect = 4 / 3;
+                this.targetWidth = width; this.targetHeight = Math.floor(width / aspect);
+                this.canvas.width = this.targetWidth; this.canvas.height = this.targetHeight;
+                this.imageData = this.ctx.createImageData(this.targetWidth, this.targetHeight);
+                this.pixelBuffer = this.imageData.data;
+            }
+
+            render(scene) {
+                if (this.lastScene !== scene) {
+                    this.lastScene = scene;
+                    const objs = scene.objects;
+                    this.optSpheres = []; this.optPlanes = []; this.optCylinders = []; this.optTriangles = [];
+                    for (let i = 0; i < objs.length; i++) {
+                        if (objs[i].type === 'sphere') this.optSpheres.push(objs[i]);
+                        else if (objs[i].type === 'plane') this.optPlanes.push(objs[i]);
+                        else if (objs[i].type === 'cylinder') this.optCylinders.push(objs[i]);
+                        else if (objs[i].type === 'triangle') this.optTriangles.push(objs[i]);
+                    }
+                }
+
+                const width = this.targetWidth, height = this.targetHeight, buffer = this.pixelBuffer;
+                const eye = Vec3.create(
+                    this.camera.distance * Math.cos(this.camera.pitch) * Math.sin(this.camera.yaw),
+                    this.camera.distance * Math.sin(this.camera.pitch),
+                    this.camera.distance * Math.cos(this.camera.pitch) * Math.cos(this.camera.yaw)
+                );
+
+                const lookAt = Vec3.create(0, 0, 0);
+                const F = Vec3.create(); Vec3.sub(F, lookAt, eye); Vec3.normalize(F, F);
+                const R = Vec3.create(); Vec3.cross(R, F, Vec3.create(0, 1, 0)); Vec3.normalize(R, R);
+                const U = Vec3.create(); Vec3.cross(U, R, F); Vec3.normalize(U, U);
+
+                const aspectScale = (width / height) * Math.tan(this.camera.fov * 0.5);
+                const scale = Math.tan(this.camera.fov * 0.5);
+                const invWidth = 1.0 / width, invHeight = 1.0 / height;
+
+                let pixelIdx = 0;
+                this.raysCastCount = 0;
+                const outColor = new Float32Array(3);
+
+                for (let y = 0; y < height; y++) {
+                    const vy = (1 - 2 * ((y + 0.5) * invHeight)) * scale;
+                    const vyUx = vy * U[0], vyUy = vy * U[1], vyUz = vy * U[2];
+
+                    for (let x = 0; x < width; x++) {
+                        const vx = (2 * ((x + 0.5) * invWidth) - 1) * aspectScale;
+
+                        this.primaryRay.ox = eye[0]; this.primaryRay.oy = eye[1]; this.primaryRay.oz = eye[2];
+
+                        const dx = F[0] + vx * R[0] + vyUx;
+                        const dy = F[1] + vx * R[1] + vyUy;
+                        const dz = F[2] + vx * R[2] + vyUz;
+
+                        const invDlen = 1.0 / Math.sqrt(dx * dx + dy * dy + dz * dz);
+                        this.primaryRay.dx = dx * invDlen;
+                        this.primaryRay.dy = dy * invDlen;
+                        this.primaryRay.dz = dz * invDlen;
+
+                        this.traceRay(this.primaryRay, scene, 0, outColor);
+
+                        let r = (outColor[0] * 255) | 0;
+                        let g = (outColor[1] * 255) | 0;
+                        let b = (outColor[2] * 255) | 0;
+
+                        buffer[pixelIdx] = r < 0 ? 0 : (r > 255 ? 255 : r);
+                        buffer[pixelIdx + 1] = g < 0 ? 0 : (g > 255 ? 255 : g);
+                        buffer[pixelIdx + 2] = b < 0 ? 0 : (b > 255 ? 255 : b);
+                        buffer[pixelIdx + 3] = 255;
+
+                        pixelIdx += 4;
+                    }
+                }
+                this.ctx.putImageData(this.imageData, 0, 0);
+            }
+
+            traceRay(ray, scene, depth, outColor) {
+                this.raysCastCount++;
+
+                const hit = this.hits[depth];
+                hit.t = Infinity; hit.material = null;
+
+                const sph = this.optSpheres, pln = this.optPlanes, cyl = this.optCylinders, tri = this.optTriangles;
+                for (let i = 0, l = sph.length; i < l; i++) sph[i].intersect(ray, hit);
+                for (let i = 0, l = pln.length; i < l; i++) pln[i].intersect(ray, hit);
+                for (let i = 0, l = cyl.length; i < l; i++) cyl[i].intersect(ray, hit);
+                for (let i = 0, l = tri.length; i < l; i++) tri[i].intersect(ray, hit);
+
+                if (hit.t === Infinity) {
+                    const t = 0.5 * (ray.dy + 1.0);
+                    const invT = 1 - t;
+                    outColor[0] = 0.02 * invT + 0.05 * t;
+                    outColor[1] = 0.04 * invT + 0.08 * t;
+                    outColor[2] = 0.08 * invT + 0.18 * t;
+                    return;
+                }
+
+                const mat = hit.material;
+                let cr = mat.color[0], cg = mat.color[1], cb = mat.color[2];
+
+                if (mat.isCheckerboard) {
+                    const scale = 0.3;
+                    const check = (Math.floor(hit.px * scale) + Math.floor(hit.pz * scale)) & 1;
+                    if (check === 0) {cr = 0.12; cg = 0.15; cb = 0.22;}
+                    else {cr = 0.85; cg = 0.88; cb = 0.92;}
+                }
+
+                const hpx = hit.px, hpy = hit.py, hpz = hit.pz;
+                let ldx = scene.lightPos[0] - hpx, ldy = scene.lightPos[1] - hpy, ldz = scene.lightPos[2] - hpz;
+
+                const lightDist = Math.sqrt(ldx * ldx + ldy * ldy + ldz * ldz);
+                const invLD = 1.0 / lightDist;
+                ldx *= invLD; ldy *= invLD; ldz *= invLD;
+
+                let inShadow = false;
+                if (this.enableShadows) {
+                    const sRay = this.shadowRay;
+                    sRay.ox = hpx + hit.nx * 0.001; sRay.oy = hpy + hit.ny * 0.001; sRay.oz = hpz + hit.nz * 0.001;
+                    sRay.dx = ldx; sRay.dy = ldy; sRay.dz = ldz;
+
+                    for (let i = 0, l = sph.length; i < l; i++) if (sph[i].testIntersect(sRay, lightDist)) {inShadow = true; break;}
+                    if (!inShadow) for (let i = 0, l = pln.length; i < l; i++) if (pln[i].testIntersect(sRay, lightDist)) {inShadow = true; break;}
+                    if (!inShadow) for (let i = 0, l = cyl.length; i < l; i++) if (cyl[i].testIntersect(sRay, lightDist)) {inShadow = true; break;}
+                    if (!inShadow) for (let i = 0, l = tri.length; i < l; i++) if (tri[i].testIntersect(sRay, lightDist)) {inShadow = true; break;}
+                }
+
+                let r = cr * scene.ambientColor[0];
+                let g = cg * scene.ambientColor[1];
+                let b = cb * scene.ambientColor[2];
+
+                if (!inShadow) {
+                    const ndotl = hit.nx * ldx + hit.ny * ldy + hit.nz * ldz;
+                    if (ndotl > 0) {
+                        const atten = 1.0 / (1.0 + 0.015 * lightDist + 0.0008 * lightDist * lightDist);
+                        const lc0 = scene.lightColor[0], lc1 = scene.lightColor[1], lc2 = scene.lightColor[2];
+
+                        r += cr * lc0 * ndotl * atten;
+                        g += cg * lc1 * ndotl * atten;
+                        b += cb * lc2 * ndotl * atten;
+
+                        if (mat.specular > 0) {
+                            const d = (ldx * hit.nx + ldy * hit.ny + ldz * hit.nz) * 2;
+                            let rx = d * hit.nx - ldx;
+                            let ry = d * hit.ny - ldy;
+                            let rz = d * hit.nz - ldz;
+
+                            const invRlen = 1.0 / Math.sqrt(rx * rx + ry * ry + rz * rz);
+                            if (invRlen < 100000) {rx *= invRlen; ry *= invRlen; rz *= invRlen;}
+
+                            const rdotv = -(rx * ray.dx + ry * ray.dy + rz * ray.dz);
+                            if (rdotv > 0) {
+                                const spec = Math.pow(rdotv, mat.specular) * atten * 0.8;
+                                r += lc0 * spec; g += lc1 * spec; b += lc2 * spec;
+                            }
+                        }
+                    }
+                }
+
+                if (this.enableReflections && mat.reflectivity > 0 && depth < this.maxRecursionDepth) {
+                    const refRay = this.reflectRays[depth];
+                    refRay.ox = hpx + hit.nx * 0.001; refRay.oy = hpy + hit.ny * 0.001; refRay.oz = hpz + hit.nz * 0.001;
+
+                    const d = (ray.dx * hit.nx + ray.dy * hit.ny + ray.dz * hit.nz) * 2;
+                    refRay.dx = ray.dx - d * hit.nx;
+                    refRay.dy = ray.dy - d * hit.ny;
+                    refRay.dz = ray.dz - d * hit.nz;
+
+                    const invDlen = 1.0 / Math.sqrt(refRay.dx * refRay.dx + refRay.dy * refRay.dy + refRay.dz * refRay.dz);
+                    if (invDlen < 100000) {refRay.dx *= invDlen; refRay.dy *= invDlen; refRay.dz *= invDlen;}
+
+                    this.traceRay(refRay, scene, depth + 1, this.tempColors[depth]);
+                    const refl = mat.reflectivity;
+                    const invRefl = 1 - refl;
+                    r = r * invRefl + this.tempColors[depth][0] * refl;
+                    g = g * invRefl + this.tempColors[depth][1] * refl;
+                    b = b * invRefl + this.tempColors[depth][2] * refl;
+                }
+
+                outColor[0] = r; outColor[1] = g; outColor[2] = b;
+            }
+        }
+
+
+        class BenchmarkManager {
+            constructor(engine) {
+                this.engine = engine;
+                this.fps = 0;
+                this.frameTime = 0;
+                this.history = new Float32Array(80);
+                this.historyIdx = 0;
+                this.lastTimestamp = performance.now();
+                this.frameCount = 0;
+                this.accumTime = 0;
+
+                this.isRunning = false;
+                this.benchmarkStartTime = 0;
+                this.benchmarkDuration = 8000;
+                this.samples = [];
+
+                this.elFps = document.getElementById('val-fps');
+                this.elFrameTime = document.getElementById('val-frametime');
+                this.elRes = document.getElementById('val-res');
+                this.elRays = document.getElementById('val-rays');
+                this.elThroughput = document.getElementById('val-throughput');
+                this.elScore = document.getElementById('val-score');
+
+                this.graphCanvas = document.getElementById('graphCanvas');
+                this.graphCtx = this.graphCanvas.getContext('2d');
+            }
+
+            update(now, renderTimeMs) {
+                const delta = now - this.lastTimestamp;
+                this.lastTimestamp = now;
+
+                this.frameCount++;
+                this.accumTime += delta;
+
+                if (this.accumTime >= 200) {
+                    this.fps = Math.round((this.frameCount * 1000) / this.accumTime);
+                    this.frameTime = renderTimeMs;
+                    this.frameCount = 0;
+                    this.accumTime = 0;
+
+                    const totalRays = this.engine.raysCastCount;
+                    const raysPerSec = (this.fps * totalRays) / 1000000;
+                    const liveScore = Math.round(this.fps * totalRays * 0.05);
+
+                    this.elFps.textContent = `${this.fps} FPS`;
+                    this.elFrameTime.textContent = `${this.frameTime.toFixed(1)} ms`;
+                    this.elRes.textContent = `${this.engine.targetWidth}x${this.engine.targetHeight}`;
+                    this.elRays.textContent = totalRays.toLocaleString();
+                    this.elThroughput.textContent = `${raysPerSec.toFixed(2)} MRays/s`;
+                    this.elScore.textContent = liveScore.toLocaleString();
+                }
+
+                this.history[this.historyIdx] = renderTimeMs;
+                this.historyIdx = (this.historyIdx + 1) % this.history.length;
+                this.drawGraph();
+
+                if (this.isRunning) {
+                    const elapsed = now - this.benchmarkStartTime;
+                    const progress = Math.min(100, (elapsed / this.benchmarkDuration) * 100);
+                    document.getElementById('benchmark-progress-bar').style.width = `${progress}%`;
+
+                    this.samples.push({
+                        fps: this.fps,
+                        renderTime: renderTimeMs,
+                        rays: this.engine.raysCastCount
+                    });
+
+                    this.engine.camera.yaw += 0.025;
+                    this.engine.camera.pitch = 0.3 + Math.sin(elapsed * 0.002) * 0.15;
+
+                    if (elapsed >= this.benchmarkDuration) {
+                        this.finishBenchmark();
+                    }
+                }
+            }
+
+            drawGraph() {
+                const ctx = this.graphCtx;
+                const w = this.graphCanvas.width;
+                const h = this.graphCanvas.height;
+
+                ctx.clearRect(0, 0, w, h);
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.beginPath();
+                ctx.moveTo(0, h * 0.6); ctx.lineTo(w, h * 0.6);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.strokeStyle = '#00f3ff';
+                ctx.lineWidth = 1.5;
+
+                const step = w / this.history.length;
+                for (let i = 0; i < this.history.length; i++) {
+                    const idx = (this.historyIdx + i) % this.history.length;
+                    const val = this.history[idx];
+                    const y = h - Math.min(h, (val / 50) * h);
+                    const x = i * step;
+
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            startBenchmark() {
+                this.isRunning = true;
+                this.benchmarkStartTime = performance.now();
+                this.samples = [];
+
+                document.getElementById('benchmark-progress').style.display = 'block';
+                document.getElementById('benchmark-progress-bar').style.width = '0%';
+                document.getElementById('btn-run-benchmark').disabled = true;
+                document.getElementById('btn-run-benchmark').textContent = 'BENCHMARKING...';
+            }
+
+            finishBenchmark() {
+                this.isRunning = false;
+                document.getElementById('benchmark-progress').style.display = 'none';
+                document.getElementById('btn-run-benchmark').disabled = false;
+                document.getElementById('btn-run-benchmark').textContent = 'RUN RAY BENCHMARK';
+
+                if (this.samples.length === 0) return;
+
+                let sumFps = 0, minFps = Infinity, sumRays = 0;
+                this.samples.forEach(s => {
+                    sumFps += s.fps;
+                    if (s.fps < minFps) minFps = s.fps;
+                    sumRays += s.rays;
+                });
+
+                const avgFps = Math.round(sumFps / this.samples.length);
+                const avgRays = Math.round(sumRays / this.samples.length);
+                const throughput = ((avgFps * avgRays) / 1000000).toFixed(2);
+                const finalScore = Math.round(avgFps * avgRays * 0.05);
+
+                let rank = 'B';
+                if (finalScore > 120000) rank = 'S+';
+                else if (finalScore > 75000) rank = 'S';
+                else if (finalScore > 40000) rank = 'A';
+
+                document.getElementById('modal-rank').textContent = rank;
+                document.getElementById('modal-score').textContent = `${finalScore.toLocaleString()} PTS`;
+                document.getElementById('modal-avg-fps').textContent = `${avgFps} FPS`;
+                document.getElementById('modal-min-fps').textContent = `${minFps === Infinity ? avgFps : minFps} FPS`;
+                document.getElementById('modal-rays-frame').textContent = avgRays.toLocaleString();
+                document.getElementById('modal-peak-tp').textContent = `${throughput} MRays/s`;
+
+                document.getElementById('benchmark-modal').classList.add('active');
+            }
+        }
+
+        window.addEventListener('load', () => {
+            const canvas = document.getElementById('rayCanvas');
+            const engine = new RayTracerEngine(canvas);
+            const scene = new Scene();
+            const benchmark = new BenchmarkManager(engine);
+
+            let isLightOrbiting = true;
+            let autoRotateCam = true;
+
+            document.querySelectorAll('[data-res]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('[data-res]').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    const res = parseInt(e.target.getAttribute('data-res'), 10);
+                    engine.setResolution(res);
+                });
+            });
+
+            const shadowToggle = document.getElementById('toggle-shadows');
+            shadowToggle.addEventListener('click', () => {
+                shadowToggle.classList.toggle('on');
+                engine.enableShadows = shadowToggle.classList.contains('on');
+            });
+
+            const reflToggle = document.getElementById('toggle-reflections');
+            reflToggle.addEventListener('click', () => {
+                reflToggle.classList.toggle('on');
+                engine.enableReflections = reflToggle.classList.contains('on');
+            });
+
+            const lightToggle = document.getElementById('toggle-light-orbit');
+            lightToggle.addEventListener('click', () => {
+                lightToggle.classList.toggle('on');
+                isLightOrbiting = lightToggle.classList.contains('on');
+            });
+
+            document.getElementById('btn-cam-auto').addEventListener('click', (e) => {
+                document.getElementById('btn-cam-manual').classList.remove('active');
+                e.target.classList.add('active');
+                autoRotateCam = true;
+            });
+
+            document.getElementById('btn-cam-manual').addEventListener('click', (e) => {
+                document.getElementById('btn-cam-auto').classList.remove('active');
+                e.target.classList.add('active');
+                autoRotateCam = false;
+            });
+
+            document.getElementById('btn-run-benchmark').addEventListener('click', () => benchmark.startBenchmark());
+            document.getElementById('btn-close-modal').addEventListener('click', () => {
+                document.getElementById('benchmark-modal').classList.remove('active');
+            });
+
+            let isDragging = false;
+            let lastMouseX = 0, lastMouseY = 0;
+
+            const onPointerDown = (x, y) => {isDragging = true; lastMouseX = x; lastMouseY = y;};
+            const onPointerMove = (x, y) => {
+                if (!isDragging || benchmark.isRunning) return;
+                const dx = x - lastMouseX;
+                const dy = y - lastMouseY;
+                lastMouseX = x; lastMouseY = y;
+
+                engine.camera.yaw += dx * 0.008;
+                engine.camera.pitch = Math.max(-1.3, Math.min(1.3, engine.camera.pitch + dy * 0.008));
+
+                autoRotateCam = false;
+                document.getElementById('btn-cam-auto').classList.remove('active');
+                document.getElementById('btn-cam-manual').classList.add('active');
+            };
+            const onPointerUp = () => {isDragging = false;};
+
+            canvas.addEventListener('mousedown', (e) => onPointerDown(e.clientX, e.clientY));
+            window.addEventListener('mousemove', (e) => onPointerMove(e.clientX, e.clientY));
+            window.addEventListener('mouseup', onPointerUp);
+
+            canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) onPointerDown(e.touches[0].clientX, e.touches[0].clientY);
+            });
+            window.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1) onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+            });
+            window.addEventListener('touchend', onPointerUp);
+
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                engine.camera.distance = Math.max(15, Math.min(90, engine.camera.distance + e.deltaY * 0.03));
+            }, {passive: false});
+
+            engine.setResolution(240);
+
+            function frameLoop(now) {
+                scene.updateLight(now, isLightOrbiting);
+
+                if (autoRotateCam && !benchmark.isRunning) {
+                    engine.camera.yaw += 0.008;
+                }
+
+                const startRender = performance.now();
+                engine.render(scene);
+                const renderTimeMs = performance.now() - startRender;
+
+                benchmark.update(now, renderTimeMs);
+
+                requestAnimationFrame(frameLoop);
+            }
+
+            requestAnimationFrame(frameLoop);
+        });
+    </script>
+</body>
+
+</html>

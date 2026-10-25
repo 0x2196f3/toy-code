@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UUID Tool</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-bg: #eff6ff;
+      --success: #16a34a;
+      --error: #dc2626;
+      --radius: 8px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --border: #334155;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --accent: #38bdf8;
+        --accent-hover: #0284c7;
+        --accent-bg: rgba(56, 189, 248, 0.1);
+        --success: #4ade80;
+        --error: #f87171;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 2rem 1rem;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center; }
+
+    .tabs { display: flex; gap: 0.25rem; background: var(--card); padding: 0.25rem; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1rem; }
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--muted);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: calc(var(--radius) - 2px);
+      transition: all 0.2s ease;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--bg); background: var(--accent);  }
+
+    .panel { display: none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+    .panel.active { display: block; }
+
+    .field { margin-bottom: 1rem; }
+    .field:last-child { margin-bottom: 0; }
+    label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 0.35rem; }
+    
+    input[type="text"], select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.6rem 0.75rem;
+      border-radius: var(--radius);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+    input[type="text"]:focus, select:focus { border-color: var(--accent); }
+
+    .preset-group { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .chip:hover { color: var(--text); border-color: var(--muted); }
+
+    .btn {
+      background: var(--accent);
+      color: #ffffff;
+      border: none;
+      padding: 0.6rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--accent-hover); }
+
+    .controls-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: flex-end; margin-bottom: 1rem; }
+
+    .output-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.875rem;
+      word-break: break-all;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 42px;
+    }
+
+    .output-list {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      margin-bottom: 0.75rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 4px;
+    }
+    .badge-success { background: var(--accent-bg); color: var(--success); }
+    .badge-error { background: rgba(220, 38, 38, 0.1); color: var(--error); }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .meta-card {
+      background: var(--bg);
+      padding: 0.6rem 0.75rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .meta-card span { display: block; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.1rem; }
+    .meta-card strong { font-size: 0.85rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--text);
+      color: var(--bg);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+  <h1>UUID Tool</h1>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('v5', this)">UUIDv5</button>
+    <button class="tab-btn" onclick="switchTab('v4', this)">UUIDv4</button>
+    <button class="tab-btn" onclick="switchTab('validate', this)">Validator</button>
+  </div>
+
+  <div id="panel-v5" class="panel active">
+    <div class="field">
+      <label for="v5-input">Input String</label>
+      <input type="text" id="v5-input" placeholder="e.g. user@example.com" oninput="generateV5UI()">
+    </div>
+
+    <div class="field">
+      <label for="v5-namespace">Namespace UUID</label>
+      <input type="text" id="v5-namespace" value="00000000-0000-0000-0000-000000000000" oninput="generateV5UI()">
+      <div class="preset-group">
+        <button class="chip" onclick="setNamespace('00000000-0000-0000-0000-000000000000')">Zeros</button>
+        <button class="chip" onclick="setNamespace('6ba7b810-9dad-11d1-80b4-00c04fd430c8')">DNS</button>
+        <button class="chip" onclick="setNamespace('6ba7b811-9dad-11d1-80b4-00c04fd430c8')">URL</button>
+        <button class="chip" onclick="setNamespace('6ba7b812-9dad-11d1-80b4-00c04fd430c8')">OID</button>
+        <button class="chip" onclick="setNamespace('6ba7b814-9dad-11d1-80b4-00c04fd430c8')">X.500</button>
+        <button class="chip" onclick="setRandomNamespace()">Random</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Result</label>
+      <div class="output-box">
+        <span id="v5-result" style="color: var(--muted);">Enter input string...</span>
+        <button class="btn" onclick="copyText('v5-result')">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-v4" class="panel">
+    <div class="controls-row">
+      <div>
+        <label for="v4-count">Quantity</label>
+        <select id="v4-count">
+          <option value="1">1</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="50">50</option>
+        </select>
+      </div>
+      <div>
+        <label for="v4-format">Format</label>
+        <select id="v4-format">
+          <option value="lowercase">lowercase</option>
+          <option value="uppercase">UPPERCASE</option>
+          <option value="braces">{braces}</option>
+        </select>
+      </div>
+      <button class="btn" onclick="generateV4UI()">Generate</button>
+    </div>
+
+    <div class="field">
+      <div class="output-list" id="v4-result"></div>
+      <button class="btn" onclick="copyText('v4-result')">Copy All</button>
+    </div>
+  </div>
+
+  <div id="panel-validate" class="panel">
+    <div class="field">
+      <label for="validate-input">UUID String</label>
+      <input type="text" id="validate-input" placeholder="Paste UUID here..." oninput="validateUI()">
+    </div>
+
+    <div class="field">
+      <label>Status</label>
+      <div>
+        <span id="val-badge" class="badge badge-error">Invalid</span>
+      </div>
+    </div>
+
+    <div class="meta-grid">
+      <div class="meta-card">
+        <span>Version</span>
+        <strong id="val-version">-</strong>
+      </div>
+      <div class="meta-card">
+        <span>Variant</span>
+        <strong id="val-variant">-</strong>
+      </div>
+      <div class="meta-card">
+        <span>Hex (32 chars)</span>
+        <strong id="val-clean">-</strong>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast">Copied to clipboard</div>
+
+  <script>
+    function sha1(bytes) {
+      const len = bytes.length;
+      const bitLen = len * 8;
+      const padLen = ((55 - (len % 64) + 64) % 64) + 1 + 8;
+      const padded = new Uint8Array(len + padLen);
+      padded.set(bytes, 0);
+      padded[len] = 0x80;
+      
+      const view = new DataView(padded.buffer);
+      view.setUint32(padded.length - 8, Math.floor(bitLen / 0x100000000), false);
+      view.setUint32(padded.length - 4, bitLen & 0xffffffff, false);
+
+      let h0 = 0x67452301, h1 = 0xefcdab89, h2 = 0x98badcfe, h3 = 0x10325476, h4 = 0xc3d2e1f0;
+      const w = new Uint32Array(80);
+
+      for (let offset = 0; offset < padded.length; offset += 64) {
+        for (let i = 0; i < 16; i++) w[i] = view.getUint32(offset + i * 4, false);
+        for (let i = 16; i < 80; i++) {
+          const temp = w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16];
+          w[i] = (temp << 1) | (temp >>> 31);
+        }
+
+        let a = h0, b = h1, c = h2, d = h3, e = h4;
+        for (let i = 0; i < 80; i++) {
+          let f, k;
+          if (i < 20) { f = (b & c) | ((~b) & d); k = 0x5a827999; }
+          else if (i < 40) { f = b ^ c ^ d; k = 0x6ed9eba1; }
+          else if (i < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8f1bbcdc; }
+          else { f = b ^ c ^ d; k = 0xca62c1d6; }
+
+          const temp = (((a << 5) | (a >>> 27)) + f + e + k + w[i]) >>> 0;
+          e = d; d = c; c = ((b << 30) | (b >>> 2)) >>> 0; b = a; a = temp;
+        }
+
+        h0 = (h0 + a) >>> 0;
+        h1 = (h1 + b) >>> 0;
+        h2 = (h2 + c) >>> 0;
+        h3 = (h3 + d) >>> 0;
+        h4 = (h4 + e) >>> 0;
+      }
+
+      const result = new Uint8Array(20);
+      const resView = new DataView(result.buffer);
+      resView.setUint32(0, h0, false);
+      resView.setUint32(4, h1, false);
+      resView.setUint32(8, h2, false);
+      resView.setUint32(12, h3, false);
+      resView.setUint32(16, h4, false);
+      return result;
+    }
+
+    function parseUuid(uuidStr) {
+      const clean = uuidStr.replace(/[^0-9a-fA-F]/g, '');
+      if (clean.length !== 32) return null;
+      const bytes = new Uint8Array(16);
+      for (let i = 0; i < 16; i++) {
+        bytes[i] = parseInt(clean.substring(i * 2, i * 2 + 2), 16);
+      }
+      return bytes;
+    }
+
+    function bytesToUuid(bytes) {
+      const hex = [];
+      for (let i = 0; i < 16; i++) {
+        hex.push((bytes[i] < 16 ? '0' : '') + bytes[i].toString(16));
+      }
+      return (
+        hex.slice(0, 4).join('') + '-' +
+        hex.slice(4, 6).join('') + '-' +
+        hex.slice(6, 8).join('') + '-' +
+        hex.slice(8, 10).join('') + '-' +
+        hex.slice(10, 16).join('')
+      ).toLowerCase();
+    }
+
+    function getRandomBytes(count) {
+      const bytes = new Uint8Array(count);
+      if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+        crypto.getRandomValues(bytes);
+      } else {
+        for (let i = 0; i < count; i++) {
+          bytes[i] = Math.floor(Math.random() * 256);
+        }
+      }
+      return bytes;
+    }
+
+    function generateUUIDv4() {
+      const bytes = getRandomBytes(16);
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      return bytesToUuid(bytes);
+    }
+
+    function generateUUIDv5(name, namespaceUuid) {
+      const nsBytes = parseUuid(namespaceUuid);
+      if (!nsBytes) throw new Error('Invalid Namespace UUID');
+      
+      const nameBytes = new TextEncoder().encode(name);
+      const combined = new Uint8Array(16 + nameBytes.length);
+      combined.set(nsBytes, 0);
+      combined.set(nameBytes, 16);
+
+      const hash = sha1(combined);
+      hash[6] = (hash[6] & 0x0f) | 0x50;
+      hash[8] = (hash[8] & 0x3f) | 0x80;
+
+      return bytesToUuid(hash.subarray(0, 16));
+    }
+
+    const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+    const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+
+    function isUUIDValid(str) {
+      if (str === NIL_UUID) return true;
+      return UUID_REGEX.test(str);
+    }
+
+    function switchTab(tabId, el) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      
+      el.classList.add('active');
+      document.getElementById('panel-' + tabId).classList.add('active');
+    }
+
+    function generateV5UI() {
+      const name = document.getElementById('v5-input').value;
+      const ns = document.getElementById('v5-namespace').value.trim();
+      const resultEl = document.getElementById('v5-result');
+
+      if (!name) {
+        resultEl.textContent = 'Enter input string...';
+        resultEl.style.color = 'var(--muted)';
+        return;
+      }
+
+      try {
+        const v5 = generateUUIDv5(name, ns);
+        resultEl.textContent = v5;
+        resultEl.style.color = 'var(--text)';
+      } catch (err) {
+        resultEl.textContent = 'Invalid Namespace UUID';
+        resultEl.style.color = 'var(--error)';
+      }
+    }
+
+    function setNamespace(val) {
+      document.getElementById('v5-namespace').value = val;
+      generateV5UI();
+    }
+
+    function setRandomNamespace() {
+      document.getElementById('v5-namespace').value = generateUUIDv4();
+      generateV5UI();
+    }
+
+    function generateV4UI() {
+      const count = parseInt(document.getElementById('v4-count').value, 10);
+      const format = document.getElementById('v4-format').value;
+      const list = [];
+
+      for (let i = 0; i < count; i++) {
+        let u = generateUUIDv4();
+        if (format === 'uppercase') u = u.toUpperCase();
+        if (format === 'braces') u = '{' + u + '}';
+        list.push(u);
+      }
+
+      document.getElementById('v4-result').textContent = list.join('\n');
+    }
+
+    function validateUI() {
+      const input = document.getElementById('validate-input').value.trim();
+      const badge = document.getElementById('val-badge');
+      const verEl = document.getElementById('val-version');
+      const varEl = document.getElementById('val-variant');
+      const cleanEl = document.getElementById('val-clean');
+
+      if (!input) {
+        badge.className = 'badge badge-error';
+        badge.textContent = 'Invalid';
+        verEl.textContent = '-';
+        varEl.textContent = '-';
+        cleanEl.textContent = '-';
+        return;
+      }
+
+      const isValid = isUUIDValid(input);
+      const cleanHex = input.replace(/[^0-9a-fA-F]/g, '');
+
+      if (isValid) {
+        badge.className = 'badge badge-success';
+        badge.textContent = 'Valid UUID';
+        cleanEl.textContent = cleanHex.toLowerCase();
+
+        if (input === NIL_UUID) {
+          verEl.textContent = 'Nil (Zeros)';
+          varEl.textContent = 'N/A';
+        } else {
+          verEl.textContent = `Version ${input.charAt(14)}`;
+          const varDigit = input.charAt(19).toLowerCase();
+          varEl.textContent = ['8', '9', 'a', 'b'].includes(varDigit) ? 'RFC 4122' : 'Reserved';
+        }
+      } else {
+        badge.className = 'badge badge-error';
+        badge.textContent = 'Invalid UUID';
+        verEl.textContent = '-';
+        varEl.textContent = '-';
+        cleanEl.textContent = cleanHex.length === 32 ? 'Bad format' : `${cleanHex.length} hex chars`;
+      }
+    }
+
+    function copyText(elementId) {
+      const text = document.getElementById(elementId).textContent;
+      if (!text || text.includes('Enter input')) return;
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(showToast);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          showToast();
+        } catch (err) {}
+        document.body.removeChild(textarea);
+      }
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    generateV4UI();
+  </script>
+</body>
+</html>

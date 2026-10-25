@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Wave Physics Laboratory</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --accent: #38bdf8;
+            --accent-hover: #0284c7;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #475569;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 900px) {
+            .main-grid {
+                grid-template-columns: 360px 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 10px;
+            padding: 18px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+            color: var(--accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-group {
+            margin-bottom: 14px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .control-group label span.val {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-input);
+            border-radius: 3px;
+            outline: none;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px 10px;
+            background-color: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+            color: #fff;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            width: auto;
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border);
+        }
+
+        /* Wave Item Components */
+        .wave-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 380px;
+            overflow-y: auto;
+            padding-right: 4px;
+            margin-bottom: 14px;
+        }
+
+        .wave-item {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .wave-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .wave-item-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Canvas Display Area */
+        .visualizer-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            background: #090d16;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .canvas-title {
+            position: absolute;
+            top: 10px;
+            left: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: rgba(15, 23, 42, 0.8);
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            z-index: 10;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 220px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-card {
+            background: var(--bg-input);
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: monospace;
+            color: var(--accent);
+            margin-top: 2px;
+        }
+
+        .playback-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Sound Wave Physics Laboratory</h1>
+            <p>Explore wave superposition, frequency modulation, and particle displacement in real-time</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- Sidebar Controls -->
+            <div class="card">
+                <div class="card-title">
+                    <span>Sound Wave Synthesis</span>
+                    <button id="addWaveBtn" class="btn btn-sm">+ Add Wave</button>
+                </div>
+
+                <!-- Scrollable list of active wave components -->
+                <div id="waveList" class="wave-list"></div>
+
+                <div class="card-title" style="margin-top: 15px;">Global Environment</div>
+
+                <div class="control-group">
+                    <label>Medium Speed of Sound (v) <span class="val" id="valSpeed">343 m/s</span></label>
+                    <input type="range" id="paramSpeed" min="100" max="1000" value="343" step="1">
+                </div>
+
+                <div class="control-group">
+                    <label>Visual Animation Speed <span class="val" id="valAnimSpeed">0.20x</span></label>
+                    <input type="range" id="paramAnimSpeed" min="0.01" max="1.00" value="0.20" step="0.01">
+                </div>
+
+                <div class="control-group">
+                    <label>Play Duration</label>
+                    <select id="paramDuration">
+                        <option value="1">1 Second</option>
+                        <option value="2" selected>2 Seconds</option>
+                        <option value="3">3 Seconds</option>
+                        <option value="-1">Continuous</option>
+                    </select>
+                </div>
+
+                <div class="playback-panel">
+                    <button id="playBtn" class="btn">Play Sound</button>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="showComponentsCheck" checked>
+                        Show Individual Waves
+                    </label>
+                </div>
+            </div>
+
+            <!-- Main Display Canvases -->
+            <div class="visualizer-container">
+                <!-- Transverse Wave Visualization -->
+                <div class="card canvas-wrapper">
+                    <div class="canvas-title">Transverse Wave Displacement y(x, t) - Superposition Result</div>
+                    <canvas id="transverseCanvas"></canvas>
+                </div>
+
+                <!-- Longitudinal Wave Visualization -->
+                <div class="card canvas-wrapper">
+                    <div class="canvas-title">Longitudinal Air Particle Density / Compression Simulation</div>
+                    <canvas id="longitudinalCanvas"></canvas>
+                </div>
+
+                <!-- Physics Information Board -->
+                <div class="card">
+                    <div class="card-title" style="margin-bottom: 8px;">Primary Wave Physics Metrics</div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Frequency (f)</div>
+                            <div class="stat-value" id="statFreq">440.0 Hz</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Period (T)</div>
+                            <div class="stat-value" id="statPeriod">2.27 ms</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Wavelength (&lambda;)</div>
+                            <div class="stat-value" id="statWavelength">0.78 m</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Wave Velocity (v)</div>
+                            <div class="stat-value" id="statVelocity">343.0 m/s</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Preset Colors for Wave Components ---
+        const WAVE_COLORS = ['#38bdf8', '#f43f5e', '#a855f7', '#10b981', '#f59e0b'];
+
+        // --- State Management ---
+        let nextWaveId = 1;
+        let waves = [
+            {id: 1, freq: 220, amp: 0.6, phase: 0, type: 'sine', color: WAVE_COLORS[0], active: true}
+        ];
+
+        let audioCtx = null;
+        let activeOscillators = [];
+        let isPlayingAudio = false;
+        let audioTimeout = null;
+
+        // Simulation animation state
+        let animationTime = 0;
+
+        // --- DOM Elements ---
+        const waveListEl = document.getElementById('waveList');
+        const addWaveBtn = document.getElementById('addWaveBtn');
+        const playBtn = document.getElementById('playBtn');
+        const paramSpeed = document.getElementById('paramSpeed');
+        const paramAnimSpeed = document.getElementById('paramAnimSpeed');
+        const paramDuration = document.getElementById('paramDuration');
+        const showComponentsCheck = document.getElementById('showComponentsCheck');
+
+        const valSpeed = document.getElementById('valSpeed');
+        const valAnimSpeed = document.getElementById('valAnimSpeed');
+
+        const statFreq = document.getElementById('statFreq');
+        const statPeriod = document.getElementById('statPeriod');
+        const statWavelength = document.getElementById('statWavelength');
+        const statVelocity = document.getElementById('statVelocity');
+
+        const transverseCanvas = document.getElementById('transverseCanvas');
+        const longitudinalCanvas = document.getElementById('longitudinalCanvas');
+        const ctxT = transverseCanvas.getContext('2d');
+        const ctxL = longitudinalCanvas.getContext('2d');
+
+        // --- High DPI Canvas Setup ---
+        function setupCanvas(canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            return {width: rect.width, height: rect.height};
+        }
+
+        let sizeT = setupCanvas(transverseCanvas);
+        let sizeL = setupCanvas(longitudinalCanvas);
+
+        window.addEventListener('resize', () => {
+            sizeT = setupCanvas(transverseCanvas);
+            sizeL = setupCanvas(longitudinalCanvas);
+        });
+
+        // --- Dynamic Wave UI Management ---
+        function renderWaveList() {
+            waveListEl.innerHTML = '';
+            waves.forEach((wave, index) => {
+                const el = document.createElement('div');
+                el.className = 'wave-item';
+                el.style.borderLeftColor = wave.color;
+
+                el.innerHTML = `
+                <div class="wave-item-header">
+                    <span class="wave-item-title">
+                        <span class="color-dot" style="background:${wave.color}"></span>
+                        Wave #${index + 1}
+                    </span>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <input type="checkbox" ${wave.active ? 'checked' : ''} onchange="toggleWave(${wave.id})">
+                        ${waves.length > 1 ? `<button class="btn btn-sm btn-danger" style="line-height: 1; padding: 2px 6px;" onclick="removeWave(${wave.id})">&times;</button>` : ''}
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Frequency <span class="val" id="valFreq${wave.id}">${wave.freq} Hz</span></label>
+                    <input type="range" min="50" max="1200" value="${wave.freq}" step="1" oninput="updateWave(${wave.id}, 'freq', this.value)">
+                </div>
+                <div class="control-group">
+                    <label>Amplitude <span class="val" id="valAmp${wave.id}">${Math.round(wave.amp * 100)}%</span></label>
+                    <input type="range" min="0" max="1" value="${wave.amp}" step="0.01" oninput="updateWave(${wave.id}, 'amp', this.value)">
+                </div>
+                <div class="control-group">
+                    <label>Waveform Type</label>
+                    <select onchange="updateWave(${wave.id}, 'type', this.value)">
+                        <option value="sine" ${wave.type === 'sine' ? 'selected' : ''}>Sine</option>
+                        <option value="square" ${wave.type === 'square' ? 'selected' : ''}>Square</option>
+                        <option value="triangle" ${wave.type === 'triangle' ? 'selected' : ''}>Triangle</option>
+                        <option value="sawtooth" ${wave.type === 'sawtooth' ? 'selected' : ''}>Sawtooth</option>
+                    </select>
+                </div>
+            `;
+                waveListEl.appendChild(el);
+            });
+
+            updateMetrics();
+        }
+
+        // (Add Wave, removeWave, toggleWave remain unchanged here)
+
+
+
+        addWaveBtn.addEventListener('click', () => {
+            if (waves.length >= 5) return;
+            nextWaveId++;
+            const color = WAVE_COLORS[waves.length % WAVE_COLORS.length];
+            waves.push({id: nextWaveId, freq: 440, amp: 0.5, phase: 0, type: 'sine', color: color, active: true});
+            renderWaveList();
+        });
+
+        window.removeWave = function (id) {
+            if (waves.length <= 1) return;
+            waves = waves.filter(w => w.id !== id);
+            renderWaveList();
+        };
+
+        window.toggleWave = function (id) {
+            const w = waves.find(w => w.id === id);
+            if (w) w.active = !w.active;
+            updateMetrics();
+        };
+
+        window.updateWave = function (id, key, val) {
+            const w = waves.find(w => w.id === id);
+            if (w) {
+                w[key] = (key === 'type') ? val : parseFloat(val);
+
+                // Update individual DOM elements directly instead of re-rendering the whole list
+                // to prevent the slider from losing focus during a continuous drag
+                if (key === 'freq') {
+                    const label = document.getElementById(`valFreq${id}`);
+                    if (label) label.textContent = `${w.freq} Hz`;
+                } else if (key === 'amp') {
+                    const label = document.getElementById(`valAmp${id}`);
+                    if (label) label.textContent = `${Math.round(w.amp * 100)}%`;
+                }
+
+                updateMetrics();
+            }
+        };
+        paramSpeed.addEventListener('input', (e) => {
+            valSpeed.textContent = `${e.target.value} m/s`;
+            updateMetrics();
+        });
+
+        paramAnimSpeed.addEventListener('input', (e) => {
+            valAnimSpeed.textContent = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+
+        // --- Physics Metrics Calculations ---
+        function updateMetrics() {
+            const activeWaves = waves.filter(w => w.active);
+            if (activeWaves.length === 0) {
+                statFreq.textContent = '0.0 Hz';
+                statPeriod.textContent = 'N/A';
+                statWavelength.textContent = 'N/A';
+                return;
+            }
+
+            const primaryFreq = activeWaves[0].freq;
+            const speed = parseFloat(paramSpeed.value);
+            const periodSec = 1 / primaryFreq;
+            const wavelengthMeters = speed / primaryFreq;
+
+            statFreq.textContent = `${primaryFreq.toFixed(1)} Hz`;
+            statPeriod.textContent = `${(periodSec * 1000).toFixed(2)} ms`;
+            statWavelength.textContent = `${wavelengthMeters.toFixed(2)} m`;
+            statVelocity.textContent = `${speed.toFixed(1)} m/s`;
+        }
+
+        // --- Audio Synthesis via Web Audio API ---
+        function stopAudio() {
+            activeOscillators.forEach(osc => {
+                try {osc.stop(); osc.disconnect();} catch (e) { }
+            });
+            activeOscillators = [];
+            isPlayingAudio = false;
+            playBtn.textContent = 'Play Sound';
+            playBtn.classList.remove('btn-danger');
+            if (audioTimeout) clearTimeout(audioTimeout);
+        }
+
+        function startAudio() {
+            if (isPlayingAudio) {
+                stopAudio();
+                return;
+            }
+
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const activeWaves = waves.filter(w => w.active && w.amp > 0);
+            if (activeWaves.length === 0) return;
+
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0.2, audioCtx.currentTime); // Prevent clipping
+            masterGain.connect(audioCtx.destination);
+
+            activeOscillators = [];
+
+            activeWaves.forEach(w => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = w.type;
+                osc.frequency.setValueAtTime(w.freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(w.amp, audioCtx.currentTime);
+
+                osc.connect(gain);
+                gain.connect(masterGain);
+                osc.start();
+
+                activeOscillators.push(osc);
+            });
+
+            isPlayingAudio = true;
+            playBtn.textContent = 'Stop Sound';
+            playBtn.classList.add('btn-danger');
+
+            const duration = parseFloat(paramDuration.value);
+            if (duration > 0) {
+                audioTimeout = setTimeout(() => {
+                    stopAudio();
+                }, duration * 1000);
+            }
+        }
+
+        playBtn.addEventListener('click', startAudio);
+
+        // --- Canvas Rendering Loop ---
+        // Evaluates composite displacement y at a spatial position x and visual time t
+        function getWaveDisplacement(x, t, wave) {
+            const speed = parseFloat(paramSpeed.value);
+            const k = (2 * Math.PI * wave.freq) / speed; // Wave number
+            const omega = 2 * Math.PI * wave.freq;       // Angular frequency
+            const phaseShift = k * x - omega * t;
+
+            switch (wave.type) {
+                case 'square':
+                    return wave.amp * Math.sign(Math.sin(phaseShift));
+                case 'triangle':
+                    return wave.amp * (2 / Math.PI) * Math.asin(Math.sin(phaseShift));
+                case 'sawtooth':
+                    return wave.amp * (-2 / Math.PI) * Math.atan(1 / Math.tan(phaseShift / 2));
+                case 'sine':
+                default:
+                    return wave.amp * Math.sin(phaseShift);
+            }
+        }
+
+        // Initialize 120 particle positions for longitudinal simulation
+        const particleGrid = [];
+        const numRows = 6;
+        const numCols = 70;
+        for (let r = 0; r < numRows; r++) {
+            for (let c = 0; c < numCols; c++) {
+                particleGrid.push({
+                    baseXRatio: (c + 0.5) / numCols,
+                    yRatio: (r + 1) / (numRows + 1)
+                });
+            }
+        }
+
+        function renderFrame() {
+            const animSpeed = parseFloat(paramAnimSpeed.value);
+            // Time progression scaled for human readability
+            animationTime += 0.00005 * animSpeed;
+
+            const wT = sizeT.width;
+            const hT = sizeT.height;
+            const centerY_T = hT / 2;
+
+            // --- 1. Draw Transverse Wave Canvas ---
+            ctxT.clearRect(0, 0, wT, hT);
+
+            // Draw background grid lines
+            ctxT.strokeStyle = '#1e293b';
+            ctxT.lineWidth = 1;
+            ctxT.beginPath();
+            for (let x = 0; x < wT; x += 40) {
+                ctxT.moveTo(x, 0); ctxT.lineTo(x, hT);
+            }
+            for (let y = 0; y < hT; y += 30) {
+                ctxT.moveTo(0, y); ctxT.lineTo(wT, y);
+            }
+            ctxT.stroke();
+
+            // Draw equilibrium baseline
+            ctxT.strokeStyle = '#475569';
+            ctxT.beginPath();
+            ctxT.moveTo(0, centerY_T);
+            ctxT.lineTo(wT, centerY_T);
+            ctxT.stroke();
+
+            const spatialScale = 2.0; // Meters mapped visually across screen width
+            const activeWaves = waves.filter(w => w.active);
+
+            // Draw individual wave components if enabled
+            if (showComponentsCheck.checked && activeWaves.length > 1) {
+                activeWaves.forEach(w => {
+                    ctxT.strokeStyle = w.color;
+                    ctxT.lineWidth = 1.5;
+                    ctxT.globalAlpha = 0.4;
+                    ctxT.beginPath();
+
+                    for (let px = 0; px < wT; px++) {
+                        const xPos = (px / wT) * spatialScale;
+                        const yVal = getWaveDisplacement(xPos, animationTime, w);
+                        const py = centerY_T - yVal * (hT * 0.3);
+                        if (px === 0) ctxT.moveTo(px, py);
+                        else ctxT.lineTo(px, py);
+                    }
+                    ctxT.stroke();
+                    ctxT.globalAlpha = 1.0;
+                });
+            }
+
+            // Draw Superposition Wave Result
+            if (activeWaves.length > 0) {
+                ctxT.strokeStyle = '#38bdf8';
+                ctxT.lineWidth = 3;
+                ctxT.beginPath();
+
+                for (let px = 0; px < wT; px++) {
+                    const xPos = (px / wT) * spatialScale;
+                    let totalY = 0;
+                    activeWaves.forEach(w => {
+                        totalY += getWaveDisplacement(xPos, animationTime, w);
+                    });
+
+                    // Normalize visual height if multiple active waves exist
+                    const maxNorm = Math.max(1, activeWaves.length * 0.7);
+                    const py = centerY_T - (totalY / maxNorm) * (hT * 0.35);
+
+                    if (px === 0) ctxT.moveTo(px, py);
+                    else ctxT.lineTo(px, py);
+                }
+                ctxT.stroke();
+            }
+
+            // --- 2. Draw Longitudinal Air Particle Simulation Canvas ---
+            const wL = sizeL.width;
+            const hL = sizeL.height;
+            ctxL.clearRect(0, 0, wL, hL);
+
+            // Draw background grid
+            ctxL.strokeStyle = '#1e293b';
+            ctxL.lineWidth = 1;
+            ctxL.beginPath();
+            for (let x = 0; x < wL; x += 40) {
+                ctxL.moveTo(x, 0); ctxL.lineTo(x, hL);
+            }
+            ctxL.stroke();
+
+            // Render air molecules shifted by local wave displacement
+            particleGrid.forEach(p => {
+                const xPos = p.baseXRatio * spatialScale;
+                let totalDisplacement = 0;
+
+                activeWaves.forEach(w => {
+                    totalDisplacement += getWaveDisplacement(xPos, animationTime, w);
+                });
+
+                const maxNorm = Math.max(1, activeWaves.length * 0.7);
+                const pixelDisplacement = (totalDisplacement / maxNorm) * 35;
+
+                const renderX = p.baseXRatio * wL + pixelDisplacement;
+                const renderY = p.yRatio * hL;
+
+                // Render particle
+                ctxL.fillStyle = '#38bdf8';
+                ctxL.beginPath();
+                ctxL.arc(renderX, renderY, 2.5, 0, Math.PI * 2);
+                ctxL.fill();
+            });
+
+            requestAnimationFrame(renderFrame);
+        }
+
+        // --- Initialize System ---
+        renderWaveList();
+        requestAnimationFrame(renderFrame);
+    </script>
+</body>
+
+</html>

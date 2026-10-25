@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base64 Converter</title>
+<style>
+:root {
+  --bg: #f4f4f5;
+  --fg: #18181b;
+  --panel-bg: #ffffff;
+  --border: #e4e4e7;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --btn-fg: #ffffff;
+  --btn-sec-bg: #f4f4f5;
+  --btn-sec-fg: #18181b;
+  --btn-sec-hover: #e4e4e7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #09090b;
+    --fg: #f4f4f5;
+    --panel-bg: #18181b;
+    --border: #27272a;
+    --primary: #3b82f6;
+    --primary-hover: #60a5fa;
+    --btn-sec-bg: #27272a;
+    --btn-sec-fg: #f4f4f5;
+    --btn-sec-hover: #3f3f46;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--bg);
+  color: var(--fg);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--panel-bg);
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.panels {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .panels {
+    flex-direction: row;
+  }
+}
+
+.panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--panel-bg);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.toolbar-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+textarea {
+  flex: 1;
+  width: 100%;
+  resize: none;
+  border: none;
+  padding: 1rem;
+  background-color: transparent;
+  color: var(--fg);
+  font-family: monospace;
+  font-size: 0.875rem;
+  transition: outline 0.2s;
+}
+
+textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.drag-over {
+  background-color: var(--btn-sec-bg);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: var(--primary);
+  color: var(--btn-fg);
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: var(--primary-hover);
+}
+
+button.secondary {
+  background-color: var(--btn-sec-bg);
+  color: var(--btn-sec-fg);
+  border: 1px solid var(--border);
+}
+
+button.secondary:hover {
+  background-color: var(--btn-sec-hover);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .actions {
+    flex-direction: column;
+    padding: 0;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Base64 Converter</h1>
+</header>
+
+<div class="container">
+  <div class="panels">
+    <div class="panel">
+      <div class="toolbar">
+        <span class="label">Input</span>
+        <div class="toolbar-group">
+          <button class="secondary" onclick="document.getElementById('file').click()">Upload File</button>
+          <input type="file" id="file" style="display:none" onchange="up(event)">
+          <button class="secondary" onclick="clr()">Clear</button>
+        </div>
+      </div>
+      <textarea id="in" placeholder="Type text, drop a file, or paste Base64 here..."></textarea>
+    </div>
+
+    <div class="actions">
+      <button onclick="enc()">Encode</button>
+      <button onclick="dec()">Decode</button>
+      <button class="secondary" onclick="swp()">Swap</button>
+    </div>
+
+    <div class="panel">
+      <div class="toolbar">
+        <span class="label">Output</span>
+        <div class="toolbar-group">
+          <button class="secondary" onclick="cpy()">Copy</button>
+          <button class="secondary" onclick="dnText()">Save .txt</button>
+          <button class="secondary" onclick="dnBin()">Save Binary</button>
+        </div>
+      </div>
+      <textarea id="out" placeholder="Result will appear here..."></textarea>
+    </div>
+  </div>
+</div>
+
+<script>
+const inEl = document.getElementById('in');
+const outEl = document.getElementById('out');
+
+function enc() {
+  try {
+    outEl.value = btoa(unescape(encodeURIComponent(inEl.value)));
+  } catch (e) {
+    outEl.value = 'Error: Unable to encode input.';
+  }
+}
+
+function dec() {
+  function b2u(b64) {
+    b64 = b64.replace(/\s+/g, '');
+    const bin = atob(b64);
+    const len = bin.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+
+  function u2s(bytes) {
+    const C = 0x8000;
+    let r = '';
+    for (let i = 0; i < bytes.length; i += C) {
+      r += String.fromCharCode.apply(null, bytes.subarray(i, i + C));
+    }
+    return r;
+  }
+
+  try {
+    outEl.value = decodeURIComponent(escape(atob(inEl.value)));
+  } catch (e) {
+    try {
+      outEl.value = u2s(b2u(inEl.value));
+    } catch (e2) {
+      outEl.value = 'Error: Invalid Base64 string.';
+    }
+  }
+}
+
+function pf(f) {
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    const u8 = new Uint8Array(ev.target.result);
+    let bin = '';
+    const C = 0x8000;
+    for (let i = 0; i < u8.length; i += C) {
+      bin += String.fromCharCode.apply(null, u8.subarray(i, i + C));
+    }
+    outEl.value = btoa(bin);
+    inEl.value = `[File: ${f.name}]`;
+  };
+  r.readAsArrayBuffer(f);
+}
+
+function up(e) {
+  pf(e.target.files[0]);
+  e.target.value = '';
+}
+
+function clr() {
+  inEl.value = '';
+  outEl.value = '';
+}
+
+function swp() {
+  const t = inEl.value;
+  inEl.value = outEl.value;
+  outEl.value = t;
+}
+
+function cpy() {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(outEl.value);
+  } else {
+    outEl.select();
+    document.execCommand('copy');
+  }
+}
+
+function dnText() {
+  if (!outEl.value) return;
+  const b = new Blob([outEl.value], { type: 'text/plain' });
+  const u = URL.createObjectURL(b);
+  const a = document.createElement('a');
+  a.href = u;
+  a.download = 'base64_output.txt';
+  a.click();
+  URL.revokeObjectURL(u);
+}
+
+function dnBin() {
+  if (!outEl.value) return;
+  const v = outEl.value;
+  const arr = new Uint8Array(v.length);
+  for (let i = 0; i < v.length; i++) {
+    arr[i] = v.charCodeAt(i) & 0xff;
+  }
+  const b = new Blob([arr], { type: 'application/octet-stream' });
+  const u = URL.createObjectURL(b);
+  const a = document.createElement('a');
+  a.href = u;
+  a.download = 'decoded_output.bin';
+  a.click();
+  URL.revokeObjectURL(u);
+}
+
+inEl.addEventListener('dragover', e => {
+  e.preventDefault();
+  inEl.classList.add('drag-over');
+});
+
+inEl.addEventListener('dragleave', e => {
+  e.preventDefault();
+  inEl.classList.remove('drag-over');
+});
+
+inEl.addEventListener('drop', e => {
+  e.preventDefault();
+  inEl.classList.remove('drag-over');
+  pf(e.dataTransfer.files[0]);
+});
+</script>
+</body>
+</html>

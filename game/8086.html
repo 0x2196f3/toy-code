@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intel 8086 Microprocessor Virtual Machine (512KB RAM)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['"Fira Code"', 'monospace'],
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfeff',
+              400: '#22d3ee',
+              500: '#06b6d4',
+              600: '#0891b2',
+              900: '#164e63',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+/* style.css — custom scrollbars and LED glow effects (Tailwind handles the rest). */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+.led-glow {
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.led-glow-amber {
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+.led-glow-red {
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans bg-slate-950 text-slate-200 overflow-hidden select-none">
+
+  <!-- Tailwind Play CDN only scans the initial markup, so classes that are
+       applied dynamically by ui.js are listed here to force their generation. -->
+  <div id="tailwind-safelist" class="hidden" aria-hidden="true">
+    <span class="px-2 py-0.5 rounded font-bold flex items-center gap-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/30"></span>
+    <span class="px-2 py-0.5 rounded font-bold flex items-center gap-1.5 bg-slate-800 text-slate-400 border border-slate-700"></span>
+    <span class="px-2 py-0.5 rounded font-bold flex items-center gap-1.5 bg-red-500/10 text-red-400 border border-red-500/30"></span>
+    <span class="px-2 py-0.5 rounded font-bold flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"></span>
+    <span class="w-2 h-2 rounded-full bg-amber-400 led-glow-amber"></span>
+    <span class="w-2 h-2 rounded-full bg-slate-500"></span>
+    <span class="w-2 h-2 rounded-full bg-red-500 led-glow-red"></span>
+    <span class="w-2 h-2 rounded-full bg-emerald-400 led-glow"></span>
+    <span class="bg-emerald-500/20 text-emerald-300 font-bold py-1 rounded border border-emerald-500/50 shadow-sm"></span>
+    <span class="bg-slate-950 text-slate-600 py-1 rounded border border-slate-800"></span>
+    <span class="px-2 py-1 rounded flex items-center justify-between font-mono text-[11px] bg-cyan-950/80 text-cyan-200 border-l-2 border-cyan-400 font-bold"></span>
+    <span class="px-2 py-1 rounded flex items-center justify-between font-mono text-[11px] hover:bg-slate-800/40 text-slate-300"></span>
+    <span class="text-cyan-400"></span>
+    <span class="text-slate-500"></span>
+    <span class="text-amber-300/80 w-16"></span>
+    <span class="text-[10px] bg-cyan-500 text-slate-950 px-1.5 rounded font-bold hidden"></span>
+    <span class="bg-cyan-500 text-slate-950 font-bold rounded px-0.5"></span>
+    <span class="text-emerald-300"></span>
+    <span class="text-slate-600"></span>
+    <span class="hover:bg-slate-900/60 py-0.5 px-1 text-slate-500 border-r border-slate-800/80 tracking-wider text-slate-400 border-l font-mono text-[11px]"></span>
+    <span class="text-slate-500 italic p-2"></span>
+  </div>
+
+  <!-- Top Header Toolbar -->
+  <header class="bg-slate-900 border-b border-slate-800 px-4 py-2.5 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-lg z-20">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center font-mono font-bold text-slate-950 text-lg shadow-md">
+        86
+      </div>
+      <div>
+        <h1 class="text-base font-bold text-slate-100 leading-none flex items-center gap-2">
+          Intel 8086 Virtual Machine
+          <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-cyan-400 font-mono border border-slate-700">512KB RAM</span>
+        </h1>
+        <p class="text-xs text-slate-400 mt-0.5">Full Segment Architecture & ModR/M Bytecode Engine</p>
+      </div>
+    </div>
+
+    <!-- CPU Status LEDs & Stats -->
+    <div class="flex items-center gap-6 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800/80 text-xs font-mono">
+      <div class="flex items-center gap-2">
+        <span class="text-slate-400">STATUS:</span>
+        <span id="status-badge" class="px-2 py-0.5 rounded font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+          <span id="status-led" class="w-2 h-2 rounded-full bg-emerald-400 led-glow"></span>
+          <span id="status-text">READY</span>
+        </span>
+      </div>
+      <div class="h-4 w-px bg-slate-800"></div>
+      <div>
+        <span class="text-slate-400">CYCLES:</span>
+        <span id="cycles-count" class="text-cyan-400 font-semibold ml-1">0</span>
+      </div>
+      <div class="h-4 w-px bg-slate-800"></div>
+      <div>
+        <span class="text-slate-400">FREQ:</span>
+        <span id="freq-display" class="text-amber-400 font-semibold ml-1">100 Hz</span>
+      </div>
+    </div>
+
+    <!-- Action Controls Toolbar -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <button id="btn-assemble" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Assemble (F9)
+      </button>
+
+      <button id="btn-run" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95">
+        <svg id="icon-run" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <span id="text-run">Run</span>
+      </button>
+
+      <button id="btn-step" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs flex items-center gap-1.5 transition-all active:scale-95">
+        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+        Step (F10)
+      </button>
+
+      <button id="btn-reset" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs flex items-center gap-1.5 transition-all active:scale-95">
+        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Reset
+      </button>
+
+      <!-- Speed Control Slider -->
+      <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg">
+        <span class="text-[10px] text-slate-400 uppercase font-mono">Speed</span>
+        <input id="speed-slider" type="range" min="1" max="1000" value="100" class="w-20 accent-cyan-500 cursor-pointer">
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Workspace -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 overflow-hidden">
+
+    <!-- Left Column: Code Editor & Disassembly & Terminal Output -->
+    <section class="lg:col-span-7 flex flex-col gap-3 h-full overflow-hidden">
+
+      <!-- Assembly Code Editor Box -->
+      <div class="flex-1 bg-slate-900 rounded-xl border border-slate-800 flex flex-col overflow-hidden shadow-md">
+        <!-- Editor Header -->
+        <div class="bg-slate-950 px-3 py-2 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+            <span class="text-xs font-bold text-slate-200">8086 Assembly Source Code</span>
+          </div>
+
+          <!-- Presets Selector Dropdown -->
+          <div class="flex items-center gap-2">
+            <label for="preset-select" class="text-[11px] text-slate-400 font-mono">Preset Examples:</label>
+            <select id="preset-select" class="bg-slate-900 border border-slate-700 text-xs text-cyan-300 rounded px-2 py-1 font-mono focus:outline-none focus:border-cyan-500">
+              <option value="hello">Hello World (INT 21h)</option>
+              <option value="fibonacci">Fibonacci Series</option>
+              <option value="factorial">Factorial Calculator</option>
+              <option value="bubblesort">Bubble Sort Array</option>
+              <option value="stringrev">String Reversal (Stack)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Textarea Code Input -->
+        <div class="flex-1 relative font-mono text-xs flex">
+          <textarea id="asm-input" spellcheck="false" class="w-full h-full bg-slate-950/80 text-cyan-200 p-3 leading-relaxed focus:outline-none resize-none font-mono selection:bg-cyan-900" placeholder="Type 8086 assembly code here..."></textarea>
+        </div>
+
+        <!-- Assembly Status Bar -->
+        <div id="asm-status" class="bg-slate-950 border-t border-slate-800/80 px-3 py-1.5 text-[11px] font-mono text-slate-400 flex items-center justify-between">
+          <span>Ready to assemble. CS:IP = 0700:0100</span>
+          <span id="asm-msg" class="text-emerald-400 font-semibold"></span>
+        </div>
+      </div>
+
+      <!-- Bottom Split: Disassembly Tracer & System Console -->
+      <div class="h-56 grid grid-cols-1 md:grid-cols-2 gap-3 shrink-0">
+
+        <!-- Instruction Disassembler & Tracer -->
+        <div class="bg-slate-900 rounded-xl border border-slate-800 flex flex-col overflow-hidden shadow-md">
+          <div class="bg-slate-950 px-3 py-1.5 border-b border-slate-800 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Disassembly Trace
+            </span>
+            <span class="text-[10px] font-mono text-slate-500">CS:IP Instruction Stream</span>
+          </div>
+          <div id="disasm-container" class="flex-1 overflow-y-auto font-mono text-[11px] p-2 space-y-0.5 bg-slate-950/50"></div>
+        </div>
+
+        <!-- System Output / INT 21h & 10h Console Terminal -->
+        <div class="bg-slate-900 rounded-xl border border-slate-800 flex flex-col overflow-hidden shadow-md">
+          <div class="bg-slate-950 px-3 py-1.5 border-b border-slate-800 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              Execution Output (Stdout)
+            </span>
+            <button id="btn-console-clear" class="text-[10px] text-slate-400 hover:text-cyan-400 font-mono transition-colors">Clear</button>
+          </div>
+          <textarea id="console-output" readonly spellcheck="false" class="flex-1 bg-slate-950 text-emerald-400 p-2.5 font-mono text-xs leading-relaxed focus:outline-none resize-none border-none selection:bg-slate-800" placeholder="Console output, DOS INT 21h stdout, and execution status logs will appear here..."></textarea>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- Right Column: Registers, Flags & 512KB RAM Hex Viewer -->
+    <section class="lg:col-span-5 flex flex-col gap-3 h-full overflow-hidden">
+
+      <!-- CPU State Card: Registers & Flags -->
+      <div class="bg-slate-900 rounded-xl border border-slate-800 p-3 shadow-md shrink-0 flex flex-col gap-3">
+
+        <!-- Registers Display Grid -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+              16-Bit General & Pointer Registers
+            </h2>
+            <span class="text-[10px] text-slate-500 font-mono">Hex / Decimal / Byte View</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-[11px]">
+
+            <!-- AX Register -->
+            <div class="bg-slate-950 p-2 rounded-lg border border-slate-800/80">
+              <div class="text-slate-400 text-[10px] flex justify-between border-b border-slate-800 pb-1 mb-1">
+                <span class="font-bold text-cyan-400">AX</span>
+                <span id="reg-ax-dec" class="text-slate-500">0</span>
+              </div>
+              <div class="text-cyan-300 font-bold text-sm tracking-wide" id="reg-ax-hex">0000</div>
+              <div class="text-[10px] text-slate-500 flex justify-between mt-1 pt-1 border-t border-slate-900">
+                <span>AH: <strong id="reg-ah-hex" class="text-slate-300">00</strong></span>
+                <span>AL: <strong id="reg-al-hex" class="text-slate-300">00</strong></span>
+              </div>
+            </div>
+
+            <!-- BX Register -->
+            <div class="bg-slate-950 p-2 rounded-lg border border-slate-800/80">
+              <div class="text-slate-400 text-[10px] flex justify-between border-b border-slate-800 pb-1 mb-1">
+                <span class="font-bold text-cyan-400">BX</span>
+                <span id="reg-bx-dec" class="text-slate-500">0</span>
+              </div>
+              <div class="text-cyan-300 font-bold text-sm tracking-wide" id="reg-bx-hex">0000</div>
+              <div class="text-[10px] text-slate-500 flex justify-between mt-1 pt-1 border-t border-slate-900">
+                <span>BH: <strong id="reg-bh-hex" class="text-slate-300">00</strong></span>
+                <span>BL: <strong id="reg-bl-hex" class="text-slate-300">00</strong></span>
+              </div>
+            </div>
+
+            <!-- CX Register -->
+            <div class="bg-slate-950 p-2 rounded-lg border border-slate-800/80">
+              <div class="text-slate-400 text-[10px] flex justify-between border-b border-slate-800 pb-1 mb-1">
+                <span class="font-bold text-cyan-400">CX</span>
+                <span id="reg-cx-dec" class="text-slate-500">0</span>
+              </div>
+              <div class="text-cyan-300 font-bold text-sm tracking-wide" id="reg-cx-hex">0000</div>
+              <div class="text-[10px] text-slate-500 flex justify-between mt-1 pt-1 border-t border-slate-900">
+                <span>CH: <strong id="reg-ch-hex" class="text-slate-300">00</strong></span>
+                <span>CL: <strong id="reg-cl-hex" class="text-slate-300">00</strong></span>
+              </div>
+            </div>
+
+            <!-- DX Register -->
+            <div class="bg-slate-950 p-2 rounded-lg border border-slate-800/80">
+              <div class="text-slate-400 text-[10px] flex justify-between border-b border-slate-800 pb-1 mb-1">
+                <span class="font-bold text-cyan-400">DX</span>
+                <span id="reg-dx-dec" class="text-slate-500">0</span>
+              </div>
+              <div class="text-cyan-300 font-bold text-sm tracking-wide" id="reg-dx-hex">0000</div>
+              <div class="text-[10px] text-slate-500 flex justify-between mt-1 pt-1 border-t border-slate-900">
+                <span>DH: <strong id="reg-dh-hex" class="text-slate-300">00</strong></span>
+                <span>DL: <strong id="reg-dl-hex" class="text-slate-300">00</strong></span>
+              </div>
+            </div>
+
+            <!-- SI, DI, BP, SP -->
+            <div class="bg-slate-950 p-1.5 rounded-lg border border-slate-800/80 flex justify-between items-center px-2">
+              <span class="text-slate-400 font-bold">SI:</span>
+              <span id="reg-si-hex" class="text-amber-300 font-bold">0000</span>
+            </div>
+            <div class="bg-slate-950 p-1.5 rounded-lg border border-slate-800/80 flex justify-between items-center px-2">
+              <span class="text-slate-400 font-bold">DI:</span>
+              <span id="reg-di-hex" class="text-amber-300 font-bold">0000</span>
+            </div>
+            <div class="bg-slate-950 p-1.5 rounded-lg border border-slate-800/80 flex justify-between items-center px-2">
+              <span class="text-slate-400 font-bold">BP:</span>
+              <span id="reg-bp-hex" class="text-purple-300 font-bold">0000</span>
+            </div>
+            <div class="bg-slate-950 p-1.5 rounded-lg border border-slate-800/80 flex justify-between items-center px-2">
+              <span class="text-slate-400 font-bold">SP:</span>
+              <span id="reg-sp-hex" class="text-purple-300 font-bold">FFFE</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Segment Registers & Instruction Pointer -->
+        <div class="border-t border-slate-800/80 pt-2 font-mono text-[11px] grid grid-cols-5 gap-1.5 text-center">
+          <div class="bg-slate-950 py-1 px-1.5 rounded border border-slate-800">
+            <span class="text-slate-500 text-[10px] block">CS</span>
+            <span id="reg-cs-hex" class="text-emerald-400 font-bold">0700</span>
+          </div>
+          <div class="bg-slate-950 py-1 px-1.5 rounded border border-slate-800">
+            <span class="text-slate-500 text-[10px] block">DS</span>
+            <span id="reg-ds-hex" class="text-emerald-400 font-bold">0700</span>
+          </div>
+          <div class="bg-slate-950 py-1 px-1.5 rounded border border-slate-800">
+            <span class="text-slate-500 text-[10px] block">SS</span>
+            <span id="reg-ss-hex" class="text-emerald-400 font-bold">0000</span>
+          </div>
+          <div class="bg-slate-950 py-1 px-1.5 rounded border border-slate-800">
+            <span class="text-slate-500 text-[10px] block">ES</span>
+            <span id="reg-es-hex" class="text-emerald-400 font-bold">0700</span>
+          </div>
+          <div class="bg-slate-950 py-1 px-1.5 rounded border border-cyan-800/50 bg-cyan-950/20">
+            <span class="text-cyan-400 text-[10px] block font-bold">IP</span>
+            <span id="reg-ip-hex" class="text-cyan-300 font-bold">0100</span>
+          </div>
+        </div>
+
+        <!-- CPU Status Flags Bar -->
+        <div class="border-t border-slate-800/80 pt-2">
+          <div class="text-[10px] font-bold text-slate-400 mb-1 font-mono uppercase tracking-wider">CPU Flags</div>
+          <div id="flags-bar" class="grid grid-cols-8 gap-1 text-center font-mono text-[10px]">
+            <div id="flag-of" class="bg-slate-950 text-slate-600 py-1 rounded border border-slate-800">OF</div>
+            <div id="flag-df" class="bg-slate-950 text-slate-600 py-1 rounded border border-slate-800">DF</div>
+            <div id="flag-if" class="bg-slate-950 text-emerald-400 font-bold py-1 rounded border border-emerald-500/30">IF</div>
+            <div id="flag-sf" class="bg-slate-950 text-slate-600 py-1 rounded border border-slate-800">SF</div>
+            <div id="flag-zf" class="bg-slate-950 text-slate-600 py-1 rounded border border-slate-800">ZF</div>
+            <div id="flag-af" class="bg-slate-950 text-slate-600 py-1 rounded border border-slate-800">AF</div>
+            <div id="flag-pf" class="bg-slate-950 text-slate-600 py-1 rounded border border-slate-800">PF</div>
+            <div id="flag-cf" class="bg-slate-950 text-slate-600 py-1 rounded border border-slate-800">CF</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 512KB RAM Memory Hex Viewer -->
+      <div class="flex-1 bg-slate-900 rounded-xl border border-slate-800 flex flex-col overflow-hidden shadow-md min-h-[250px]">
+        <!-- Memory Header Toolbar -->
+        <div class="bg-slate-950 px-3 py-2 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21 3.582 4 8 4s8-1.79 8-4"/></svg>
+            <span class="text-xs font-bold text-slate-200">512KB System Memory Hex View</span>
+          </div>
+
+          <!-- Jump to Address Form -->
+          <div class="flex items-center gap-1.5">
+            <span class="text-[11px] text-slate-400 font-mono">Addr:</span>
+            <input id="mem-addr-input" type="text" value="0700:0100" class="bg-slate-900 border border-slate-700 text-xs text-emerald-300 font-mono rounded px-2 py-0.5 w-24 focus:outline-none focus:border-emerald-500" placeholder="0700:0100">
+            <button id="btn-mem-go" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-2 py-0.5 rounded font-mono border border-slate-700">Go</button>
+          </div>
+        </div>
+
+        <!-- Quick Jump Shortcuts -->
+        <div class="bg-slate-950/80 px-3 py-1 border-b border-slate-800/80 flex items-center gap-3 text-[10px] font-mono text-slate-400">
+          <span>Quick Jumps:</span>
+          <button id="btn-jump-csip" class="text-cyan-400 hover:underline">CS:IP (Code)</button>
+          <button id="btn-jump-dsdx" class="text-emerald-400 hover:underline">DS:DX (Data)</button>
+          <button id="btn-jump-sssp" class="text-purple-400 hover:underline">SS:SP (Stack)</button>
+          <button id="btn-jump-code" class="text-amber-400 hover:underline">0700:0200</button>
+        </div>
+
+        <!-- Hex Grid Table View -->
+        <div class="flex-1 overflow-y-auto font-mono text-[11px] p-2 bg-slate-950/60 leading-normal">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="text-slate-500 border-b border-slate-800/80 text-[10px]">
+                <th class="py-1 px-1">Address</th>
+                <th class="py-1 px-1 font-normal">00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F</th>
+                <th class="py-1 px-1 font-normal">ASCII</th>
+              </tr>
+            </thead>
+            <tbody id="hex-table-body" class="divide-y divide-slate-900/40">
+              <!-- Dynamically populated hex rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Hex View Navigation Controls -->
+        <div class="bg-slate-950 px-3 py-1.5 border-t border-slate-800 flex items-center justify-between text-xs font-mono">
+          <button id="btn-mem-prev" class="text-slate-400 hover:text-slate-200 font-bold">&larr; Prev Page</button>
+          <span id="mem-range-label" class="text-slate-500 text-[11px]">0x07100 - 0x071FF</span>
+          <button id="btn-mem-next" class="text-slate-400 hover:text-slate-200 font-bold">Next Page &rarr;</button>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Ordered classic scripts (work both from a server and from file://). -->
+  <script>
+/* util.js — small shared helpers used by the VM, assembler and UI.
+ * Classic script: exports onto window.Util so the page also works from file://. */
+(function (global) {
+  'use strict';
+
+  /** Escape a string for safe insertion into HTML text/attribute content. */
+  function escapeHTML(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /** Format a number as an uppercase hex string padded to `width` digits. */
+  function toHex(value, width) {
+    return (value >>> 0).toString(16).toUpperCase().padStart(width, '0');
+  }
+
+  /**
+   * Parse an assembler numeric literal.
+   * Supports 123, 0x1F, 1Fh, 1010b and 'c' character constants.
+   */
+  function parseNumber(str) {
+    if (str == null) return 0;
+    str = String(str).trim().toUpperCase();
+    if (!str) return 0;
+    if (str.length === 3 && str.startsWith("'") && str.endsWith("'")) {
+      return str.charCodeAt(1);
+    }
+    if (str.startsWith('0X')) return parseInt(str.slice(2), 16) || 0;
+    if (str.endsWith('H')) return parseInt(str.slice(0, -1), 16) || 0;
+    if (str.endsWith('B')) return parseInt(str.slice(0, -1), 2) || 0;
+    return parseInt(str, 10) || 0;
+  }
+
+  /** Remove `;` and `//` line comments from an assembly line. */
+  function stripComments(line) {
+    return String(line).split(';')[0].split('//')[0];
+  }
+
+  global.Util = { escapeHTML, toHex, parseNumber, stripComments };
+})(window);
+
+  </script>
+  <script>
+/* vm.js — Intel 8086 virtual machine core.
+ *
+ * Contains the 512KB RAM model, the register/flag file, segmented memory
+ * access helpers, the effective-address (ModR/M) decoder and the opcode
+ * execution engine. This file is deliberately free of any DOM access so it
+ * can be driven by the UI at whatever rate is needed.
+ *
+ * Classic script: exports onto window.VM so the page also works from file://.
+ */
+(function (global) {
+  'use strict';
+
+const RAM_SIZE = 512 * 1024; // 512 KiB = 524,288 bytes
+const memory = new Uint8Array(RAM_SIZE);
+
+/* --------------------------------------------------------------------------
+ * CPU state
+ * ------------------------------------------------------------------------ */
+const cpu = {
+  // 16-bit general purpose registers
+  AX: 0x0000, BX: 0x0000, CX: 0x0000, DX: 0x0000,
+  SI: 0x0000, DI: 0x0000, BP: 0x0000,
+  SP: 0xFFFE, // top of the 64KB stack
+
+  // Segment registers
+  CS: 0x0700, DS: 0x0700, SS: 0x0000, ES: 0x0700,
+
+  // Instruction pointer (CS:IP starts at 0700:0100 -> physical 0x07100)
+  IP: 0x0100,
+
+  flags: { CF: 0, PF: 0, AF: 0, ZF: 0, SF: 0, IF: 1, DF: 0, OF: 0 },
+
+  status: 'READY', // READY | RUNNING | PAUSED | HALTED | ERROR
+  cycles: 0,
+  speedHz: 100,
+};
+
+/** Restore the CPU to its power-on state. */
+function resetCpu() {
+  cpu.AX = cpu.BX = cpu.CX = cpu.DX = 0;
+  cpu.SI = cpu.DI = cpu.BP = 0;
+  cpu.SP = 0xFFFE;
+  cpu.CS = 0x0700;
+  cpu.DS = 0x0700;
+  cpu.ES = 0x0700;
+  cpu.SS = 0x0000;
+  cpu.IP = 0x0100;
+  cpu.cycles = 0;
+  cpu.status = 'READY';
+  cpu.flags = { CF: 0, PF: 0, AF: 0, ZF: 0, SF: 0, IF: 1, DF: 0, OF: 0 };
+}
+
+/* --------------------------------------------------------------------------
+ * Output sink (interrupt/console output). The UI installs a handler so the VM
+ * never has to touch the DOM directly.
+ * ------------------------------------------------------------------------ */
+let outputSink = null;
+function setOutputSink(fn) { outputSink = fn; }
+function emit(text) { if (outputSink) outputSink(text); }
+
+/* --------------------------------------------------------------------------
+ * Memory version counter — bumped on every write so the UI can skip
+ * re-rendering the hex viewer when nothing changed.
+ * ------------------------------------------------------------------------ */
+let memoryVersion = 0;
+function getMemoryVersion() { return memoryVersion; }
+/** Signal that memory changed without going through write8 (e.g. bulk clear). */
+function markMemoryChanged() { memoryVersion++; }
+
+/* --------------------------------------------------------------------------
+ * 8-bit register accessors
+ * ------------------------------------------------------------------------ */
+const getAH = () => (cpu.AX >> 8) & 0xFF;
+const getAL = () => cpu.AX & 0xFF;
+const getBH = () => (cpu.BX >> 8) & 0xFF;
+const getBL = () => cpu.BX & 0xFF;
+const getCH = () => (cpu.CX >> 8) & 0xFF;
+const getCL = () => cpu.CX & 0xFF;
+const getDH = () => (cpu.DX >> 8) & 0xFF;
+const getDL = () => cpu.DX & 0xFF;
+
+function setAH(v) { cpu.AX = ((v & 0xFF) << 8) | (cpu.AX & 0xFF); }
+function setAL(v) { cpu.AX = (cpu.AX & 0xFF00) | (v & 0xFF); }
+function setBH(v) { cpu.BX = ((v & 0xFF) << 8) | (cpu.BX & 0xFF); }
+function setBL(v) { cpu.BX = (cpu.BX & 0xFF00) | (v & 0xFF); }
+function setCH(v) { cpu.CX = ((v & 0xFF) << 8) | (cpu.CX & 0xFF); }
+function setCL(v) { cpu.CX = (cpu.CX & 0xFF00) | (v & 0xFF); }
+function setDH(v) { cpu.DX = ((v & 0xFF) << 8) | (cpu.DX & 0xFF); }
+function setDL(v) { cpu.DX = (cpu.DX & 0xFF00) | (v & 0xFF); }
+
+/* --------------------------------------------------------------------------
+ * Segmented memory access
+ * ------------------------------------------------------------------------ */
+function getPhysicalAddr(segment, offset) {
+  return (((segment & 0xFFFF) << 4) + (offset & 0xFFFF)) % RAM_SIZE;
+}
+
+function read8(segment, offset) {
+  return memory[getPhysicalAddr(segment, offset)];
+}
+
+function write8(segment, offset, value) {
+  memory[getPhysicalAddr(segment, offset)] = value & 0xFF;
+  memoryVersion++;
+}
+
+function read16(segment, offset) {
+  return read8(segment, offset) | (read8(segment, offset + 1) << 8);
+}
+
+function write16(segment, offset, value) {
+  write8(segment, offset, value & 0xFF);
+  write8(segment, offset + 1, (value >> 8) & 0xFF);
+}
+
+/* Stack operations (SS:SP) */
+function push16(val) {
+  cpu.SP = (cpu.SP - 2) & 0xFFFF;
+  write16(cpu.SS, cpu.SP, val);
+}
+
+function pop16() {
+  const val = read16(cpu.SS, cpu.SP);
+  cpu.SP = (cpu.SP + 2) & 0xFFFF;
+  return val;
+}
+
+/* --------------------------------------------------------------------------
+ * Flags
+ * ------------------------------------------------------------------------ */
+// Lookup table for the parity flag (1 when the byte has an even number of set bits).
+const PARITY = new Uint8Array(256);
+for (let i = 0; i < 256; i++) {
+  let count = 0;
+  for (let b = 0; b < 8; b++) count += (i >> b) & 1;
+  PARITY[i] = (count & 1) ? 0 : 1;
+}
+function getParity(byteVal) { return PARITY[byteVal & 0xFF]; }
+
+function updateFlags8(result, val1, val2, isSub = false, carryIn = 0) {
+  const r8 = result & 0xFF;
+  cpu.flags.ZF = (r8 === 0) ? 1 : 0;
+  cpu.flags.SF = (r8 & 0x80) ? 1 : 0;
+  cpu.flags.PF = getParity(r8);
+  if (isSub) {
+    cpu.flags.CF = (result < 0 || result > 0xFF) ? 1 : 0;
+    cpu.flags.AF = (((val1 & 0x0F) - (val2 & 0x0F) - carryIn) < 0) ? 1 : 0;
+    cpu.flags.OF = (((val1 ^ val2) & (val1 ^ r8) & 0x80) !== 0) ? 1 : 0;
+  } else {
+    cpu.flags.CF = (result > 0xFF || result < 0) ? 1 : 0;
+    cpu.flags.AF = (((val1 & 0x0F) + (val2 & 0x0F) + carryIn) > 0x0F) ? 1 : 0;
+    cpu.flags.OF = (((~(val1 ^ val2)) & (val1 ^ r8) & 0x80) !== 0) ? 1 : 0;
+  }
+}
+
+function updateFlags16(result, val1, val2, isSub = false, carryIn = 0) {
+  const r16 = result & 0xFFFF;
+  cpu.flags.ZF = (r16 === 0) ? 1 : 0;
+  cpu.flags.SF = (r16 & 0x8000) ? 1 : 0;
+  cpu.flags.PF = getParity(r16 & 0xFF);
+  if (isSub) {
+    cpu.flags.CF = (result < 0 || result > 0xFFFF) ? 1 : 0;
+    cpu.flags.AF = (((val1 & 0x0F) - (val2 & 0x0F) - carryIn) < 0) ? 1 : 0;
+    cpu.flags.OF = (((val1 ^ val2) & (val1 ^ r16) & 0x8000) !== 0) ? 1 : 0;
+  } else {
+    cpu.flags.CF = (result > 0xFFFF || result < 0) ? 1 : 0;
+    cpu.flags.AF = (((val1 & 0x0F) + (val2 & 0x0F) + carryIn) > 0x0F) ? 1 : 0;
+    cpu.flags.OF = (((~(val1 ^ val2)) & (val1 ^ r16) & 0x8000) !== 0) ? 1 : 0;
+  }
+}
+
+function setLogicFlags(res, is16) {
+  cpu.flags.CF = cpu.flags.OF = cpu.flags.AF = 0;
+  if (is16) {
+    cpu.flags.ZF = ((res & 0xFFFF) === 0) ? 1 : 0;
+    cpu.flags.SF = (res & 0x8000) ? 1 : 0;
+  } else {
+    cpu.flags.ZF = ((res & 0xFF) === 0) ? 1 : 0;
+    cpu.flags.SF = (res & 0x80) ? 1 : 0;
+  }
+  cpu.flags.PF = getParity(res & 0xFF);
+}
+
+/* --------------------------------------------------------------------------
+ * Register-index accessors used by the ModR/M engine
+ * ------------------------------------------------------------------------ */
+function getReg16(idx) {
+  switch (idx & 7) {
+    case 0: return cpu.AX; case 1: return cpu.CX;
+    case 2: return cpu.DX; case 3: return cpu.BX;
+    case 4: return cpu.SP; case 5: return cpu.BP;
+    case 6: return cpu.SI; case 7: return cpu.DI;
+  }
+}
+
+function setReg16(idx, val) {
+  val = val & 0xFFFF;
+  switch (idx & 7) {
+    case 0: cpu.AX = val; break; case 1: cpu.CX = val; break;
+    case 2: cpu.DX = val; break; case 3: cpu.BX = val; break;
+    case 4: cpu.SP = val; break; case 5: cpu.BP = val; break;
+    case 6: cpu.SI = val; break; case 7: cpu.DI = val; break;
+  }
+}
+
+function getReg8(idx) {
+  switch (idx & 7) {
+    case 0: return getAL(); case 1: return getCL();
+    case 2: return getDL(); case 3: return getBL();
+    case 4: return getAH(); case 5: return getCH();
+    case 6: return getDH(); case 7: return getBH();
+  }
+}
+
+function setReg8(idx, val) {
+  val = val & 0xFF;
+  switch (idx & 7) {
+    case 0: setAL(val); break; case 1: setCL(val); break;
+    case 2: setDL(val); break; case 3: setBL(val); break;
+    case 4: setAH(val); break; case 5: setCH(val); break;
+    case 6: setDH(val); break; case 7: setBH(val); break;
+  }
+}
+
+function getSReg(idx) {
+  switch (idx & 3) {
+    case 0: return cpu.ES; case 1: return cpu.CS;
+    case 2: return cpu.SS; case 3: return cpu.DS;
+  }
+}
+
+function setSReg(idx, val) {
+  val = val & 0xFFFF;
+  switch (idx & 3) {
+    case 0: cpu.ES = val; break; case 1: cpu.CS = val; break;
+    case 2: cpu.SS = val; break; case 3: cpu.DS = val; break;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Effective address decoder (8086 ModR/M byte)
+ * ------------------------------------------------------------------------ */
+function getEffectiveAddress(mod, rm, disp) {
+  if (mod === 3) return { isReg: true, regIdx: rm };
+
+  let seg = cpu.DS;
+  let offset = 0;
+
+  switch (rm) {
+    case 0: offset = (cpu.BX + cpu.SI) & 0xFFFF; break;
+    case 1: offset = (cpu.BX + cpu.DI) & 0xFFFF; break;
+    case 2: seg = cpu.SS; offset = (cpu.BP + cpu.SI) & 0xFFFF; break;
+    case 3: seg = cpu.SS; offset = (cpu.BP + cpu.DI) & 0xFFFF; break;
+    case 4: offset = cpu.SI; break;
+    case 5: offset = cpu.DI; break;
+    case 6:
+      if (mod === 0) offset = disp & 0xFFFF;        // [disp16] direct
+      else { seg = cpu.SS; offset = cpu.BP; }       // [BP...]
+      break;
+    case 7: offset = cpu.BX; break;
+  }
+
+  if (mod === 1 || mod === 2) offset = (offset + disp) & 0xFFFF;
+
+  return { isReg: false, seg, offset };
+}
+
+function decodeModRM(ipOffset) {
+  const modrm = read8(cpu.CS, ipOffset);
+  const mod = (modrm >> 6) & 0x03;
+  const reg = (modrm >> 3) & 0x07;
+  const rm = modrm & 0x07;
+
+  let len = 1;
+  let disp = 0;
+
+  if (mod === 0 && rm === 6) {
+    disp = read16(cpu.CS, ipOffset + len);
+    len += 2;
+  } else if (mod === 1) {
+    const b = read8(cpu.CS, ipOffset + len);
+    disp = (b & 0x80) ? b - 256 : b; // sign-extend disp8
+    len += 1;
+  } else if (mod === 2) {
+    const w = read16(cpu.CS, ipOffset + len);
+    disp = (w & 0x8000) ? w - 65536 : w; // sign-extend disp16
+    len += 2;
+  }
+
+  return { mod, reg, rm, disp, len, ea: getEffectiveAddress(mod, rm, disp) };
+}
+
+function getVal8(ea) { return ea.isReg ? getReg8(ea.regIdx) : read8(ea.seg, ea.offset); }
+function setVal8(ea, val) { if (ea.isReg) setReg8(ea.regIdx, val); else write8(ea.seg, ea.offset, val); }
+function getVal16(ea) { return ea.isReg ? getReg16(ea.regIdx) : read16(ea.seg, ea.offset); }
+function setVal16(ea, val) { if (ea.isReg) setReg16(ea.regIdx, val); else write16(ea.seg, ea.offset, val); }
+
+/* --------------------------------------------------------------------------
+ * ALU dispatcher
+ * ------------------------------------------------------------------------ */
+function execALU(op, v1, v2, is16) {
+  let res = 0;
+  switch (op) {
+    case 0: // ADD
+      res = v1 + v2;
+      is16 ? updateFlags16(res, v1, v2, false) : updateFlags8(res, v1, v2, false);
+      break;
+    case 1: res = v1 | v2; setLogicFlags(res, is16); break; // OR
+    case 2: { // ADC
+      const cin = cpu.flags.CF;
+      res = v1 + v2 + cin;
+      is16 ? updateFlags16(res, v1, v2, false, cin) : updateFlags8(res, v1, v2, false, cin);
+      break;
+    }
+    case 3: { // SBB
+      const cin = cpu.flags.CF;
+      res = v1 - v2 - cin;
+      is16 ? updateFlags16(res, v1, v2, true, cin) : updateFlags8(res, v1, v2, true, cin);
+      break;
+    }
+    case 4: res = v1 & v2; setLogicFlags(res, is16); break; // AND
+    case 5: // SUB
+    case 7: // CMP
+      res = v1 - v2;
+      is16 ? updateFlags16(res, v1, v2, true) : updateFlags8(res, v1, v2, true);
+      break;
+    case 6: res = v1 ^ v2; setLogicFlags(res, is16); break; // XOR
+  }
+  return is16 ? (res & 0xFFFF) : (res & 0xFF);
+}
+
+/* --------------------------------------------------------------------------
+ * Interrupt handling (DOS INT 21h + BIOS INT 10h subset)
+ * ------------------------------------------------------------------------ */
+function handleInterrupt(intNum) {
+  if (intNum === 0x21) {
+    const ah = getAH();
+    if (ah === 0x02) {
+      emit(String.fromCharCode(getDL()));
+    } else if (ah === 0x09) {
+      // Print `$`-terminated string at DS:DX (bounded to avoid runaway scans).
+      let offset = cpu.DX;
+      let out = '';
+      let guard = 0;
+      while (guard++ < 0x10000) {
+        const b = read8(cpu.DS, offset++);
+        if (b === 0x24 || b === 0) break; // '$' or NUL
+        out += String.fromCharCode(b);
+      }
+      emit(out);
+    } else if (ah === 0x4C) {
+      cpu.status = 'HALTED';
+      emit(`\n[SYSTEM]: Program finished with exit code AL = 0x${getAL().toString(16).padStart(2, '0').toUpperCase()}\n`);
+    }
+  } else if (intNum === 0x10) {
+    if (getAH() === 0x0E) emit(String.fromCharCode(getAL()));
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Opcode execution engine
+ * ------------------------------------------------------------------------ */
+/** Execute one instruction. Returns false when the CPU stopped (halt/error). */
+function cpuStep() {
+  if (cpu.status === 'HALTED' || cpu.status === 'ERROR') return false;
+
+  const startIP = cpu.IP;
+  const opcode = read8(cpu.CS, cpu.IP);
+
+  if (opcode === 0x90) { // NOP
+    cpu.IP = (cpu.IP + 1) & 0xFFFF;
+  } else if (opcode === 0xF4) { // HLT
+    cpu.status = 'HALTED';
+    emit('SYSTEM: CPU Halted (HLT instruction).\n');
+    return false;
+  } else if (opcode >= 0x50 && opcode <= 0x57) { // PUSH r16
+    push16(getReg16(opcode - 0x50));
+    cpu.IP = (cpu.IP + 1) & 0xFFFF;
+  } else if (opcode >= 0x58 && opcode <= 0x5F) { // POP r16
+    setReg16(opcode - 0x58, pop16());
+    cpu.IP = (cpu.IP + 1) & 0xFFFF;
+  } else if (opcode >= 0x40 && opcode <= 0x47) { // INC r16
+    const idx = opcode - 0x40;
+    const oldV = getReg16(idx);
+    const newV = (oldV + 1) & 0xFFFF;
+    setReg16(idx, newV);
+    const cf = cpu.flags.CF;
+    updateFlags16(newV, oldV, 1, false);
+    cpu.flags.CF = cf; // INC preserves CF
+    cpu.IP = (cpu.IP + 1) & 0xFFFF;
+  } else if (opcode >= 0x48 && opcode <= 0x4F) { // DEC r16
+    const idx = opcode - 0x48;
+    const oldV = getReg16(idx);
+    const newV = (oldV - 1) & 0xFFFF;
+    setReg16(idx, newV);
+    const cf = cpu.flags.CF;
+    updateFlags16(newV, oldV, 1, true);
+    cpu.flags.CF = cf; // DEC preserves CF
+    cpu.IP = (cpu.IP + 1) & 0xFFFF;
+  } else if (opcode === 0xC3) { // RET
+    cpu.IP = pop16();
+  } else if (opcode >= 0xB0 && opcode <= 0xB7) { // MOV r8, imm8
+    setReg8(opcode - 0xB0, read8(cpu.CS, cpu.IP + 1));
+    cpu.IP = (cpu.IP + 2) & 0xFFFF;
+  } else if (opcode >= 0xB8 && opcode <= 0xBF) { // MOV r16, imm16
+    setReg16(opcode - 0xB8, read16(cpu.CS, cpu.IP + 1));
+    cpu.IP = (cpu.IP + 3) & 0xFFFF;
+  } else if (opcode === 0xCD) { // INT imm8
+    const intNum = read8(cpu.CS, cpu.IP + 1);
+    cpu.IP = (cpu.IP + 2) & 0xFFFF;
+    handleInterrupt(intNum);
+  } else if (opcode === 0xEB) { // JMP rel8
+    let rel8 = read8(cpu.CS, cpu.IP + 1);
+    if (rel8 & 0x80) rel8 -= 256;
+    cpu.IP = (cpu.IP + 2 + rel8) & 0xFFFF;
+  } else if (opcode === 0xE9) { // JMP rel16
+    let rel16 = read16(cpu.CS, cpu.IP + 1);
+    if (rel16 & 0x8000) rel16 -= 65536;
+    cpu.IP = (cpu.IP + 3 + rel16) & 0xFFFF;
+  } else if (opcode === 0xE8) { // CALL rel16
+    let rel16 = read16(cpu.CS, cpu.IP + 1);
+    if (rel16 & 0x8000) rel16 -= 65536;
+    const retIP = (cpu.IP + 3) & 0xFFFF;
+    push16(retIP);
+    cpu.IP = (retIP + rel16) & 0xFFFF;
+  } else if (opcode >= 0x70 && opcode <= 0x7F) { // Jcc rel8
+    let rel8 = read8(cpu.CS, cpu.IP + 1);
+    if (rel8 & 0x80) rel8 -= 256;
+    let take = false;
+    switch (opcode) {
+      case 0x74: take = (cpu.flags.ZF === 1); break;                                   // JE/JZ
+      case 0x75: take = (cpu.flags.ZF === 0); break;                                   // JNE/JNZ
+      case 0x7C: take = (cpu.flags.SF !== cpu.flags.OF); break;                        // JL
+      case 0x7D: take = (cpu.flags.SF === cpu.flags.OF); break;                        // JGE
+      case 0x7E: take = (cpu.flags.ZF === 1 || cpu.flags.SF !== cpu.flags.OF); break;  // JLE
+      case 0x7F: take = (cpu.flags.ZF === 0 && cpu.flags.SF === cpu.flags.OF); break;  // JG
+    }
+    cpu.IP = take ? ((cpu.IP + 2 + rel8) & 0xFFFF) : ((cpu.IP + 2) & 0xFFFF);
+  } else if (opcode === 0xE2) { // LOOP rel8
+    let rel8 = read8(cpu.CS, cpu.IP + 1);
+    if (rel8 & 0x80) rel8 -= 256;
+    cpu.CX = (cpu.CX - 1) & 0xFFFF;
+    cpu.IP = (cpu.IP + ((cpu.CX !== 0) ? 2 + rel8 : 2)) & 0xFFFF;
+  } else if (opcode === 0x8D) { // LEA r16, mem
+    const d = decodeModRM(cpu.IP + 1);
+    if (!d.ea.isReg) setReg16(d.reg, d.ea.offset);
+    cpu.IP = (cpu.IP + 1 + d.len) & 0xFFFF;
+  } else if (!executeModRMInstruction(opcode)) {
+    cpu.status = 'ERROR';
+    emit(
+      `ERROR: Unknown/Unhandled Opcode 0x${opcode.toString(16).padStart(2, '0').toUpperCase()}` +
+      ` at CS:IP=${cpu.CS.toString(16).padStart(4, '0')}:${startIP.toString(16).padStart(4, '0')}\n`
+    );
+    return false;
+  }
+
+  cpu.cycles++;
+  return true;
+}
+
+function executeModRMInstruction(opcode) {
+  // MOV r/m8,r8 (0x88) / MOV r/m16,r16 (0x89) / MOV r8,r/m8 (0x8A) / MOV r16,r/m16 (0x8B)
+  if (opcode === 0x88 || opcode === 0x89 || opcode === 0x8A || opcode === 0x8B) {
+    const d = decodeModRM(cpu.IP + 1);
+    const is16 = (opcode & 1) === 1;
+    const isRegSource = (opcode & 2) === 0;
+    if (is16) {
+      if (isRegSource) setVal16(d.ea, getReg16(d.reg));
+      else setReg16(d.reg, getVal16(d.ea));
+    } else {
+      if (isRegSource) setVal8(d.ea, getReg8(d.reg));
+      else setReg8(d.reg, getVal8(d.ea));
+    }
+    cpu.IP = (cpu.IP + 1 + d.len) & 0xFFFF;
+    return true;
+  }
+
+  // MOV r/m8,imm8 (0xC6) / MOV r/m16,imm16 (0xC7)
+  if (opcode === 0xC6 || opcode === 0xC7) {
+    const d = decodeModRM(cpu.IP + 1);
+    if (opcode === 0xC7) {
+      setVal16(d.ea, read16(cpu.CS, cpu.IP + 1 + d.len));
+      cpu.IP = (cpu.IP + 1 + d.len + 2) & 0xFFFF;
+    } else {
+      setVal8(d.ea, read8(cpu.CS, cpu.IP + 1 + d.len));
+      cpu.IP = (cpu.IP + 1 + d.len + 1) & 0xFFFF;
+    }
+    return true;
+  }
+
+  // MOV r/m16,sreg (0x8C) / MOV sreg,r/m16 (0x8E)
+  if (opcode === 0x8C || opcode === 0x8E) {
+    const d = decodeModRM(cpu.IP + 1);
+    if (opcode === 0x8C) setVal16(d.ea, getSReg(d.reg));
+    else setSReg(d.reg, getVal16(d.ea));
+    cpu.IP = (cpu.IP + 1 + d.len) & 0xFFFF;
+    return true;
+  }
+
+  // Group 1 ALU: opcodes 0x00..0x3D whose low three bits are <= 5.
+  // (Excludes segment prefixes / PUSH/POP sreg / DAA-DAS-AAA-AAS / 0x0F.)
+  if (opcode <= 0x3D && (opcode & 0x07) <= 5) {
+    const aluOp = (opcode >> 3) & 7;
+    const is16 = (opcode & 1) === 1;
+    const isRegDest = (opcode & 2) === 2;
+
+    if ((opcode & 0x06) === 0x04) {
+      // Accumulator with immediate (AL/AX, imm)
+      const imm = is16 ? read16(cpu.CS, cpu.IP + 1) : read8(cpu.CS, cpu.IP + 1);
+      const v1 = is16 ? cpu.AX : getAL();
+      const res = execALU(aluOp, v1, imm, is16);
+      if (aluOp !== 7) { if (is16) cpu.AX = res & 0xFFFF; else setAL(res & 0xFF); }
+      cpu.IP = (cpu.IP + 1 + (is16 ? 2 : 1)) & 0xFFFF;
+      return true;
+    }
+
+    const d = decodeModRM(cpu.IP + 1);
+    const v1 = is16 ? (isRegDest ? getReg16(d.reg) : getVal16(d.ea)) : (isRegDest ? getReg8(d.reg) : getVal8(d.ea));
+    const v2 = is16 ? (isRegDest ? getVal16(d.ea) : getReg16(d.reg)) : (isRegDest ? getVal8(d.ea) : getReg8(d.reg));
+    const res = execALU(aluOp, v1, v2, is16);
+    if (aluOp !== 7) {
+      if (is16) { if (isRegDest) setReg16(d.reg, res); else setVal16(d.ea, res); }
+      else { if (isRegDest) setReg8(d.reg, res); else setVal8(d.ea, res); }
+    }
+    cpu.IP = (cpu.IP + 1 + d.len) & 0xFFFF;
+    return true;
+  }
+
+  // Immediate to r/m ALU group: 0x80 (r/m8,imm8), 0x81 (r/m16,imm16), 0x83 (r/m16,sext imm8)
+  if (opcode === 0x80 || opcode === 0x81 || opcode === 0x83) {
+    const d = decodeModRM(cpu.IP + 1);
+    const aluOp = d.reg;
+    const is16 = (opcode !== 0x80);
+
+    let imm = 0;
+    let immLen = 0;
+    if (opcode === 0x80) {
+      imm = read8(cpu.CS, cpu.IP + 1 + d.len);
+      immLen = 1;
+    } else if (opcode === 0x81) {
+      imm = read16(cpu.CS, cpu.IP + 1 + d.len);
+      immLen = 2;
+    } else {
+      const b = read8(cpu.CS, cpu.IP + 1 + d.len);
+      imm = (b & 0x80) ? (b - 256) & 0xFFFF : b;
+      immLen = 1;
+    }
+
+    const v1 = is16 ? getVal16(d.ea) : getVal8(d.ea);
+    const res = execALU(aluOp, v1, imm, is16);
+    if (aluOp !== 7) {
+      if (is16) setVal16(d.ea, res); else setVal8(d.ea, res);
+    }
+    cpu.IP = (cpu.IP + 1 + d.len + immLen) & 0xFFFF;
+    return true;
+  }
+
+  // Group 3 unary: NOT, NEG, MUL, DIV (0xF6 / 0xF7)
+  if (opcode === 0xF6 || opcode === 0xF7) {
+    const d = decodeModRM(cpu.IP + 1);
+    const is16 = (opcode === 0xF7);
+    const subOp = d.reg;
+
+    if (subOp === 2) { // NOT
+      if (is16) setVal16(d.ea, ~getVal16(d.ea)); else setVal8(d.ea, ~getVal8(d.ea));
+    } else if (subOp === 3) { // NEG
+      const v = is16 ? getVal16(d.ea) : getVal8(d.ea);
+      const res = execALU(5, 0, v, is16);
+      if (is16) setVal16(d.ea, res); else setVal8(d.ea, res);
+    } else if (subOp === 4) { // MUL (unsigned)
+      if (is16) {
+        const res = cpu.AX * getVal16(d.ea);
+        cpu.AX = res & 0xFFFF;
+        cpu.DX = (res >> 16) & 0xFFFF;
+        cpu.flags.CF = cpu.flags.OF = (cpu.DX !== 0) ? 1 : 0;
+      } else {
+        const res = getAL() * getVal8(d.ea);
+        cpu.AX = res & 0xFFFF;
+        cpu.flags.CF = cpu.flags.OF = (getAH() !== 0) ? 1 : 0;
+      }
+    } else if (subOp === 6) { // DIV (unsigned)
+      if (is16) {
+        const num = ((cpu.DX << 16) | cpu.AX) >>> 0;
+        const den = getVal16(d.ea);
+        if (den === 0) { cpu.status = 'ERROR'; emit('ERROR: Division by zero!\n'); return false; }
+        cpu.AX = Math.floor(num / den) & 0xFFFF;
+        cpu.DX = (num % den) & 0xFFFF;
+      } else {
+        const den = getVal8(d.ea);
+        if (den === 0) { cpu.status = 'ERROR'; emit('ERROR: Division by zero!\n'); return false; }
+        setAL(Math.floor(cpu.AX / den));
+        setAH(cpu.AX % den);
+      }
+    }
+    cpu.IP = (cpu.IP + 1 + d.len) & 0xFFFF;
+    return true;
+  }
+
+  // Group 4/5: INC/DEC (0xFE/0xFF), PUSH r/m16 (0xFF /6), POP r/m16 (0x8F /0)
+  if (opcode === 0xFE || opcode === 0xFF || opcode === 0x8F) {
+    const d = decodeModRM(cpu.IP + 1);
+    const is16 = (opcode !== 0xFE);
+    const subOp = d.reg;
+
+    if (opcode === 0x8F) {
+      if (subOp === 0) setVal16(d.ea, pop16()); // POP r/m16
+    } else if (subOp === 0) { // INC
+      const oldV = is16 ? getVal16(d.ea) : getVal8(d.ea);
+      const newV = (oldV + 1) & (is16 ? 0xFFFF : 0xFF);
+      if (is16) setVal16(d.ea, newV); else setVal8(d.ea, newV);
+      const cf = cpu.flags.CF;
+      is16 ? updateFlags16(newV, oldV, 1, false) : updateFlags8(newV, oldV, 1, false);
+      cpu.flags.CF = cf;
+    } else if (subOp === 1) { // DEC
+      const oldV = is16 ? getVal16(d.ea) : getVal8(d.ea);
+      const newV = (oldV - 1) & (is16 ? 0xFFFF : 0xFF);
+      if (is16) setVal16(d.ea, newV); else setVal8(d.ea, newV);
+      const cf = cpu.flags.CF;
+      is16 ? updateFlags16(newV, oldV, 1, true) : updateFlags8(newV, oldV, 1, true);
+      cpu.flags.CF = cf;
+    } else if (opcode === 0xFF && subOp === 6) { // PUSH r/m16
+      push16(getVal16(d.ea));
+    }
+    cpu.IP = (cpu.IP + 1 + d.len) & 0xFFFF;
+    return true;
+  }
+
+  return false;
+}
+
+  global.VM = {
+    RAM_SIZE,
+    memory,
+    cpu,
+    resetCpu,
+    setOutputSink,
+    getMemoryVersion,
+    markMemoryChanged,
+    getPhysicalAddr,
+    read8,
+    write8,
+    read16,
+    write16,
+    getReg16,
+    getReg8,
+    cpuStep,
+  };
+})(window);
+
+
+  </script>
+  <script>
+/* assembler.js — two-pass 8086 assembler.
+ *
+ * Translates the assembly source into machine code written directly into the
+ * VM's RAM at CS:0100 and returns a listing used by the disassembly trace.
+ *
+ * Classic script: exports onto window.Assembler; depends on window.VM/Util.
+ */
+(function (global) {
+  'use strict';
+
+const { cpu, memory, write8, getPhysicalAddr, markMemoryChanged } = global.VM;
+const { parseNumber, stripComments } = global.Util;
+
+/**
+ * Assemble `source` into memory. Resets the segment registers and IP to the
+ * program entry point (0700:0100) and returns the instruction listing.
+ */
+function assemble(source) {
+  const lines = String(source == null ? '' : source).split('\n');
+  const labels = Object.create(null);
+
+  cpu.CS = 0x0700;
+  cpu.DS = 0x0700;
+  cpu.ES = 0x0700;
+  cpu.SS = 0x0000;
+  cpu.SP = 0xFFFE;
+
+  // Clear the 64KB code segment before (re)assembling.
+  const codeStart = getPhysicalAddr(cpu.CS, 0x0000);
+  memory.fill(0, codeStart, codeStart + 0x10000);
+  markMemoryChanged();
+
+  // ---- Pass 1: resolve label offsets -------------------------------------
+  let ip = 0x0100;
+  for (const raw of lines) {
+    let line = stripComments(raw).trim();
+    if (!line) continue;
+
+    if (line.includes(':')) {
+      const parts = line.split(':');
+      labels[parts[0].trim().toUpperCase()] = ip;
+      line = parts[1] ? parts[1].trim() : '';
+      if (!line) continue;
+    }
+
+    const tokens = line.split(/\s+/);
+    if (tokens[0].toUpperCase() === 'ORG') { ip = parseNumber(tokens[1]); continue; }
+    ip = (ip + assembleLine(line, ip, labels).length) & 0xFFFF;
+  }
+
+  // ---- Pass 2: emit bytes -------------------------------------------------
+  ip = 0x0100;
+  const listing = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const original = lines[i];
+    let line = stripComments(original).trim();
+    if (!line) continue;
+
+    if (line.includes(':')) {
+      const parts = line.split(':');
+      line = parts[1] ? parts[1].trim() : '';
+      if (!line) continue;
+    }
+
+    const tokens = line.split(/\s+/);
+    if (tokens[0].toUpperCase() === 'ORG') { ip = parseNumber(tokens[1]); continue; }
+
+    const bytes = assembleLine(line, ip, labels);
+    if (bytes && bytes.length) {
+      for (let b = 0; b < bytes.length; b++) write8(cpu.CS, ip + b, bytes[b]);
+      listing.push({
+        ip,
+        lineNum: i + 1,
+        source: original.trim(),
+        bytes,
+        hexBytes: bytes.map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join(' '),
+      });
+      ip = (ip + bytes.length) & 0xFFFF;
+    }
+  }
+
+  cpu.IP = 0x0100;
+  cpu.cycles = 0;
+  cpu.status = 'READY';
+
+  return listing;
+}
+
+/* --------------------------------------------------------------------------
+ * Single-line encoder
+ * ------------------------------------------------------------------------ */
+function assembleLine(line, currentIP, labels) {
+  const match = line.match(/^([A-Z0-9]+)(\s+(.*))?$/i);
+  if (!match) return [0x90];
+  const mnemonic = match[1].toUpperCase();
+  const opStr = match[3] || '';
+  const operands = splitOperands(opStr);
+
+  if (mnemonic === 'DB') return parseDBValues(opStr, labels);
+  if (mnemonic === 'DW') return parseDWValues(opStr, labels);
+
+  if (mnemonic === 'NOP') return [0x90];
+  if (mnemonic === 'HLT') return [0xF4];
+  if (mnemonic === 'RET') return [0xC3];
+
+  const op1 = parseOperand(operands[0], labels);
+  const op2 = parseOperand(operands[1], labels);
+
+  // ---- MOV ---------------------------------------------------------------
+  if (mnemonic === 'MOV') {
+    if (op1.type === 'reg16' && op2.type === 'imm') return [0xB8 + op1.regIdx, op2.val & 0xFF, (op2.val >> 8) & 0xFF];
+    if (op1.type === 'reg8' && op2.type === 'imm') return [0xB0 + op1.regIdx, op2.val & 0xFF];
+    if (op1.type === 'reg16' && op2.type === 'reg16') return [0x8B, encodeModRM(3, op1.regIdx, op2.regIdx)];
+    if (op1.type === 'reg8' && op2.type === 'reg8') return [0x8A, encodeModRM(3, op1.regIdx, op2.regIdx)];
+    if (op1.type === 'mem' && op2.type === 'reg8') return encodeModRMInst(0x88, op2.regIdx, op1);
+    if (op1.type === 'mem' && op2.type === 'reg16') return encodeModRMInst(0x89, op2.regIdx, op1);
+    if (op1.type === 'reg8' && op2.type === 'mem') return encodeModRMInst(0x8A, op1.regIdx, op2);
+    if (op1.type === 'reg16' && op2.type === 'mem') return encodeModRMInst(0x8B, op1.regIdx, op2);
+    if (op1.type === 'mem' && op2.type === 'imm') {
+      const bytes = encodeModRMInst(op1.isWordPtr ? 0xC7 : 0xC6, 0, op1);
+      bytes.push(op2.val & 0xFF);
+      if (op1.isWordPtr) bytes.push((op2.val >> 8) & 0xFF);
+      return bytes;
+    }
+  }
+
+  // ---- Group 1 ALU -------------------------------------------------------
+  const aluOps = ['ADD', 'OR', 'ADC', 'SBB', 'AND', 'SUB', 'XOR', 'CMP'];
+  const aluIdx = aluOps.indexOf(mnemonic);
+  if (aluIdx !== -1) {
+    // The accumulator short form (0x04/0x05) is only legal for AL/AX; every
+    // other register must use the generic r/m,imm form.
+    if (op1.type === 'reg8' && op2.type === 'imm') {
+      if (op1.regIdx === 0) return [(aluIdx << 3) | 0x04, op2.val & 0xFF];
+      return [0x80, encodeModRM(3, aluIdx, op1.regIdx), op2.val & 0xFF];
+    }
+    if (op1.type === 'reg16' && op2.type === 'imm') {
+      if (op1.regIdx === 0) return [(aluIdx << 3) | 0x05, op2.val & 0xFF, (op2.val >> 8) & 0xFF];
+      return [0x81, encodeModRM(3, aluIdx, op1.regIdx), op2.val & 0xFF, (op2.val >> 8) & 0xFF];
+    }
+    if (op1.type === 'reg8' && op2.type === 'reg8') return [(aluIdx << 3) | 0x02, encodeModRM(3, op1.regIdx, op2.regIdx)];
+    if (op1.type === 'reg16' && op2.type === 'reg16') return [(aluIdx << 3) | 0x03, encodeModRM(3, op1.regIdx, op2.regIdx)];
+    if (op1.type === 'mem' && op2.type === 'imm') {
+      const bytes = encodeModRMInst(op1.isWordPtr ? 0x81 : 0x80, aluIdx, op1);
+      bytes.push(op2.val & 0xFF);
+      if (op1.isWordPtr) bytes.push((op2.val >> 8) & 0xFF);
+      return bytes;
+    }
+  }
+
+  // ---- INC / DEC ---------------------------------------------------------
+  if (mnemonic === 'INC') {
+    if (op1.type === 'reg16') return [0x40 + op1.regIdx];
+    if (op1.type === 'reg8') return [0xFE, encodeModRM(3, 0, op1.regIdx)];
+    if (op1.type === 'mem') return encodeModRMInst(op1.isWordPtr ? 0xFF : 0xFE, 0, op1);
+  }
+  if (mnemonic === 'DEC') {
+    if (op1.type === 'reg16') return [0x48 + op1.regIdx];
+    if (op1.type === 'reg8') return [0xFE, encodeModRM(3, 1, op1.regIdx)];
+    if (op1.type === 'mem') return encodeModRMInst(op1.isWordPtr ? 0xFF : 0xFE, 1, op1);
+  }
+
+  // ---- Jumps & control flow ---------------------------------------------
+  if (CONTROL_FLOW.has(mnemonic)) {
+    const target = op1.val;
+    // JMP uses the near form (rel16) so targets beyond the rel8 range are
+    // encoded correctly and both assembler passes agree on the length.
+    if (mnemonic === 'JMP') {
+      const rel16 = target - (currentIP + 3);
+      return [0xE9, rel16 & 0xFF, (rel16 >> 8) & 0xFF];
+    }
+    if (mnemonic === 'CALL') {
+      const rel16 = target - (currentIP + 3);
+      return [0xE8, rel16 & 0xFF, (rel16 >> 8) & 0xFF];
+    }
+    const rel8 = target - (currentIP + 2);
+    const opcode =
+      (mnemonic === 'JE' || mnemonic === 'JZ') ? 0x74 :
+      (mnemonic === 'JNE' || mnemonic === 'JNZ') ? 0x75 :
+      mnemonic === 'JL' ? 0x7C :
+      mnemonic === 'JGE' ? 0x7D :
+      mnemonic === 'JLE' ? 0x7E :
+      mnemonic === 'JG' ? 0x7F :
+      0xE2; // LOOP
+    return [opcode, rel8 & 0xFF];
+  }
+
+  // ---- PUSH / POP --------------------------------------------------------
+  if (mnemonic === 'PUSH' && op1.type === 'reg16') return [0x50 + op1.regIdx];
+  if (mnemonic === 'POP' && op1.type === 'reg16') return [0x58 + op1.regIdx];
+
+  // ---- LEA ---------------------------------------------------------------
+  if (mnemonic === 'LEA' && op1.type === 'reg16' && op2.type === 'mem') {
+    return encodeModRMInst(0x8D, op1.regIdx, op2);
+  }
+
+  // ---- INT ---------------------------------------------------------------
+  if (mnemonic === 'INT') return [0xCD, op1.val & 0xFF];
+
+  // ---- Unary group 3 (MUL / DIV / NOT) ----------------------------------
+  if (mnemonic === 'MUL' || mnemonic === 'DIV' || mnemonic === 'NOT') {
+    const subOp = mnemonic === 'MUL' ? 4 : mnemonic === 'DIV' ? 6 : 2;
+    if (op1.type === 'reg8') return [0xF6, encodeModRM(3, subOp, op1.regIdx)];
+    if (op1.type === 'reg16') return [0xF7, encodeModRM(3, subOp, op1.regIdx)];
+    if (op1.type === 'mem') return encodeModRMInst(op1.isWordPtr ? 0xF7 : 0xF6, subOp, op1);
+  }
+
+  // Unknown / unsupported mnemonic: emit a NOP so the length is stable.
+  return [0x90];
+}
+
+const CONTROL_FLOW = new Set(['JMP', 'JE', 'JZ', 'JNE', 'JNZ', 'JL', 'JGE', 'JLE', 'JG', 'LOOP', 'CALL']);
+
+/* --------------------------------------------------------------------------
+ * Operand parsing / encoding helpers
+ * ------------------------------------------------------------------------ */
+function splitOperands(str) {
+  if (!str) return [];
+  return str.split(',').map((s) => s.trim());
+}
+
+function encodeModRM(mod, reg, rm) {
+  return ((mod & 3) << 6) | ((reg & 7) << 3) | (rm & 7);
+}
+
+function encodeModRMInst(opcode, reg, memOp) {
+  const bytes = [opcode, encodeModRM(memOp.mod, reg, memOp.rm)];
+  if (memOp.mod === 1) {
+    bytes.push(memOp.disp & 0xFF);
+  } else if (memOp.mod === 2 || (memOp.mod === 0 && memOp.rm === 6)) {
+    bytes.push(memOp.disp & 0xFF, (memOp.disp >> 8) & 0xFF);
+  }
+  return bytes;
+}
+
+function parseOperand(opStr, labels) {
+  if (!opStr) return { type: 'none' };
+  let str = opStr.trim();
+
+  let isBytePtr = false;
+  let isWordPtr = false;
+  if (/^BYTE\s+PTR\s+/i.test(str)) { isBytePtr = true; str = str.replace(/^BYTE\s+PTR\s+/i, '').trim(); }
+  if (/^WORD\s+PTR\s+/i.test(str)) { isWordPtr = true; str = str.replace(/^WORD\s+PTR\s+/i, '').trim(); }
+
+  if (str.startsWith('[') && str.endsWith(']')) {
+    const content = str.slice(1, -1).trim();
+    return { type: 'mem', isBytePtr, isWordPtr, ...parseMemoryExpr(content, labels) };
+  }
+
+  const r16 = ['AX', 'CX', 'DX', 'BX', 'SP', 'BP', 'SI', 'DI'].indexOf(str.toUpperCase());
+  if (r16 !== -1) return { type: 'reg16', regIdx: r16 };
+
+  const r8 = ['AL', 'CL', 'DL', 'BL', 'AH', 'CH', 'DH', 'BH'].indexOf(str.toUpperCase());
+  if (r8 !== -1) return { type: 'reg8', regIdx: r8 };
+
+  const key = str.toUpperCase();
+  if (labels && labels[key] !== undefined) return { type: 'imm', val: labels[key] };
+  return { type: 'imm', val: parseNumber(str) };
+}
+
+function parseMemoryExpr(expr, labels) {
+  const s = expr.toUpperCase().replace(/\s+/g, '');
+  if (labels && labels[s] !== undefined) return { mod: 0, rm: 6, disp: labels[s] };
+
+  const hasBX = s.includes('BX');
+  const hasBP = s.includes('BP');
+  const hasSI = s.includes('SI');
+  const hasDI = s.includes('DI');
+
+  let baseRm = -1;
+  if (hasBX && hasSI) baseRm = 0;
+  else if (hasBX && hasDI) baseRm = 1;
+  else if (hasBP && hasSI) baseRm = 2;
+  else if (hasBP && hasDI) baseRm = 3;
+  else if (hasSI) baseRm = 4;
+  else if (hasDI) baseRm = 5;
+  else if (hasBP) baseRm = 6;
+  else if (hasBX) baseRm = 7;
+
+  let cleanStr = s.replace(/BX|BP|SI|DI/g, '');
+  let disp = 0;
+  if (cleanStr.length > 0) {
+    if (cleanStr.startsWith('+')) cleanStr = cleanStr.slice(1);
+    disp = parseNumber(cleanStr);
+  }
+
+  if (baseRm === -1) return { mod: 0, rm: 6, disp };
+
+  let mod;
+  if (disp === 0 && baseRm !== 6) mod = 0;
+  else if (disp >= -128 && disp <= 127) mod = 1;
+  else mod = 2;
+
+  return { mod, rm: baseRm, disp };
+}
+
+function parseDBValues(argsStr, labels) {
+  const bytes = [];
+  let i = 0;
+  while (i < argsStr.length) {
+    while (i < argsStr.length && (argsStr[i] === ' ' || argsStr[i] === ',')) i++;
+    if (i >= argsStr.length) break;
+
+    if (argsStr[i] === "'" || argsStr[i] === '"') {
+      const q = argsStr[i++];
+      while (i < argsStr.length && argsStr[i] !== q) bytes.push(argsStr.charCodeAt(i++));
+      if (i < argsStr.length) i++;
+    } else {
+      let token = '';
+      while (i < argsStr.length && argsStr[i] !== ',' && argsStr[i] !== ' ') token += argsStr[i++];
+      let v = parseNumber(token);
+      if (labels && labels[token.toUpperCase()] !== undefined) v = labels[token.toUpperCase()];
+      bytes.push((v || 0) & 0xFF);
+    }
+  }
+  return bytes;
+}
+
+function parseDWValues(argsStr, labels) {
+  const bytes = [];
+  for (let p of argsStr.split(',')) {
+    p = p.trim();
+    if (!p) continue;
+    let v = parseNumber(p);
+    if (labels && labels[p.toUpperCase()] !== undefined) v = labels[p.toUpperCase()];
+    v = (v || 0) & 0xFFFF;
+    bytes.push(v & 0xFF, (v >> 8) & 0xFF);
+  }
+  return bytes;
+}
+
+  global.Assembler = { assemble };
+})(window);
+
+
+  </script>
+  <script>
+/* presets.js — bundled example programs for the editor's preset selector.
+ * Classic script: exports onto window.Presets. */
+(function (global) {
+  'use strict';
+
+const presets = {
+  hello: `; Hello World using DOS INT 21h
+ORG 0100h
+
+    MOV DX, msg      ; Load string offset
+    MOV AH, 09h      ; DOS Print String
+    INT 21h
+
+    MOV AH, 4Ch      ; DOS Exit Program
+    INT 21h
+
+msg:
+    DB 'Hello, World! Intel 8086 VM operational.$', 0`,
+
+  fibonacci: `; Fibonacci Series Generator
+ORG 0100h
+
+    MOV CX, 8        ; Count = 8 terms
+    MOV AL, 0        ; F(0) = 0
+    MOV BL, 1        ; F(1) = 1
+
+fib_loop:
+    MOV DL, AL
+    ADD DL, 30h      ; Convert digit to ASCII
+    MOV AH, 02h
+    INT 21h          ; Print character
+
+    MOV DL, ' '
+    MOV AH, 02h
+    INT 21h          ; Print space
+
+    MOV BH, AL
+    ADD AL, BL       ; Next term = AL + BL
+    MOV BL, BH
+
+    LOOP fib_loop
+
+    MOV AH, 4Ch
+    INT 21h`,
+
+  factorial: `; Factorial Calculator (5! = 120 / 0x78)
+ORG 0100h
+
+    MOV AX, 1        ; Result accumulator
+    MOV CX, 5        ; Calculate 5!
+
+fact_loop:
+    MUL CX           ; AX = AX * CX
+    LOOP fact_loop
+
+    MOV [0200h], AX  ; Store 120 (0x0078) at offset 0200h
+
+    MOV DX, done_msg
+    MOV AH, 09h
+    INT 21h
+
+    MOV AH, 4Ch
+    INT 21h
+
+done_msg:
+    DB 'Factorial computed! Result stored in AX and [0200h].$', 0`,
+
+  bubblesort: `; Bubble Sort Array in Memory
+ORG 0100h
+
+    ; Initialize array at offset 0200h
+    MOV SI, 0200h
+    MOV BYTE PTR [SI], 9
+    MOV BYTE PTR [SI+1], 3
+    MOV BYTE PTR [SI+2], 7
+    MOV BYTE PTR [SI+3], 1
+    MOV BYTE PTR [SI+4], 5
+
+    MOV CX, 5        ; Outer loop count
+
+outer_loop:
+    MOV SI, 0200h
+    MOV DX, 4        ; Inner loop count
+
+inner_loop:
+    MOV AL, [SI]
+    MOV BL, [SI+1]
+    CMP AL, BL
+    JLE no_swap
+
+    MOV [SI], BL
+    MOV [SI+1], AL
+
+no_swap:
+    INC SI
+    DEC DX
+    JNZ inner_loop
+    LOOP outer_loop
+
+    MOV DX, sort_msg
+    MOV AH, 09h
+    INT 21h
+
+    MOV AH, 4Ch
+    INT 21h
+
+sort_msg:
+    DB 'Array sorted at [0200h]! Check Hex Viewer.$', 0`,
+
+  stringrev: `; String Reversal using Stack
+ORG 0100h
+
+    MOV SI, src_str
+    MOV CX, 5        ; Length of string '8086!'
+
+push_loop:
+    MOV AL, [SI]
+    PUSH AX
+    INC SI
+    LOOP push_loop
+
+    MOV DI, dest_str
+    MOV CX, 5
+
+pop_loop:
+    POP AX
+    MOV [DI], AL
+    INC DI
+    LOOP pop_loop
+
+    MOV BYTE PTR [DI], '$'
+
+    MOV DX, dest_str
+    MOV AH, 09h
+    INT 21h
+
+    MOV AH, 4Ch
+    INT 21h
+
+src_str:
+    DB '8086!'
+dest_str:
+    DB 0, 0, 0, 0, 0, '$'`,
+};
+
+  global.Presets = { presets };
+})(window);
+
+
+  </script>
+  <script>
+/* ui.js — all DOM rendering and console output for the 8086 VM.
+ *
+ * Responsibilities:
+ *   - register / flag / status panels
+ *   - disassembly trace (built once per assembly, then O(1) highlight moves)
+ *   - 512KB hex viewer (skips re-render when nothing changed)
+ *   - console text area (buffered to avoid O(n^2) string building)
+ *
+ * Classic script: exports onto window.UI; depends on window.VM/Util.
+ */
+(function (global) {
+  'use strict';
+
+const { cpu, memory, RAM_SIZE, getPhysicalAddr, getMemoryVersion, getReg16, getReg8 } = global.VM;
+const { toHex, escapeHTML } = global.Util;
+
+/* --------------------------------------------------------------------------
+ * Element cache + small change-detecting helpers
+ * ------------------------------------------------------------------------ */
+const elements = new Map();
+const $ = (id) => {
+  let el = elements.get(id);
+  if (!el) { el = document.getElementById(id); elements.set(id, el); }
+  return el;
+};
+
+function setText(el, value) {
+  if (el && el.__text !== value) { el.__text = value; el.textContent = value; }
+}
+
+function setClass(el, cls) {
+  if (el && el.__class !== cls) { el.__class = cls; el.className = cls; }
+}
+
+/* --------------------------------------------------------------------------
+ * Static class-name fragments (kept in sync with the Tailwind safelist in
+ * index.html so the CDN generates them).
+ * ------------------------------------------------------------------------ */
+const FLAG_ON = 'bg-emerald-500/20 text-emerald-300 font-bold py-1 rounded border border-emerald-500/50 shadow-sm';
+const FLAG_OFF = 'bg-slate-950 text-slate-600 py-1 rounded border border-slate-800';
+
+const DIS_ROW = 'px-2 py-1 rounded flex items-center justify-between font-mono text-[11px]';
+const DIS_ROW_CUR = DIS_ROW + ' bg-cyan-950/80 text-cyan-200 border-l-2 border-cyan-400 font-bold';
+const DIS_ROW_NORM = DIS_ROW + ' hover:bg-slate-800/40 text-slate-300';
+
+const STATUS_STYLES = {
+  RUNNING: {
+    badge: 'px-2 py-0.5 rounded font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1.5',
+    led: 'w-2 h-2 rounded-full bg-amber-400 led-glow-amber',
+  },
+  HALTED: {
+    badge: 'px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5',
+    led: 'w-2 h-2 rounded-full bg-slate-500',
+  },
+  ERROR: {
+    badge: 'px-2 py-0.5 rounded font-bold bg-red-500/10 text-red-400 border border-red-500/30 flex items-center gap-1.5',
+    led: 'w-2 h-2 rounded-full bg-red-500 led-glow-red',
+  },
+  READY: {
+    badge: 'px-2 py-0.5 rounded font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5',
+    led: 'w-2 h-2 rounded-full bg-emerald-400 led-glow',
+  },
+};
+
+/* --------------------------------------------------------------------------
+ * Disassembly trace
+ * ------------------------------------------------------------------------ */
+let disasmRows = [];
+let disasmIndexByIp = new Map();
+let highlightedIdx = -1;
+
+function setDisassemblyListing(listing) {
+  const container = $('disasm-container');
+  disasmRows = [];
+  disasmIndexByIp = new Map();
+  highlightedIdx = -1;
+  container.replaceChildren();
+
+  if (!listing || listing.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'text-slate-500 italic p-2';
+    empty.textContent = 'Assemble code to populate execution stream...';
+    container.appendChild(empty);
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  listing.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = DIS_ROW_NORM;
+
+    const left = document.createElement('div');
+    left.className = 'flex items-center gap-2';
+
+    const addr = document.createElement('span');
+    addr.className = 'text-slate-500';
+    addr.textContent = '0700:' + toHex(item.ip, 4);
+
+    const bytes = document.createElement('span');
+    bytes.className = 'text-amber-300/80 w-16';
+    bytes.textContent = item.hexBytes;
+
+    const src = document.createElement('span');
+    src.textContent = item.source;
+
+    left.append(addr, bytes, src);
+
+    const badge = document.createElement('span');
+    badge.className = 'text-[10px] bg-cyan-500 text-slate-950 px-1.5 rounded font-bold hidden';
+    badge.textContent = 'CS:IP';
+
+    row.append(left, badge);
+    frag.appendChild(row);
+
+    disasmRows.push({ el: row, addr, badge });
+    disasmIndexByIp.set(item.ip, i);
+  });
+  container.appendChild(frag);
+
+  updateDisassemblyHighlight();
+}
+
+function updateDisassemblyHighlight() {
+  const idx = disasmIndexByIp.has(cpu.IP) ? disasmIndexByIp.get(cpu.IP) : -1;
+  if (idx === highlightedIdx) return;
+
+  if (highlightedIdx !== -1 && disasmRows[highlightedIdx]) {
+    const prev = disasmRows[highlightedIdx];
+    prev.el.className = DIS_ROW_NORM;
+    prev.addr.className = 'text-slate-500';
+    prev.badge.classList.add('hidden');
+  }
+  if (idx !== -1) {
+    const cur = disasmRows[idx];
+    cur.el.className = DIS_ROW_CUR;
+    cur.addr.className = 'text-cyan-400';
+    cur.badge.classList.remove('hidden');
+  }
+  highlightedIdx = idx;
+}
+
+/* --------------------------------------------------------------------------
+ * Register / flag / status panels
+ * ------------------------------------------------------------------------ */
+// 16-bit register index order must match the VM's getReg16: AX, CX, DX, BX.
+const REG16_LAYOUT = [
+  { prefix: 'ax', idx: 0 },
+  { prefix: 'bx', idx: 3 },
+  { prefix: 'cx', idx: 1 },
+  { prefix: 'dx', idx: 2 },
+];
+
+function updateRegisters() {
+  for (const r of REG16_LAYOUT) {
+    const v = getReg16(r.idx);
+    setText($(`reg-${r.prefix}-hex`), toHex(v, 4));
+    setText($(`reg-${r.prefix}-dec`), String(v));
+  }
+
+  // High/low byte readouts (explicit to keep the DOM ids readable).
+  setText($('reg-ah-hex'), toHex(getReg8(4), 2));
+  setText($('reg-al-hex'), toHex(getReg8(0), 2));
+  setText($('reg-bh-hex'), toHex(getReg8(7), 2));
+  setText($('reg-bl-hex'), toHex(getReg8(3), 2));
+  setText($('reg-ch-hex'), toHex(getReg8(5), 2));
+  setText($('reg-cl-hex'), toHex(getReg8(1), 2));
+  setText($('reg-dh-hex'), toHex(getReg8(6), 2));
+  setText($('reg-dl-hex'), toHex(getReg8(2), 2));
+
+  setText($('reg-si-hex'), toHex(cpu.SI, 4));
+  setText($('reg-di-hex'), toHex(cpu.DI, 4));
+  setText($('reg-bp-hex'), toHex(cpu.BP, 4));
+  setText($('reg-sp-hex'), toHex(cpu.SP, 4));
+
+  setText($('reg-cs-hex'), toHex(cpu.CS, 4));
+  setText($('reg-ds-hex'), toHex(cpu.DS, 4));
+  setText($('reg-ss-hex'), toHex(cpu.SS, 4));
+  setText($('reg-es-hex'), toHex(cpu.ES, 4));
+  setText($('reg-ip-hex'), toHex(cpu.IP, 4));
+
+  setText($('cycles-count'), String(cpu.cycles));
+}
+
+function updateStatus() {
+  setText($('status-text'), cpu.status);
+  const style = STATUS_STYLES[cpu.status] || STATUS_STYLES.READY;
+  setClass($('status-badge'), style.badge);
+  setClass($('status-led'), style.led);
+}
+
+function updateFlags() {
+  setClass($('flag-of'), cpu.flags.OF ? FLAG_ON : FLAG_OFF);
+  setClass($('flag-df'), cpu.flags.DF ? FLAG_ON : FLAG_OFF);
+  setClass($('flag-if'), cpu.flags.IF ? FLAG_ON : FLAG_OFF);
+  setClass($('flag-sf'), cpu.flags.SF ? FLAG_ON : FLAG_OFF);
+  setClass($('flag-zf'), cpu.flags.ZF ? FLAG_ON : FLAG_OFF);
+  setClass($('flag-af'), cpu.flags.AF ? FLAG_ON : FLAG_OFF);
+  setClass($('flag-pf'), cpu.flags.PF ? FLAG_ON : FLAG_OFF);
+  setClass($('flag-cf'), cpu.flags.CF ? FLAG_ON : FLAG_OFF);
+}
+
+/* --------------------------------------------------------------------------
+ * 512KB hex viewer
+ * ------------------------------------------------------------------------ */
+let hexViewAddress = 0x07100;
+let hexSignature = '';
+
+function renderMemoryHexView(force = false) {
+  const startPhys = Math.floor(hexViewAddress / 16) * 16;
+  const endPhys = Math.min(startPhys + 128, RAM_SIZE);
+  const ipPhys = getPhysicalAddr(cpu.CS, cpu.IP);
+
+  const signature = `${startPhys}|${getMemoryVersion()}|${ipPhys}`;
+  if (!force && signature === hexSignature) return;
+  hexSignature = signature;
+
+  setText($('mem-range-label'), `0x${toHex(startPhys, 5)} - 0x${toHex(endPhys - 1, 5)}`);
+
+  let html = '';
+  for (let phys = startPhys; phys < endPhys; phys += 16) {
+    let hexCols = '';
+    let asciiCols = '';
+    for (let i = 0; i < 16; i++) {
+      const addr = phys + i;
+      if (addr >= RAM_SIZE) break;
+      const val = memory[addr];
+      const cls = (addr === ipPhys)
+        ? 'bg-cyan-500 text-slate-950 font-bold rounded px-0.5'
+        : (val !== 0 ? 'text-emerald-300' : 'text-slate-600');
+      hexCols += `<span class="${cls}">${toHex(val, 2)}</span> `;
+      asciiCols += (val >= 32 && val <= 126) ? String.fromCharCode(val) : '.';
+    }
+    html += `<tr class="hover:bg-slate-900/60 font-mono text-[11px]">
+      <td class="py-0.5 px-1 text-slate-500 border-r border-slate-800/80">0x${toHex(phys, 5)}</td>
+      <td class="py-0.5 px-1 font-mono tracking-wider">${hexCols}</td>
+      <td class="py-0.5 px-1 text-slate-400 border-l border-slate-800/80">${escapeHTML(asciiCols)}</td>
+    </tr>`;
+  }
+  $('hex-table-body').innerHTML = html;
+}
+
+function scrollMemoryView(delta) {
+  hexViewAddress = Math.max(0, Math.min(RAM_SIZE - 128, hexViewAddress + delta));
+  renderMemoryHexView(true);
+}
+
+// The address box is displayed in hex (e.g. "0700:0100"), so parse it as hex
+// rather than decimal. Optional `h`/`0x` prefixes are accepted too.
+function parseHexToken(token) {
+  let s = String(token).trim().replace(/h$/i, '');
+  if (s.toLowerCase().startsWith('0x')) s = s.slice(2);
+  const v = parseInt(s, 16);
+  return Number.isFinite(v) ? (v & 0xFFFF) : 0;
+}
+
+function jumpToMemoryAddr() {
+  const input = $('mem-addr-input').value.trim();
+  if (!input) return;
+  if (input.includes(':')) {
+    const [s, o] = input.split(':');
+    hexViewAddress = getPhysicalAddr(parseHexToken(s), parseHexToken(o));
+  } else {
+    hexViewAddress = parseHexToken(input);
+  }
+  hexViewAddress = Math.max(0, Math.min(RAM_SIZE - 128, hexViewAddress));
+  renderMemoryHexView(true);
+}
+
+function jumpToSegmentOffset(seg, off) {
+  hexViewAddress = Math.max(0, Math.min(RAM_SIZE - 128, getPhysicalAddr(seg, off)));
+  $('mem-addr-input').value = `${toHex(seg, 4)}:${toHex(off, 4)}`;
+  renderMemoryHexView(true);
+}
+
+/* --------------------------------------------------------------------------
+ * Console (buffered, flushed once per frame)
+ * ------------------------------------------------------------------------ */
+let consoleBuffer = '';
+let consoleDirty = false;
+let consoleScheduled = false;
+const MAX_CONSOLE_CHARS = 200000;
+
+function log(text) {
+  if (text == null) return;
+  consoleBuffer += text;
+  if (consoleBuffer.length > MAX_CONSOLE_CHARS) {
+    consoleBuffer = consoleBuffer.slice(consoleBuffer.length - MAX_CONSOLE_CHARS);
+  }
+  consoleDirty = true;
+  if (!consoleScheduled) {
+    consoleScheduled = true;
+    requestAnimationFrame(() => { consoleScheduled = false; flushConsole(); });
+  }
+}
+
+function flushConsole() {
+  if (!consoleDirty) return;
+  const el = $('console-output');
+  el.value = consoleBuffer;
+  el.scrollTop = el.scrollHeight;
+  consoleDirty = false;
+}
+
+function clearConsole() {
+  consoleBuffer = '';
+  consoleDirty = true;
+  flushConsole();
+}
+
+/* --------------------------------------------------------------------------
+ * Misc setters + full refresh
+ * ------------------------------------------------------------------------ */
+function setRunButtonState(isRunning) {
+  setText($('text-run'), isRunning ? 'Pause' : 'Run');
+  $('icon-run').innerHTML = isRunning
+    ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'
+    : '<path d="M8 5v14l11-7z"/>';
+}
+
+function setFrequencyDisplay(hz) {
+  setText($('freq-display'), `${hz} Hz`);
+}
+
+function setAsmMessage(msg) {
+  setText($('asm-msg'), msg);
+}
+
+function updateUI() {
+  updateRegisters();
+  updateStatus();
+  updateFlags();
+  updateDisassemblyHighlight();
+  renderMemoryHexView();
+  flushConsole();
+}
+
+function initUI() {
+  setRunButtonState(false);
+  updateUI();
+}
+
+  global.UI = {
+    initUI,
+    updateUI,
+    setDisassemblyListing,
+    renderMemoryHexView,
+    scrollMemoryView,
+    jumpToMemoryAddr,
+    jumpToSegmentOffset,
+    log,
+    clearConsole,
+    setRunButtonState,
+    setFrequencyDisplay,
+    setAsmMessage,
+  };
+})(window);
+  </script>
+  <script>
+/* main.js — application controller.
+ *
+ * Wires the toolbar/console buttons to the VM and drives the execution loop.
+ * The run loop uses requestAnimationFrame with a time-based accumulator so the
+ * executed instruction rate matches the requested frequency regardless of the
+ * display refresh rate, and UI rendering is capped at one update per frame.
+ *
+ * Classic script: depends on window.VM/Assembler/Presets/UI.
+ */
+(function (global) {
+  'use strict';
+
+const { cpu, cpuStep, resetCpu, setOutputSink } = global.VM;
+const { assemble } = global.Assembler;
+const { presets } = global.Presets;
+const ui = global.UI;
+
+const $ = (id) => document.getElementById(id);
+
+/* --------------------------------------------------------------------------
+ * Execution loop
+ * ------------------------------------------------------------------------ */
+let running = false;
+let rafId = null;
+let lastTimestamp = 0;
+let stepAccumulator = 0;
+const MAX_STEPS_PER_FRAME = 100000; // safety valve against tight infinite loops
+
+function startRun() {
+  if (running) return;
+  if (cpu.status === 'HALTED' || cpu.status === 'ERROR') return;
+
+  running = true;
+  cpu.status = 'RUNNING';
+  lastTimestamp = 0;
+  stepAccumulator = 0;
+  ui.setRunButtonState(true);
+  ui.updateUI();
+  rafId = requestAnimationFrame(tick);
+}
+
+function stopRun() {
+  if (rafId !== null) cancelAnimationFrame(rafId);
+  rafId = null;
+  running = false;
+  if (cpu.status === 'RUNNING') cpu.status = 'PAUSED';
+  ui.setRunButtonState(false);
+  ui.updateUI();
+}
+
+function tick(timestamp) {
+  if (!running) return;
+
+  if (!lastTimestamp) lastTimestamp = timestamp;
+  let elapsed = (timestamp - lastTimestamp) / 1000;
+  lastTimestamp = timestamp;
+  if (elapsed > 0.25) elapsed = 0.25; // don't burn through after a tab switch
+
+  stepAccumulator += elapsed * cpu.speedHz;
+  let steps = Math.floor(stepAccumulator);
+  stepAccumulator -= steps;
+  if (steps > MAX_STEPS_PER_FRAME) steps = MAX_STEPS_PER_FRAME;
+
+  let stopped = false;
+  for (let i = 0; i < steps; i++) {
+    if (!cpuStep()) { stopped = true; break; }
+  }
+
+  ui.updateUI();
+
+  if (stopped || cpu.status === 'HALTED' || cpu.status === 'ERROR') {
+    stopRun();
+    return;
+  }
+  rafId = requestAnimationFrame(tick);
+}
+
+/* --------------------------------------------------------------------------
+ * Actions
+ * ------------------------------------------------------------------------ */
+function doAssemble() {
+  stopRun();
+  const listing = assemble($('asm-input').value);
+  ui.setDisassemblyListing(listing);
+  ui.jumpToSegmentOffset(cpu.CS, cpu.IP);
+  ui.log(`\n[ASSEMBLER]: Assembly successful! ${listing.length} instructions written to CS:IP (0700:0100).\n`);
+  ui.setAsmMessage(`${listing.length} instructions compiled cleanly.`);
+  ui.updateUI();
+}
+
+function loadPreset(key) {
+  if (presets[key]) {
+    $('asm-input').value = presets[key];
+    doAssemble();
+  }
+}
+
+function toggleRun() {
+  if (running) stopRun();
+  else startRun();
+}
+
+function stepOnce() {
+  stopRun();
+  cpuStep();
+  ui.updateUI();
+}
+
+function doReset() {
+  stopRun();
+  resetCpu();
+  ui.log('\n[SYSTEM]: CPU registers and state reset.\n');
+  ui.updateUI();
+}
+
+function updateSpeed(value) {
+  const hz = Math.max(1, parseInt(value, 10) || 1);
+  cpu.speedHz = hz;
+  ui.setFrequencyDisplay(hz);
+}
+
+/* --------------------------------------------------------------------------
+ * Bootstrap
+ * ------------------------------------------------------------------------ */
+function init() {
+  setOutputSink(ui.log);
+
+  $('btn-assemble').addEventListener('click', doAssemble);
+  $('btn-run').addEventListener('click', toggleRun);
+  $('btn-step').addEventListener('click', stepOnce);
+  $('btn-reset').addEventListener('click', doReset);
+
+  $('preset-select').addEventListener('change', (e) => loadPreset(e.target.value));
+  $('speed-slider').addEventListener('input', (e) => updateSpeed(e.target.value));
+
+  $('btn-mem-go').addEventListener('click', () => ui.jumpToMemoryAddr());
+  $('mem-addr-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') ui.jumpToMemoryAddr();
+  });
+  $('btn-mem-prev').addEventListener('click', () => ui.scrollMemoryView(-128));
+  $('btn-mem-next').addEventListener('click', () => ui.scrollMemoryView(128));
+
+  $('btn-jump-csip').addEventListener('click', () => ui.jumpToSegmentOffset(cpu.CS, cpu.IP));
+  $('btn-jump-dsdx').addEventListener('click', () => ui.jumpToSegmentOffset(cpu.DS, cpu.DX));
+  $('btn-jump-sssp').addEventListener('click', () => ui.jumpToSegmentOffset(cpu.SS, cpu.SP));
+  $('btn-jump-code').addEventListener('click', () => ui.jumpToSegmentOffset(0x0700, 0x0200));
+
+  $('btn-console-clear').addEventListener('click', () => ui.clearConsole());
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'F9') { e.preventDefault(); doAssemble(); }
+    else if (e.key === 'F10') { e.preventDefault(); stepOnce(); }
+  });
+
+  ui.initUI();
+  ui.setFrequencyDisplay(cpu.speedHz);
+  loadPreset('hello');
+}
+
+  init();
+})(window);
+
+
+  </script>
+</body>
+</html>

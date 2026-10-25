@@ -499,11 +499,16 @@
             createRow(headersContainer);
 
             async function sendRequest() {
-                const url = urlInput.value.trim();
+                let url = urlInput.value.trim();
                 if (!url) {
                     urlInput.style.borderColor = 'var(--error-color)';
                     setTimeout(() => { urlInput.style.borderColor = ''; }, 2000);
                     return;
+                }
+
+                if (!/^https?:\/\//i.test(url)) {
+                    url = 'https://' + url;
+                    urlInput.value = url;
                 }
 
                 loaderContainer.classList.remove('hidden');
@@ -515,11 +520,27 @@
 
                 try {
                     const headers = new Headers();
-                    collectRows(headersContainer).forEach(([k, v]) => headers.append(k, v));
+                    let headerError = false;
+                    
+                    collectRows(headersContainer).forEach(([k, v]) => {
+                        try {
+                            headers.append(k, v);
+                        } catch (e) {
+                            alert(`Invalid header name: "${k}". Headers cannot contain spaces or special characters.`);
+                            headerError = true;
+                        }
+                    });
+
+                    if (headerError) {
+                        loaderContainer.classList.add('hidden');
+                        sendBtn.disabled = false;
+                        return;
+                    }
 
                     const method = methodSelect.value;
                     const options = { method, headers, mode: 'cors' };
-                    if (method !== 'GET' && method !== 'HEAD') {
+                    
+                    if (method !== 'GET' && method !== 'HEAD' && bodyInput.value.trim()) {
                         options.body = bodyInput.value;
                     }
 
@@ -558,6 +579,7 @@
                     const parsed = JSON.parse(responseBodyEl.textContent);
                     responseBodyEl.textContent = JSON.stringify(parsed, null, 2);
                 } catch {
+                    alert('Response is not valid JSON and cannot be formatted.');
                 }
             });
         });

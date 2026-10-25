@@ -405,7 +405,7 @@
             <small>Use `{{text}}`, `{{source_language}}`, and `{{destination_language}}` as placeholders.</small>
         </div>
         <div class="form-group stream-switch">
-            <label for="stream-switch">Stream Response</label>
+            <label for="stream-switch-checkbox">Stream Response</label>
             <label class="switch">
                 <input type="checkbox" id="stream-switch-checkbox">
                 <span class="slider"></span>
@@ -537,7 +537,7 @@
         const ollamaApi = {
             async getModels(settings) {
                 const data = await getModelsRequest(settings.serverUrl, '/api/tags', settings.apiKey);
-                return data.models.map((m) => m.name).sort();
+                return (data.models || []).map((m) => m.name).sort();
             },
             buildBody(systemPrompt, userPrompt, settings, stream) {
                 return JSON.stringify({
@@ -570,7 +570,7 @@
         const openAiCompatibleApi = {
             async getModels(settings) {
                 const data = await getModelsRequest(settings.serverUrl, '/v1/models', settings.apiKey);
-                return data.data.map((m) => m.id).sort();
+                return (data.data || []).map((m) => m.id).sort();
             },
             buildBody(systemPrompt, userPrompt, settings, stream) {
                 return JSON.stringify({

@@ -54,7 +54,6 @@ body{
 .site-header{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
 h1{font-size:clamp(1.55rem,4vw,2.1rem);letter-spacing:-.02em}
 
-/* Updated Tabs Styling for rounded rectangle instead of pill */
 .tabs{display:inline-flex;flex-wrap:wrap;justify-content:center;padding:4px;gap:4px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px}
 .tab{
     appearance:none;border:none;background:transparent;color:var(--color-muted);
@@ -104,7 +103,7 @@ h1{font-size:clamp(1.55rem,4vw,2.1rem);letter-spacing:-.02em}
 .marks .bar{position:absolute;left:0;right:0;height:var(--code-leading);background:var(--color-mark)}
 .canvas textarea{
     border:none;outline:none;resize:none;background:transparent;color:var(--color-text);
-    white-space:pre;overflow:hidden;width:100%;min-height:180px;display:block;box-sizing:border-box;
+    white-space:pre;overflow-x:auto;overflow-y:hidden;width:100%;min-height:180px;display:block;box-sizing:border-box;
 }
 .canvas textarea::placeholder{color:var(--color-faint)}
 .icon-btn{
@@ -116,7 +115,6 @@ h1{font-size:clamp(1.55rem,4vw,2.1rem);letter-spacing:-.02em}
 .icon-btn:hover{opacity:1;color:var(--color-text)}
 .icon-btn svg{width:15px;height:15px}
 
-/* Main FAB Button */
 .fab{
     position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:40;
     padding:14px 26px;border:none;border-radius:12px;
@@ -128,7 +126,6 @@ h1{font-size:clamp(1.55rem,4vw,2.1rem);letter-spacing:-.02em}
 }
 .fab.show{opacity:1;transform:none;pointer-events:auto}
 
-/* Scroll Top/Bottom Floating Buttons */
 .scroll-fabs{
     position:fixed;right:max(16px,env(safe-area-inset-right));bottom:calc(max(16px,env(safe-area-inset-bottom)) + 68px);
     z-index:40;display:flex;flex-direction:column;gap:10px;
@@ -146,7 +143,6 @@ h1{font-size:clamp(1.55rem,4vw,2.1rem);letter-spacing:-.02em}
 
 button:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
 
-/* Toast Component */
 .toast-container{
     position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
     z-index:1000;display:flex;flex-direction:column;align-items:center;gap:8px;
@@ -163,13 +159,9 @@ button:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
 .toast.ok{border-color:var(--color-ok);color:var(--color-ok)}
 .toast.warn{border-color:var(--color-warn);color:var(--color-warn)}
 
-/* 
- * Mobile/Portrait Styling 
- * Fixed height container layout with no page scroll, equal textarea splits
- */
 @media (max-width:760px){
     html, body {
-        height:100%; height:100dvh; overflow:hidden; /* Lock outer page scroll */
+        height:100%; height:100dvh; overflow:hidden;
     }
     body { padding:10px; display:flex; flex-direction:column; }
     .layout {
@@ -183,23 +175,21 @@ button:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
         display:flex; flex-direction:column; gap:10px;
     }
     .card { flex-shrink:0; padding:12px; }
-    .options { justify-content:center; gap:8px 12px; } /* Centered checkboxes */
+    .options { justify-content:center; gap:8px 12px; }
     .panes {
         flex:1; min-height:0;
         display:flex; flex-direction:column; gap:10px;
     }
     .editor {
         flex:1; min-height:0;
-        height:auto !important; /* Force override inline JS height */
+        height:auto !important;
         border-radius:12px;
     }
-    /* Let the textarea completely fill and handle scrolling natively */
     .canvas textarea {
         position:absolute !important; inset:0 !important;
         height:100% !important; width:100% !important;
         overflow-y:auto !important;
     }
-    /* FAB and Scroll buttons naturally hide because intersection observer is on card inside viewport, but we can force hide to be safe */
     .fab, .scroll-fabs { display:none !important; }
 }
 </style>
@@ -218,7 +208,6 @@ button:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
         </nav>
     </header>
 
-    <!-- 1. Base64 Convert -->
     <section class="panel active" id="panel-base64" aria-label="Base64 convert">
         <div class="card">
             <div class="options">
@@ -255,8 +244,6 @@ button:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
             </section>
         </div>
     </section>
-
-    <!-- 2. URL Convert -->
     <section class="panel" id="panel-url" aria-label="URL convert">
         <div class="card">
             <div class="options">
@@ -293,8 +280,6 @@ button:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
             </section>
         </div>
     </section>
-
-    <!-- 3. JSON Validate -->
     <section class="panel" id="panel-json" aria-label="JSON validate">
         <div class="card">
             <div class="options">
@@ -329,8 +314,6 @@ button:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
             </section>
         </div>
     </section>
-
-    <!-- 4. Compare -->
     <section class="panel" id="panel-compare" aria-label="Text compare">
         <div class="card">
             <div class="options">
@@ -369,8 +352,6 @@ button:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
             </section>
         </div>
     </section>
-
-    <!-- 5. Sort -->
     <section class="panel" id="panel-sort" aria-label="Line sorter">
         <div class="card">
             <div class="options">
@@ -409,8 +390,6 @@ button:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
             </section>
         </div>
     </section>
-
-    <!-- 6. Batch Obfuscate -->
     <section class="panel" id="panel-obfuscate" aria-label="Batch obfuscate">
         <div class="card">
             <div class="options">
@@ -446,8 +425,6 @@ button:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
         </div>
     </section>
 </main>
-
-<!-- Scroll Top/Bottom Floating Elements -->
 <div class="scroll-fabs" id="scroll-fabs">
     <button type="button" class="fab-mini" id="fab-top" aria-label="Scroll to top" title="Scroll to top">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><polyline points="18 15 12 9 6 15"></polyline></svg>

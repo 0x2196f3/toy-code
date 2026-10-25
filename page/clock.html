@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clock App</title>
+    <title>Clock</title>
     <style>
         :root {
             --primary: #2196F3;
@@ -89,7 +89,7 @@
         .tab-content {
             display: none;
             width: 100%;
-            max-width: 500px;
+            max-width: 540px;
             flex-direction: column;
             align-items: center;
             animation: fadeIn 0.2s linear;
@@ -142,17 +142,20 @@
             margin-bottom: 32px;
         }
 
-        select {
+        select, input[type="date"], input[type="time"] {
             background-color: var(--surface);
             color: var(--text);
             border: 1px solid var(--border);
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-radius: 8px;
-            font-size: 16px;
-            width: 100%;
-            max-width: 300px;
+            font-size: 15px;
             outline: none;
             cursor: pointer;
+        }
+
+        select {
+            width: 100%;
+            max-width: 300px;
         }
 
         .stopwatch-display {
@@ -226,11 +229,128 @@
             margin: 0;
         }
 
+        .converter-panel {
+            width: 100%;
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+
+        .converter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .converter-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-live {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-live.active {
+            border-color: #4CAF50;
+            color: #4CAF50;
+            background-color: rgba(76, 175, 80, 0.08);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #9E9E9E;
+        }
+
+        .btn-live.active .live-dot {
+            background-color: #4CAF50;
+            box-shadow: 0 0 6px #4CAF50;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.25); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .converter-src-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        @media (min-width: 480px) {
+            .converter-src-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .converter-src-grid .full-row {
+                grid-column: span 2;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            max-width: none;
+        }
+
+        .dst-header {
+            width: 100%;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dst-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
         .add-tz-row {
             display: flex;
             gap: 8px;
             width: 100%;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             align-items: center;
         }
         
@@ -244,6 +364,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            padding-bottom: 48px;
         }
 
         .world-clock-item {
@@ -255,6 +376,7 @@
             border: 1px solid var(--border);
             border-radius: 12px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: border-color 0.2s;
         }
 
         .world-clock-info {
@@ -265,12 +387,19 @@
         .world-clock-info h2 {
             font-size: 18px;
             font-weight: 500;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .world-clock-info p {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-secondary);
+        }
+
+        .world-clock-diff {
+            font-size: 12px;
+            color: var(--primary);
+            font-weight: 500;
+            margin-top: 2px;
         }
 
         .world-clock-right {
@@ -295,11 +424,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, transform 0.1s;
         }
 
         .delete-btn:hover {
-            background-color: rgba(229, 57, 53, 0.1);
+            background-color: rgba(229, 57, 53, 0.12);
+        }
+
+        .delete-btn:active {
+            transform: scale(0.92);
         }
 
         nav {
@@ -381,7 +514,6 @@
     </header>
 
     <main id="mainContainer">
-        <!-- Tab 1: Clock -->
         <section id="clockTab" class="tab-content">
             <div class="clock-display" id="clockDisplay">00:00:00</div>
             <div class="date-display" id="dateDisplay">Loading date...</div>
@@ -431,19 +563,64 @@
         </section>
 
         <section id="worldclockTab" class="tab-content">
+            <div class="converter-panel">
+                <div class="converter-header">
+                    <h3>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
+                        </svg>
+                        Source Time Zone (SRC)
+                    </h3>
+                    <button class="btn-live active" id="liveToggleBtn" title="Toggle real-time clock synchronization">
+                        <span class="live-dot"></span> Live Sync
+                    </button>
+                </div>
+                <div class="converter-src-grid">
+                    <div class="form-group full-row">
+                        <label for="srcTzSelect">Source Time Zone</label>
+                        <select id="srcTzSelect">
+                            <option value="local">Local Timezone</option>
+                            <option value="UTC">UTC (GMT)</option>
+                            <option value="America/New_York">New York (EST/EDT)</option>
+                            <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
+                            <option value="Europe/London">London (GMT/BST)</option>
+                            <option value="Europe/Paris">Paris (CET/CEST)</option>
+                            <option value="Europe/Berlin">Berlin (CET/CEST)</option>
+                            <option value="Europe/Moscow">Moscow (MSK)</option>
+                            <option value="Asia/Dubai">Dubai (GST)</option>
+                            <option value="Asia/Shanghai">Shanghai (CST)</option>
+                            <option value="Asia/Taipei">Taipei (CST)</option>
+                            <option value="Asia/Tokyo">Tokyo (JST)</option>
+                            <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="srcDateInput">Source Date</label>
+                        <input type="date" id="srcDateInput">
+                    </div>
+                    <div class="form-group">
+                        <label for="srcTimeInput">Source Time</label>
+                        <input type="time" step="1" id="srcTimeInput">
+                    </div>
+                </div>
+            </div>
+
+            <div class="dst-header">
+                <h3>Converted Time Zones (DST)</h3>
+            </div>
             <div class="add-tz-row">
                 <select id="newTzSelect">
-                    <option value="America/New_York">New York (UTC-5)</option>
-                    <option value="America/Los_Angeles">Los Angeles (UTC-8)</option>
-                    <option value="Europe/London">London (UTC+0)</option>
-                    <option value="Europe/Paris">Paris (UTC+1)</option>
-                    <option value="Europe/Berlin">Berlin (UTC+1)</option>
+                    <option value="America/New_York">New York (UTC-5/UTC-4)</option>
+                    <option value="America/Los_Angeles">Los Angeles (UTC-8/UTC-7)</option>
+                    <option value="Europe/London">London (UTC+0/UTC+1)</option>
+                    <option value="Europe/Paris">Paris (UTC+1/UTC+2)</option>
+                    <option value="Europe/Berlin">Berlin (UTC+1/UTC+2)</option>
                     <option value="Europe/Moscow">Moscow (UTC+3)</option>
                     <option value="Asia/Dubai">Dubai (UTC+4)</option>
                     <option value="Asia/Shanghai">Shanghai (UTC+8)</option>
                     <option value="Asia/Taipei">Taipei (UTC+8)</option>
                     <option value="Asia/Tokyo">Tokyo (UTC+9)</option>
-                    <option value="Australia/Sydney">Sydney (UTC+11)</option>
+                    <option value="Australia/Sydney">Sydney (UTC+10/UTC+11)</option>
                 </select>
                 <button class="btn" id="addTzBtn" style="min-width: 80px;">Add</button>
             </div>
@@ -451,35 +628,44 @@
         </section>
     </main>
 
-	<nav>
-		<button class="nav-item active" onclick="switchTab('clock')">
-			<svg viewBox="0 0 24 24">
-				<path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zM12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
-			</svg>
-			<span>Clock</span>
-		</button>
-		<button class="nav-item" onclick="switchTab('stopwatch')">
-			<svg viewBox="0 0 24 24">
-				<path fill="currentColor" d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42A8.962 8.962 0 0012 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
-			</svg>
-			<span>Stopwatch</span>
-		</button>
-		<button class="nav-item" onclick="switchTab('timer')">
-			<svg viewBox="0 0 24 24">
-				<path fill="currentColor" d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/>
-			</svg>
-			<span>Timer</span>
-		</button>
+    <nav>
+        <button class="nav-item active" onclick="switchTab('clock')">
+            <svg viewBox="0 0 24 24">
+                <path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zM12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+            </svg>
+            <span>Clock</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('stopwatch')">
+            <svg viewBox="0 0 24 24">
+                <path fill="currentColor" d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42A8.962 8.962 0 0012 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+            </svg>
+            <span>Stopwatch</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('timer')">
+            <svg viewBox="0 0 24 24">
+                <path fill="currentColor" d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/>
+            </svg>
+            <span>Timer</span>
+        </button>
         <button class="nav-item" onclick="switchTab('worldclock')">
             <svg viewBox="0 0 24 24">
                 <path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.34.16-2h4.68c.09.66.16 1.32.16 2 0 .68-.07 1.34-.16 2zm1.15 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/>
             </svg>
             <span>World</span>
         </button>
-	</nav>
+    </nav>
 
     <script>
         let currentActiveTab = 'clock';
+
+        let isLiveMode = true;
+        let worldClockCities = [
+            'America/New_York',
+            'Europe/London',
+            'Europe/Berlin',
+            'Europe/Moscow',
+            'Asia/Shanghai'
+        ];
 
         const AudioEngine = {
             ctx: null,
@@ -524,34 +710,54 @@
             }
         };
 
+        const srcTzSelect = document.getElementById('srcTzSelect');
+        const srcDateInput = document.getElementById('srcDateInput');
+        const srcTimeInput = document.getElementById('srcTimeInput');
+        const liveToggleBtn = document.getElementById('liveToggleBtn');
+
         function syncStateToUrl() {
-            const url = new URL(window.location);
-            url.searchParams.set('tab', currentActiveTab);
-            
-            url.searchParams.delete('action');
-            url.searchParams.delete('h');
-            url.searchParams.delete('m');
-            url.searchParams.delete('s');
-            url.searchParams.delete('tz');
-            url.searchParams.delete('cities');
-            
-            if (currentActiveTab === 'clock') {
-                url.searchParams.set('tz', document.getElementById('timezoneSelect').value);
+            try {
+                if (window.location.protocol === 'blob:') return;
+
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', currentActiveTab);
+                
+                url.searchParams.delete('action');
+                url.searchParams.delete('h');
+                url.searchParams.delete('m');
+                url.searchParams.delete('s');
+                url.searchParams.delete('tz');
+                url.searchParams.delete('cities');
+                url.searchParams.delete('src_tz');
+                url.searchParams.delete('src_date');
+                url.searchParams.delete('src_time');
+                url.searchParams.delete('live');
+                
+                if (currentActiveTab === 'clock') {
+                    url.searchParams.set('tz', document.getElementById('timezoneSelect').value);
+                }
+                else if (currentActiveTab === 'stopwatch') {
+                    if (swIsRunning) url.searchParams.set('action', 'start');
+                }
+                else if (currentActiveTab === 'timer') {
+                    url.searchParams.set('h', document.getElementById('timerH').value);
+                    url.searchParams.set('m', document.getElementById('timerM').value);
+                    url.searchParams.set('s', document.getElementById('timerS').value);
+                    if (timerIsRunning) url.searchParams.set('action', 'start');
+                }
+                else if (currentActiveTab === 'worldclock') {
+                    url.searchParams.set('cities', worldClockCities.join(','));
+                    url.searchParams.set('src_tz', srcTzSelect.value);
+                    url.searchParams.set('live', isLiveMode ? '1' : '0');
+                    if (!isLiveMode) {
+                        if (srcDateInput.value) url.searchParams.set('src_date', srcDateInput.value);
+                        if (srcTimeInput.value) url.searchParams.set('src_time', srcTimeInput.value);
+                    }
+                }
+                
+                window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+            } catch (e) {
             }
-            else if (currentActiveTab === 'stopwatch') {
-                if (swIsRunning) url.searchParams.set('action', 'start');
-            }
-            else if (currentActiveTab === 'timer') {
-                url.searchParams.set('h', document.getElementById('timerH').value);
-                url.searchParams.set('m', document.getElementById('timerM').value);
-                url.searchParams.set('s', document.getElementById('timerS').value);
-                if (timerIsRunning) url.searchParams.set('action', 'start');
-            }
-            else if (currentActiveTab === 'worldclock') {
-                url.searchParams.set('cities', worldClockCities.join(','));
-            }
-            
-            window.history.replaceState({}, '', url);
         }
 
         const themeToggle = document.getElementById('themeToggle');
@@ -595,6 +801,9 @@
 
             currentActiveTab = tabId;
             syncStateToUrl();
+            if (tabId === 'worldclock') {
+                updateWorldClockValues();
+            }
         }
 
         const clockDisplay = document.getElementById('clockDisplay');
@@ -629,7 +838,6 @@
             updateClock();
             syncStateToUrl();
         });
-
 
         let swInterval = null;
         let swElapsedTime = 0; 
@@ -716,7 +924,6 @@
             if (swIsRunning) lapStopwatch();
             else resetStopwatch();
         });
-
 
         let timerInterval = null;
         let timerTargetTime = 0; 
@@ -841,54 +1048,186 @@
             cancelTimer();
         });
 
-        let worldClockCities = [
-            'America/New_York',
-            'Europe/London',
-            'Europe/Berlin',
-            'Europe/Moscow',
-            'Asia/Shanghai'
-        ];
+        function getFormattedDateInTz(d, tz) {
+            const opts = { year: 'numeric', month: '2-digit', day: '2-digit' };
+            if (tz !== 'local') opts.timeZone = tz;
+            const parts = new Intl.DateTimeFormat('en-CA', opts).formatToParts(d);
+            const year = parts.find(p => p.type === 'year').value;
+            const month = parts.find(p => p.type === 'month').value;
+            const day = parts.find(p => p.type === 'day').value;
+            return `${year}-${month}-${day}`;
+        }
 
-        function renderWorldClocks() {
+        function getFormattedTimeInTz(d, tz) {
+            const opts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            if (tz !== 'local') opts.timeZone = tz;
+            const formatted = new Intl.DateTimeFormat('en-GB', opts).format(d);
+            return formatted === '24:00:00' ? '00:00:00' : formatted;
+        }
+
+        function getUtcTimestampFromTzDate(srcYear, srcMonth, srcDay, srcHour, srcMinute, srcSecond, srcTz) {
+            if (srcTz === 'local') {
+                return new Date(srcYear, srcMonth - 1, srcDay, srcHour, srcMinute, srcSecond);
+            }
+            if (srcTz === 'UTC') {
+                return new Date(Date.UTC(srcYear, srcMonth - 1, srcDay, srcHour, srcMinute, srcSecond));
+            }
+            
+            let baseUtcStr = `${srcYear}-${String(srcMonth).padStart(2,'0')}-${String(srcDay).padStart(2,'0')}T${String(srcHour).padStart(2,'0')}:${String(srcMinute).padStart(2,'0')}:${String(srcSecond).padStart(2,'0')}Z`;
+            let baseUtcMs = Date.parse(baseUtcStr);
+            if (isNaN(baseUtcMs)) return new Date();
+            
+            let guessDate = new Date(baseUtcMs);
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: srcTz,
+                year: 'numeric', month: 'numeric', day: 'numeric',
+                hour: 'numeric', minute: 'numeric', second: 'numeric',
+                hour12: false
+            });
+            
+            const getParts = (d) => {
+                const parts = formatter.formatToParts(d);
+                const map = {};
+                parts.forEach(p => { if (p.type !== 'literal') map[p.type] = parseInt(p.value, 10); });
+                if (map.hour === 24) map.hour = 0;
+                return map;
+            };
+            
+            let p = getParts(guessDate);
+            let formattedUtcStr = `${p.year}-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}T${String(p.hour).padStart(2,'0')}:${String(p.minute).padStart(2,'0')}:${String(p.second).padStart(2,'0')}Z`;
+            let formattedUtcMs = Date.parse(formattedUtcStr);
+            
+            let offsetMs = formattedUtcMs - baseUtcMs;
+            return new Date(baseUtcMs - offsetMs);
+        }
+
+        function getTimeDifferenceText(srcDateObj, srcTz, dstTz) {
+            const getTzComponents = (d, tz) => {
+                const opts = { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false };
+                if (tz !== 'local') opts.timeZone = tz;
+                const parts = new Intl.DateTimeFormat('en-US', opts).formatToParts(d);
+                const map = {};
+                parts.forEach(p => { if (p.type !== 'literal') map[p.type] = parseInt(p.value, 10); });
+                if (map.hour === 24) map.hour = 0;
+                return map;
+            };
+            
+            try {
+                const srcP = getTzComponents(srcDateObj, srcTz);
+                const dstP = getTzComponents(srcDateObj, dstTz);
+                
+                const srcUtcDays = Date.UTC(srcP.year, srcP.month - 1, srcP.day);
+                const dstUtcDays = Date.UTC(dstP.year, dstP.month - 1, dstP.day);
+                const dayDiff = Math.round((dstUtcDays - srcUtcDays) / (24 * 3600 * 1000));
+                
+                const srcMinutes = srcP.hour * 60 + srcP.minute;
+                const dstMinutes = dstP.hour * 60 + dstP.minute;
+                let totalMinDiff = (dstMinutes - srcMinutes) + (dayDiff * 24 * 60);
+                
+                if (totalMinDiff === 0) return "Same time as source";
+                
+                const hours = Math.floor(Math.abs(totalMinDiff) / 60);
+                const mins = Math.abs(totalMinDiff) % 60;
+                
+                let diffStr = (totalMinDiff > 0 ? "+" : "-");
+                if (hours > 0) diffStr += `${hours}h`;
+                if (mins > 0) diffStr += `${mins}m`;
+                
+                if (dayDiff > 0) diffStr += ` (+${dayDiff} day${dayDiff > 1 ? 's' : ''})`;
+                else if (dayDiff < 0) diffStr += ` (${dayDiff} day${Math.abs(dayDiff) > 1 ? 's' : ''})`;
+                
+                return `${diffStr} relative to source`;
+            } catch(e) {
+                return "";
+            }
+        }
+
+        function buildWorldClockDOM() {
             const listElement = document.getElementById('worldClockList');
             if (!listElement) return;
-            const now = new Date();
             
             listElement.innerHTML = worldClockCities.map((tz, index) => {
+                const tzName = tz.includes('/') ? tz.split('/')[1].replace(/_/g, ' ') : tz;
+                return `
+                    <div class="world-clock-item" id="wc-item-${index}">
+                        <div class="world-clock-info">
+                            <h2>${tzName}</h2>
+                            <p class="world-clock-date" id="wc-date-${index}">-</p>
+                            <span class="world-clock-diff" id="wc-diff-${index}">-</span>
+                        </div>
+                        <div class="world-clock-right">
+                            <div class="world-clock-time" id="wc-time-${index}">--:--:--</div>
+                            <button class="delete-btn" onclick="removeWorldClockCity(${index})" aria-label="Delete timezone">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateWorldClockValues() {
+            if (currentActiveTab !== 'worldclock') return;
+            
+            const selectedSrcTz = srcTzSelect.value;
+            let srcDateObj;
+            
+            if (isLiveMode) {
+                srcDateObj = new Date();
+                srcDateInput.value = getFormattedDateInTz(srcDateObj, selectedSrcTz);
+                srcTimeInput.value = getFormattedTimeInTz(srcDateObj, selectedSrcTz);
+            } else {
+                const dateVal = srcDateInput.value;
+                const timeVal = srcTimeInput.value;
+                
+                if (!dateVal) return;
+                
+                const [y, m, d] = dateVal.split('-').map(Number);
+                let h = 0, min = 0, s = 0;
+                if (timeVal) {
+                    const timeParts = timeVal.split(':').map(Number);
+                    h = timeParts[0] || 0;
+                    min = timeParts[1] || 0;
+                    s = timeParts[2] || 0;
+                }
+                srcDateObj = getUtcTimestampFromTzDate(y, m, d, h, min, s, selectedSrcTz);
+            }
+            
+            worldClockCities.forEach((tz, index) => {
+                const dateEl = document.getElementById(`wc-date-${index}`);
+                const timeEl = document.getElementById(`wc-time-${index}`);
+                const diffEl = document.getElementById(`wc-diff-${index}`);
+                
+                if (!dateEl || !timeEl || !diffEl) return;
+                
                 try {
                     const timeStr = new Intl.DateTimeFormat('en-US', {
                         timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-                    }).format(now);
-                    const dateStr = new Intl.DateTimeFormat('en-US', {
-                        timeZone: tz, month: 'short', day: 'numeric'
-                    }).format(now);
-                    const tzName = tz.split('/')[1].replace('_', ' ');
+                    }).format(srcDateObj);
                     
-                    return `
-                        <div class="world-clock-item">
-                            <div class="world-clock-info">
-                                <h2>${tzName}</h2>
-                                <p>${dateStr}</p>
-                            </div>
-                            <div class="world-clock-right">
-                                <div class="world-clock-time">${timeStr}</div>
-                                <button class="delete-btn" onclick="removeWorldClockCity(${index})" aria-label="Delete">
-                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                } catch(e) {
-                    return `<div class="world-clock-item">Error loading ${tz}</div>`;
+                    const dateStr = new Intl.DateTimeFormat('en-US', {
+                        timeZone: tz, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+                    }).format(srcDateObj);
+                    
+                    const diffStr = getTimeDifferenceText(srcDateObj, selectedSrcTz, tz);
+                    
+                    timeEl.textContent = timeStr;
+                    dateEl.textContent = dateStr;
+                    diffEl.textContent = diffStr;
+                } catch (e) {
+                    timeEl.textContent = "Error";
+                    dateEl.textContent = "Invalid TZ";
+                    diffEl.textContent = "";
                 }
-            }).join('');
+            });
         }
 
         function removeWorldClockCity(index) {
             worldClockCities.splice(index, 1);
-            renderWorldClocks();
+            buildWorldClockDOM();
+            updateWorldClockValues();
             syncStateToUrl();
         }
 
@@ -896,16 +1235,58 @@
             const tz = document.getElementById('newTzSelect').value;
             if (!worldClockCities.includes(tz)) {
                 worldClockCities.push(tz);
-                renderWorldClocks();
+                buildWorldClockDOM();
+                updateWorldClockValues();
                 syncStateToUrl();
             }
         });
 
+        function updateLiveButtonUI() {
+            if (isLiveMode) {
+                liveToggleBtn.classList.add('active');
+                liveToggleBtn.innerHTML = `<span class="live-dot"></span> Live Sync`;
+            } else {
+                liveToggleBtn.classList.remove('active');
+                liveToggleBtn.innerHTML = `<span class="live-dot"></span> Static / Custom`;
+            }
+        }
+
+        liveToggleBtn.addEventListener('click', () => {
+            isLiveMode = !isLiveMode;
+            updateLiveButtonUI();
+            updateWorldClockValues();
+            syncStateToUrl();
+        });
+
+        srcTzSelect.addEventListener('change', () => {
+            updateWorldClockValues();
+            syncStateToUrl();
+        });
+
+        srcDateInput.addEventListener('input', () => {
+            if (isLiveMode) {
+                isLiveMode = false;
+                updateLiveButtonUI();
+            }
+            updateWorldClockValues();
+            syncStateToUrl();
+        });
+
+        srcTimeInput.addEventListener('input', () => {
+            if (isLiveMode) {
+                isLiveMode = false;
+                updateLiveButtonUI();
+            }
+            updateWorldClockValues();
+            syncStateToUrl();
+        });
+
         setInterval(() => {
             updateClock();
-            if (currentActiveTab === 'worldclock') renderWorldClocks();
+            if (currentActiveTab === 'worldclock') {
+                updateWorldClockValues();
+            }
         }, 200);
-
 
         function processUrlParams() {
             const params = new URLSearchParams(window.location.search);
@@ -945,6 +1326,30 @@
                 if (citiesParam) {
                     worldClockCities = citiesParam.split(',').filter(Boolean);
                 }
+
+                const srcTz = params.get('src_tz');
+                if (srcTz) {
+                    let options = Array.from(srcTzSelect.options).map(o => o.value);
+                    if (!options.includes(srcTz)) {
+                        let newOpt = document.createElement('option');
+                        newOpt.value = srcTz;
+                        newOpt.textContent = srcTz;
+                        srcTzSelect.appendChild(newOpt);
+                    }
+                    srcTzSelect.value = srcTz;
+                }
+
+                const liveParam = params.get('live');
+                if (liveParam === '0') {
+                    isLiveMode = false;
+                    const dParam = params.get('src_date');
+                    const tParam = params.get('src_time');
+                    if (dParam) srcDateInput.value = dParam;
+                    if (tParam) srcTimeInput.value = tParam;
+                } else {
+                    isLiveMode = true;
+                }
+                updateLiveButtonUI();
             }
 
             switchTab(tab); 
@@ -958,8 +1363,8 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             initTheme();
+            buildWorldClockDOM();
             processUrlParams();
-            if(currentActiveTab === 'worldclock') renderWorldClocks();
         });
     </script>
 </body>

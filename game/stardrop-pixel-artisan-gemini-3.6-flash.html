@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stardrop Pixel Artisan - 8-Bit Stardew Style Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --stardew-wood-dark: #3a2216;
+            --stardew-wood-mid: #5d3822;
+            --stardew-wood-light: #8b5533;
+            --stardew-parchment: #f7e6c4;
+            --stardew-parchment-dark: #e3cc9e;
+            --stardew-gold: #f3be36;
+            --stardew-gold-dark: #b88316;
+            --stardew-green: #387b2e;
+            --stardew-green-hover: #499e3c;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #2b1810;
+            background-image: 
+                radial-gradient(#3d2417 15%, transparent 16%),
+                radial-gradient(#3d2417 15%, transparent 16%);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            color: #2b1810;
+            min-height: 100vh;
+        }
+
+        .font-pixel {
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        .font-vt323 {
+            font-family: 'VT323', monospace;
+        }
+
+        /* Retro Pixel Frame Borders */
+        .pixel-panel {
+            background-color: var(--stardew-parchment);
+            border: 4px solid var(--stardew-wood-dark);
+            box-shadow: 
+                inset -4px -4px 0px 0px var(--stardew-parchment-dark),
+                inset 4px 4px 0px 0px #fff,
+                0px 6px 0px 0px rgba(0,0,0,0.5);
+            border-radius: 4px;
+        }
+
+        .pixel-panel-wood {
+            background-color: var(--stardew-wood-mid);
+            border: 4px solid var(--stardew-wood-dark);
+            box-shadow: 
+                inset -4px -4px 0px 0px #2a160c,
+                inset 4px 4px 0px 0px var(--stardew-wood-light),
+                0 8px 16px rgba(0,0,0,0.4);
+            border-radius: 6px;
+        }
+
+        .pixel-btn {
+            font-family: 'Press Start 2P', monospace;
+            background-color: var(--stardew-gold);
+            border: 3px solid #6e460d;
+            box-shadow: 
+                inset -3px -3px 0px 0px var(--stardew-gold-dark),
+                inset 3px 3px 0px 0px #ffe58f,
+                0 4px 0px #2a160c;
+            transition: all 0.05s ease;
+            text-shadow: 1px 1px 0px #fff;
+        }
+
+        .pixel-btn:hover {
+            background-color: #ffd257;
+            transform: translateY(-2px);
+            box-shadow: 
+                inset -3px -3px 0px 0px var(--stardew-gold-dark),
+                inset 3px 3px 0px 0px #fff,
+                0 6px 0px #2a160c;
+        }
+
+        .pixel-btn:active {
+            transform: translateY(3px);
+            box-shadow: 
+                inset -2px -2px 0px 0px #ffe58f,
+                inset 2px 2px 0px 0px var(--stardew-gold-dark),
+                0 1px 0px #2a160c;
+        }
+
+        .pixel-btn-green {
+            background-color: var(--stardew-green);
+            color: #ffffff;
+            border-color: #1e4518;
+            text-shadow: 1px 1px 0px #1a3a14;
+            box-shadow: 
+                inset -3px -3px 0px 0px #22521b,
+                inset 3px 3px 0px 0px #61b853,
+                0 4px 0px #0e210b;
+        }
+
+        .pixel-btn-green:hover {
+            background-color: var(--stardew-green-hover);
+        }
+
+        .pixel-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 12px;
+            background: #bfa378;
+            border: 2px solid var(--stardew-wood-dark);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .pixel-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 24px;
+            background: var(--stardew-gold);
+            border: 2px solid var(--stardew-wood-dark);
+            cursor: pointer;
+            box-shadow: inset -2px -2px 0px var(--stardew-gold-dark), inset 2px 2px 0px #fff;
+        }
+
+        /* Pixel art canvas scaling mode */
+        .pixelated {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            -ms-interpolation-mode: nearest-neighbor;
+        }
+
+        /* Palette Swatch Highlight */
+        .palette-card.active {
+            border-color: var(--stardew-gold);
+            outline: 3px solid var(--stardew-gold);
+            transform: scale(1.03);
+        }
+
+        /* Custom scrollbar for game feel */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--stardew-wood-dark);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--stardew-gold);
+            border: 2px solid var(--stardew-wood-dark);
+        }
+    </style>
+</head>
+<body class="p-2 sm:p-4 md:p-6 text-amber-950 select-none">
+
+    <header class="max-w-7xl mx-auto mb-6 text-center">
+        <div class="pixel-panel-wood p-4 sm:p-6 relative overflow-hidden">
+            <div class="absolute top-2 left-2 w-4 h-4 bg-yellow-400 border-2 border-amber-900"></div>
+            <div class="absolute top-2 right-2 w-4 h-4 bg-yellow-400 border-2 border-amber-900"></div>
+            <div class="absolute bottom-2 left-2 w-4 h-4 bg-yellow-400 border-2 border-amber-900"></div>
+            <div class="absolute bottom-2 right-2 w-4 h-4 bg-yellow-400 border-2 border-amber-900"></div>
+
+            <div class="flex items-center justify-center gap-3 flex-wrap">
+                <span class="text-3xl sm:text-4xl">🌾</span>
+                <h1 class="font-pixel text-xl sm:text-3xl md:text-4xl text-amber-200 tracking-wider drop-shadow-[0_4px_0_rgba(0,0,0,0.8)]">
+                    STARDROP PIXEL ARTISAN
+                </h1>
+                <span class="text-3xl sm:text-4xl">🍎</span>
+            </div>
+            <p class="font-vt323 text-lg sm:text-2xl text-amber-100 mt-2 tracking-wide">
+                Convert photos into vibrant Stardew Valley 8-bit retro pixel graphics!
+            </p>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <section class="lg:col-span-5 space-y-6">
+            
+            <div class="pixel-panel p-4 sm:p-5">
+                <h2 class="font-pixel text-xs sm:text-sm text-amber-900 mb-3 flex items-center gap-2">
+                    <span>🖼️</span> 1. SELECT IMAGE
+                </h2>
+                
+                <div id="drop-zone" class="border-4 border-dashed border-amber-800/40 hover:border-amber-700 bg-amber-100/50 rounded-lg p-4 sm:p-6 text-center cursor-pointer transition-colors relative">
+                    <input type="file" id="file-input" accept="image/png, image/jpeg, image/webp" class="hidden">
+                    <div class="space-y-2 pointer-events-none">
+                        <div class="text-4xl">📥</div>
+                        <p class="font-pixel text-[10px] text-amber-900 leading-relaxed">
+                            DRAG & DROP IMAGE HERE<br>
+                            <span class="text-amber-700 text-[9px]">(JPG, PNG, WEBP)</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex gap-2">
+                    <button id="btn-browse" class="pixel-btn text-[10px] px-3 py-2.5 flex-1 text-amber-950 font-bold">
+                        BROWSE FILE
+                    </button>
+                    <button id="btn-sample" class="pixel-btn text-[10px] px-3 py-2.5 flex-1 text-amber-950 font-bold">
+                        LOAD SAMPLE 🏡
+                    </button>
+                </div>
+            </div>
+
+            <div class="pixel-panel p-4 sm:p-5 space-y-4">
+                <h2 class="font-pixel text-xs sm:text-sm text-amber-900 flex items-center justify-between">
+                    <span class="flex items-center gap-2"><span>👾</span> 2. PIXEL GRID</span>
+                    <span id="grid-val-display" class="font-vt323 text-xl text-amber-800 bg-amber-200 px-2 py-0.5 rounded border border-amber-900">128 px</span>
+                </h2>
+
+                <div>
+                    <div class="flex justify-between text-xs font-bold text-amber-900 mb-1">
+                        <span>Coarse (32px)</span>
+                        <span>Balanced</span>
+                        <span>Detailed (256px)</span>
+                    </div>
+                    <input type="range" id="slider-grid" min="32" max="256" step="8" value="128" class="pixel-slider w-full">
+                </div>
+            </div>
+
+            <div class="pixel-panel p-4 sm:p-5 space-y-3">
+                <h2 class="font-pixel text-xs sm:text-sm text-amber-900 flex items-center gap-2">
+                    <span>🎨</span> 3. COLOR PALETTE
+                </h2>
+
+                <div class="grid grid-cols-2 gap-2 text-xs" id="palette-container">
+                </div>
+            </div>
+
+            <div class="pixel-panel p-4 sm:p-5 space-y-4">
+                <h2 class="font-pixel text-xs sm:text-sm text-amber-900 flex items-center gap-2">
+                    <span>✨</span> 4. VIBRANCE & OUTLINES
+                </h2>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between font-vt323 text-lg font-bold text-amber-900">
+                        <span>Saturation (Stardew Pop):</span>
+                        <span id="sat-val">130%</span>
+                    </div>
+                    <input type="range" id="slider-sat" min="50" max="220" value="130" class="pixel-slider w-full">
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between font-vt323 text-lg font-bold text-amber-900">
+                        <span>Contrast:</span>
+                        <span id="contrast-val">115%</span>
+                    </div>
+                    <input type="range" id="slider-contrast" min="50" max="180" value="115" class="pixel-slider w-full">
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between font-vt323 text-lg font-bold text-amber-900">
+                        <span>Brightness:</span>
+                        <span id="bright-val">105%</span>
+                    </div>
+                    <input type="range" id="slider-bright" min="50" max="150" value="105" class="pixel-slider w-full">
+                </div>
+
+                <div class="pt-2 border-t-2 border-amber-900/20 grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-pixel text-[10px] text-amber-900 block mb-1">Outline Style</label>
+                        <select id="select-outline" class="w-full bg-amber-100 border-2 border-amber-900 text-amber-950 p-1.5 rounded font-bold text-xs">
+                            <option value="none">None</option>
+                            <option value="soft">Soft Outline</option>
+                            <option value="strong" selected>Bold Cartoon Edge</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="font-pixel text-[10px] text-amber-900 block mb-1">Retro Dithering</label>
+                        <select id="select-dither" class="w-full bg-amber-100 border-2 border-amber-900 text-amber-950 p-1.5 rounded font-bold text-xs">
+                            <option value="none">None (Clean)</option>
+                            <option value="bayer4x4" selected>Bayer 4x4 (Classic)</option>
+                            <option value="bayer8x8">Bayer 8x8 (Dense)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="btn-reset" class="w-full pixel-btn text-[10px] py-2 text-amber-900">
+                    ↺ RESET DEFAULT VALUES
+                </button>
+            </div>
+        </section>
+
+        <section class="lg:col-span-7 flex flex-col space-y-6">
+            
+            <div class="pixel-panel p-4 sm:p-5 flex-1 flex flex-col">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b-2 border-amber-900/20">
+                    <h2 class="font-pixel text-xs sm:text-sm text-amber-900 flex items-center gap-2">
+                        <span>👁️</span> PREVIEW STUDIO
+                    </h2>
+
+                    <div class="flex items-center gap-1 bg-amber-200 p-1 rounded border-2 border-amber-900 text-[10px] font-pixel">
+                        <button id="view-btn-pixel" class="px-2 py-1 bg-amber-800 text-amber-100 rounded">Pixel Art</button>
+                        <button id="view-btn-split" class="px-2 py-1 text-amber-900 hover:bg-amber-300 rounded">Split Compare</button>
+                        <button id="view-btn-orig" class="px-2 py-1 text-amber-900 hover:bg-amber-300 rounded">Original</button>
+                    </div>
+                </div>
+
+                <div id="preview-container" class="relative flex-1 min-h-[380px] sm:min-h-[480px] bg-amber-950/20 rounded border-4 border-amber-900 flex items-center justify-center p-2 overflow-hidden">
+                    
+                    <div id="processing-indicator" class="hidden absolute top-4 z-20 bg-amber-800 text-amber-100 font-pixel text-[10px] px-3 py-1.5 rounded-full shadow-lg border border-yellow-400 animate-pulse">
+                        PROCESSING PIXELS...
+                    </div>
+
+                    <canvas id="source-canvas" class="hidden"></canvas>
+                    <canvas id="processed-canvas" class="hidden"></canvas>
+
+                    <div class="relative max-w-full max-h-full flex items-center justify-center overflow-hidden">
+                        <canvas id="display-canvas" class="pixelated max-w-full max-h-[500px] object-contain shadow-2xl rounded border-2 border-amber-900"></canvas>
+                        
+                        <div id="split-divider" class="hidden absolute top-0 bottom-0 w-1 bg-yellow-400 cursor-ew-resize shadow-[0_0_10px_rgba(0,0,0,0.8)] z-10" style="left: 50%;">
+                            <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-7 h-7 bg-amber-800 text-amber-100 border-2 border-yellow-400 rounded-full flex items-center justify-center text-xs shadow-md">
+                                ↔
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex justify-between items-center font-vt323 text-base text-amber-900 px-1">
+                    <span id="info-grid-dim">Resolution: 128 x 128 px</span>
+                    <span id="info-aspect">Aspect Ratio: 1:1</span>
+                </div>
+
+                <div class="mt-4 pt-4 border-t-2 border-amber-900/20 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <label class="font-pixel text-[10px] text-amber-900">Export Scale:</label>
+                            <select id="select-export-scale" class="bg-amber-100 border-2 border-amber-900 text-amber-950 text-xs font-bold p-1 rounded">
+                                <option value="4">4x (Crisp Small)</option>
+                                <option value="8" selected>8x (HD Pixel Art)</option>
+                                <option value="16">16x (Ultra Crisp)</option>
+                            </select>
+                        </div>
+
+                        <button id="btn-download" class="pixel-btn pixel-btn-green font-pixel text-xs px-6 py-3.5 flex items-center gap-2">
+                            <span>💾</span> DOWNLOAD 8-BIT PNG
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const PALETTES = {
+            stardew: {
+                name: "Stardew Valley",
+                desc: "Warm pastoral colors",
+                colors: [
+                    [18, 9, 20], [38, 19, 28], [59, 35, 24], [92, 56, 38], [141, 87, 60],
+                    [184, 125, 86], [227, 175, 129], [28, 68, 40], [45, 106, 49], [79, 154, 53],
+                    [134, 202, 64], [197, 237, 107], [125, 46, 24], [209, 77, 40], [240, 139, 51],
+                    [242, 200, 73], [255, 243, 133], [24, 48, 79], [43, 90, 136], [66, 148, 199],
+                    [135, 210, 240], [220, 244, 255], [92, 24, 58], [168, 40, 88], [232, 77, 130],
+                    [255, 158, 187], [240, 246, 240], [255, 255, 255]
+                ]
+            },
+            pico8: {
+                name: "Pico-8",
+                desc: "16-Color retro console",
+                colors: [
+                    [0, 0, 0], [29, 43, 83], [126, 37, 83], [0, 135, 81],
+                    [171, 82, 54], [95, 87, 79], [194, 195, 199], [255, 241, 232],
+                    [255, 0, 77], [255, 163, 0], [255, 236, 39], [0, 228, 54],
+                    [41, 173, 255], [131, 118, 156], [255, 119, 168], [255, 204, 170]
+                ]
+            },
+            gameboy: {
+                name: "Game Boy Green",
+                desc: "4 Green monochrome shades",
+                colors: [
+                    [15, 56, 15], [48, 98, 48], [139, 172, 15], [155, 188, 15]
+                ]
+            },
+            poster16: {
+                name: "16-Color Poster",
+                desc: "Vibrant high-contrast 16",
+                colors: [
+                    [20, 20, 20], [80, 40, 30], [160, 60, 40], [230, 100, 50],
+                    [250, 180, 60], [255, 240, 150], [30, 80, 50], [60, 150, 80],
+                    [120, 210, 110], [20, 60, 120], [50, 130, 200], [120, 200, 240],
+                    [100, 40, 100], [180, 70, 150], [240, 150, 200], [240, 240, 240]
+                ]
+            },
+            original: {
+                name: "Original Colors",
+                desc: "Smooth dynamic colors",
+                colors: null
+            }
+        };
+
+        const BAYER_4x4 = [
+            [ 0,  8,  2, 10],
+            [12,  4, 14,  6],
+            [ 3, 11,  1,  9],
+            [15,  7, 13,  5]
+        ].map(row => row.map(v => (v / 16.0 - 0.5)));
+
+        const BAYER_8x8 = [
+            [ 0, 32,  8, 40,  2, 34, 10, 42],
+            [48, 16, 56, 24, 50, 18, 58, 26],
+            [12, 44,  4, 36, 14, 46,  6, 38],
+            [60, 28, 52, 20, 62, 30, 54, 22],
+            [ 3, 35, 11, 43,  1, 33,  9, 41],
+            [51, 19, 59, 27, 49, 17, 57, 25],
+            [15, 47,  7, 39, 13, 45,  5, 37],
+            [63, 31, 55, 23, 61, 29, 53, 21]
+        ].map(row => row.map(v => (v / 64.0 - 0.5)));
+
+        let currentImage = null;
+        let selectedPaletteKey = 'stardew';
+        let viewMode = 'pixel';
+        let splitPosition = 0.5;
+        let isDraggingSplitter = false;
+
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const btnBrowse = document.getElementById('btn-browse');
+        const btnSample = document.getElementById('btn-sample');
+        
+        const sliderGrid = document.getElementById('slider-grid');
+        const gridValDisplay = document.getElementById('grid-val-display');
+        
+        const sliderSat = document.getElementById('slider-sat');
+        const satVal = document.getElementById('sat-val');
+        
+        const sliderContrast = document.getElementById('slider-contrast');
+        const contrastVal = document.getElementById('contrast-val');
+        
+        const sliderBright = document.getElementById('slider-bright');
+        const brightVal = document.getElementById('bright-val');
+        
+        const selectOutline = document.getElementById('select-outline');
+        const selectDither = document.getElementById('select-dither');
+        const btnReset = document.getElementById('btn-reset');
+        
+        const sourceCanvas = document.getElementById('source-canvas');
+        const processedCanvas = document.getElementById('processed-canvas');
+        const displayCanvas = document.getElementById('display-canvas');
+        
+        const viewBtnPixel = document.getElementById('view-btn-pixel');
+        const viewBtnSplit = document.getElementById('view-btn-split');
+        const viewBtnOrig = document.getElementById('view-btn-orig');
+        const splitDivider = document.getElementById('split-divider');
+        const previewContainer = document.getElementById('preview-container');
+        
+        const infoGridDim = document.getElementById('info-grid-dim');
+        const infoAspect = document.getElementById('info-aspect');
+        const btnDownload = document.getElementById('btn-download');
+        const selectExportScale = document.getElementById('select-export-scale');
+        const processingIndicator = document.getElementById('processing-indicator');
+
+        function initPaletteUI() {
+            const container = document.getElementById('palette-container');
+            container.innerHTML = '';
+
+            Object.keys(PALETTES).forEach(key => {
+                const pal = PALETTES[key];
+                const card = document.createElement('div');
+                card.className = `palette-card pixel-panel p-2 cursor-pointer transition-all ${key === selectedPaletteKey ? 'active' : ''}`;
+                card.dataset.palette = key;
+
+                let swatchesHtml = '';
+                if (pal.colors) {
+                    swatchesHtml = '<div class="flex h-3 w-full rounded overflow-hidden mt-1.5 border border-amber-900/40">';
+                    pal.colors.slice(0, 8).forEach(c => {
+                        swatchesHtml += `<div style="background-color: rgb(${c[0]},${c[1]},${c[2]});" class="flex-1"></div>`;
+                    });
+                    swatchesHtml += '</div>';
+                } else {
+                    swatchesHtml = '<div class="h-3 w-full rounded overflow-hidden mt-1.5 bg-gradient-to-r from-red-500 via-green-500 to-blue-500 border border-amber-900/40"></div>';
+                }
+
+                card.innerHTML = `
+                    <div class="font-pixel text-[10px] text-amber-950 font-bold truncate">${pal.name}</div>
+                    <div class="font-vt323 text-xs text-amber-800 leading-none">${pal.desc}</div>
+                    ${swatchesHtml}
+                `;
+
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('.palette-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    selectedPaletteKey = key;
+                    processImage();
+                });
+
+                container.appendChild(card);
+            });
+        }
+
+        function createSampleImage() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 600;
+            tempCanvas.height = 600;
+            const ctx = tempCanvas.getContext('2d');
+
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, 350);
+            skyGradient.addColorStop(0, '#3a7bd5');
+            skyGradient.addColorStop(1, '#3a6073');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, 600, 600);
+
+            ctx.fillStyle = '#ffcc00';
+            ctx.beginPath();
+            ctx.arc(450, 120, 60, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#2c3e50';
+            ctx.beginPath();
+            ctx.moveTo(0, 400);
+            ctx.lineTo(150, 180);
+            ctx.lineTo(320, 400);
+            ctx.fill();
+
+            ctx.fillStyle = '#34495e';
+            ctx.beginPath();
+            ctx.moveTo(180, 400);
+            ctx.lineTo(380, 150);
+            ctx.lineTo(600, 400);
+            ctx.fill();
+
+            ctx.fillStyle = '#27ae60';
+            ctx.beginPath();
+            ctx.ellipse(200, 450, 300, 120, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#2ecc71';
+            ctx.beginPath();
+            ctx.ellipse(450, 480, 250, 100, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#8e44ad';
+            ctx.fillRect(200, 320, 160, 120);
+
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.moveTo(180, 320);
+            ctx.lineTo(280, 240);
+            ctx.lineTo(380, 320);
+            ctx.fill();
+
+            ctx.fillStyle = '#f39c12';
+            ctx.fillRect(265, 380, 30, 60); // door
+            ctx.fillRect(220, 340, 30, 30); // window 1
+            ctx.fillRect(310, 340, 30, 30); // window 2
+
+            ctx.fillStyle = '#795548';
+            ctx.fillRect(100, 360, 30, 100);
+            ctx.fillStyle = '#1e824c';
+            ctx.beginPath();
+            ctx.arc(115, 330, 50, 0, Math.PI * 2);
+            ctx.fill();
+
+            const img = new Image();
+            img.onload = () => {
+                currentImage = img;
+                processImage();
+            };
+            img.src = tempCanvas.toDataURL();
+        }
+
+        function handleFileSelect(file) {
+            if (!file || !file.type.match('image.*')) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = img;
+                    processImage();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function findClosestColor(r, g, b, palette) {
+            let minDistance = Infinity;
+            let closest = palette[0];
+
+            for (let i = 0; i < palette.length; i++) {
+                const color = palette[i];
+                const dr = r - color[0];
+                const dg = g - color[1];
+                const db = b - color[2];
+                const distance = (dr * dr * 0.299) + (dg * dg * 0.587) + (db * db * 0.114);
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closest = color;
+                }
+            }
+            return closest;
+        }
+
+        function processImage() {
+            if (!currentImage) return;
+
+            processingIndicator.classList.remove('hidden');
+
+            setTimeout(() => {
+                const targetWidth = parseInt(sliderGrid.value);
+                const aspectRatio = currentImage.height / currentImage.width;
+                const targetHeight = Math.max(1, Math.round(targetWidth * aspectRatio));
+
+                sourceCanvas.width = targetWidth;
+                sourceCanvas.height = targetHeight;
+                const sCtx = sourceCanvas.getContext('2d');
+                sCtx.imageSmoothingEnabled = true;
+                sCtx.drawImage(currentImage, 0, 0, targetWidth, targetHeight);
+
+                const srcData = sCtx.getImageData(0, 0, targetWidth, targetHeight);
+                const pixels = srcData.data;
+
+                processedCanvas.width = targetWidth;
+                processedCanvas.height = targetHeight;
+                const pCtx = processedCanvas.getContext('2d');
+                const outImageData = pCtx.createImageData(targetWidth, targetHeight);
+                const outPixels = outImageData.data;
+
+                const satFactor = parseInt(sliderSat.value) / 100;
+                const contrastFactor = parseInt(sliderContrast.value) / 100;
+                const brightFactor = parseInt(sliderBright.value) / 100;
+                const outlineMode = selectOutline.value;
+                const ditherMode = selectDither.value;
+                const selectedPal = PALETTES[selectedPaletteKey].colors;
+
+                let edgeMap = null;
+                if (outlineMode !== 'none') {
+                    edgeMap = new Uint8Array(targetWidth * targetHeight);
+                    const threshold = outlineMode === 'strong' ? 35 : 65;
+
+                    for (let y = 0; y < targetHeight - 1; y++) {
+                        for (let x = 0; x < targetWidth - 1; x++) {
+                            const idx = (y * targetWidth + x) * 4;
+                            const rightIdx = (y * targetWidth + (x + 1)) * 4;
+                            const bottomIdx = ((y + 1) * targetWidth + x) * 4;
+
+                            const lum = 0.299 * pixels[idx] + 0.587 * pixels[idx + 1] + 0.114 * pixels[idx + 2];
+                            const lumRight = 0.299 * pixels[rightIdx] + 0.587 * pixels[rightIdx + 1] + 0.114 * pixels[rightIdx + 2];
+                            const lumBottom = 0.299 * pixels[bottomIdx] + 0.587 * pixels[bottomIdx + 1] + 0.114 * pixels[bottomIdx + 2];
+
+                            const diff = Math.abs(lum - lumRight) + Math.abs(lum - lumBottom);
+                            if (diff > threshold) {
+                                edgeMap[y * targetWidth + x] = 1;
+                            }
+                        }
+                    }
+                }
+
+                for (let y = 0; y < targetHeight; y++) {
+                    for (let x = 0; x < targetWidth; x++) {
+                        const i = (y * targetWidth + x) * 4;
+
+                        let r = pixels[i];
+                        let g = pixels[i + 1];
+                        let b = pixels[i + 2];
+                        const a = pixels[i + 3];
+
+                        if (a < 10) {
+                            outPixels[i + 3] = 0;
+                            continue;
+                        }
+
+                        r *= brightFactor;
+                        g *= brightFactor;
+                        b *= brightFactor;
+
+                        r = ((r / 255 - 0.5) * contrastFactor + 0.5) * 255;
+                        g = ((g / 255 - 0.5) * contrastFactor + 0.5) * 255;
+                        b = ((b / 255 - 0.5) * contrastFactor + 0.5) * 255;
+
+                        const gray = 0.2989 * r + 0.5870 * g + 0.1140 * b;
+                        r = gray + satFactor * (r - gray);
+                        g = gray + satFactor * (g - gray);
+                        b = gray + satFactor * (b - gray);
+
+                        r = Math.min(255, Math.max(0, r));
+                        g = Math.min(255, Math.max(0, g));
+                        b = Math.min(255, Math.max(0, b));
+
+                        if (edgeMap && edgeMap[y * targetWidth + x] === 1) {
+                            r *= 0.25;
+                            g *= 0.2;
+                            b *= 0.2;
+                        } else if (selectedPal) {
+                            let ditherOffset = 0;
+                            if (ditherMode === 'bayer4x4') {
+                                ditherOffset = BAYER_4x4[y % 4][x % 4] * 42;
+                            } else if (ditherMode === 'bayer8x8') {
+                                ditherOffset = BAYER_8x8[y % 8][x % 8] * 48;
+                            }
+
+                            r = Math.min(255, Math.max(0, r + ditherOffset));
+                            g = Math.min(255, Math.max(0, g + ditherOffset));
+                            b = Math.min(255, Math.max(0, b + ditherOffset));
+
+                            const closest = findClosestColor(r, g, b, selectedPal);
+                            r = closest[0];
+                            g = closest[1];
+                            b = closest[2];
+                        }
+
+                        outPixels[i] = r;
+                        outPixels[i + 1] = g;
+                        outPixels[i + 2] = b;
+                        outPixels[i + 3] = a;
+                    }
+                }
+
+                pCtx.putImageData(outImageData, 0, 0);
+
+                infoGridDim.textContent = `Resolution: ${targetWidth} x ${targetHeight} px`;
+                infoAspect.textContent = `Aspect Ratio: ${(currentImage.width / currentImage.height).toFixed(2)}:1`;
+
+                renderDisplayCanvas();
+                processingIndicator.classList.add('hidden');
+            }, 20);
+        }
+
+        function renderDisplayCanvas() {
+            if (!currentImage) return;
+
+            const dCtx = displayCanvas.getContext('2d');
+            dCtx.imageSmoothingEnabled = false;
+
+            const targetW = processedCanvas.width;
+            const targetH = processedCanvas.height;
+
+            displayCanvas.width = targetW;
+            displayCanvas.height = targetH;
+
+            if (viewMode === 'pixel') {
+                dCtx.drawImage(processedCanvas, 0, 0);
+            } else if (viewMode === 'orig') {
+                dCtx.drawImage(currentImage, 0, 0, targetW, targetH);
+            } else if (viewMode === 'split') {
+                dCtx.drawImage(processedCanvas, 0, 0);
+
+                const splitX = Math.round(targetW * splitPosition);
+                dCtx.save();
+                dCtx.beginPath();
+                dCtx.rect(0, 0, splitX, targetH);
+                dCtx.clip();
+                dCtx.drawImage(currentImage, 0, 0, targetW, targetH);
+                dCtx.restore();
+
+                dCtx.fillStyle = '#f3be36';
+                dCtx.fillRect(splitX - 1, 0, 2, targetH);
+            }
+        }
+
+        function download8BitPNG() {
+            if (!currentImage) return;
+
+            const scale = parseInt(selectExportScale.value);
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = processedCanvas.width * scale;
+            exportCanvas.height = processedCanvas.height * scale;
+
+            const ctx = exportCanvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(processedCanvas, 0, 0, exportCanvas.width, exportCanvas.height);
+
+            const link = document.createElement('a');
+            link.download = `stardrop-pixel-${processedCanvas.width}x${processedCanvas.height}.png`;
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function setupEventListeners() {
+            dropZone.addEventListener('click', () => fileInput.click());
+            btnBrowse.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('bg-amber-200/80');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('bg-amber-200/80');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('bg-amber-200/80');
+                if (e.dataTransfer.files.length > 0) {
+                    handleFileSelect(e.dataTransfer.files[0]);
+                }
+            });
+
+            btnSample.addEventListener('click', () => createSampleImage());
+
+            sliderGrid.addEventListener('input', (e) => {
+                gridValDisplay.textContent = `${e.target.value} px`;
+                processImage();
+            });
+
+            sliderSat.addEventListener('input', (e) => {
+                satVal.textContent = `${e.target.value}%`;
+                processImage();
+            });
+
+            sliderContrast.addEventListener('input', (e) => {
+                contrastVal.textContent = `${e.target.value}%`;
+                processImage();
+            });
+
+            sliderBright.addEventListener('input', (e) => {
+                brightVal.textContent = `${e.target.value}%`;
+                processImage();
+            });
+
+            selectOutline.addEventListener('change', () => processImage());
+            selectDither.addEventListener('change', () => processImage());
+
+            btnReset.addEventListener('click', () => {
+                sliderGrid.value = 128;
+                gridValDisplay.textContent = '128 px';
+                sliderSat.value = 130;
+                satVal.textContent = '130%';
+                sliderContrast.value = 115;
+                contrastVal.textContent = '115%';
+                sliderBright.value = 105;
+                brightVal.textContent = '105%';
+                selectOutline.value = 'strong';
+                selectDither.value = 'bayer4x4';
+                selectedPaletteKey = 'stardew';
+                initPaletteUI();
+                processImage();
+            });
+
+            viewBtnPixel.addEventListener('click', () => setViewMode('pixel'));
+            viewBtnSplit.addEventListener('click', () => setViewMode('split'));
+            viewBtnOrig.addEventListener('click', () => setViewMode('orig'));
+
+            previewContainer.addEventListener('mousedown', startDragging);
+            window.addEventListener('mousemove', dragSplitter);
+            window.addEventListener('mouseup', stopDragging);
+
+            previewContainer.addEventListener('touchstart', startDragging);
+            window.addEventListener('touchmove', dragSplitter);
+            window.addEventListener('touchend', stopDragging);
+
+            btnDownload.addEventListener('click', download8BitPNG);
+        }
+
+        function setViewMode(mode) {
+            viewMode = mode;
+            [viewBtnPixel, viewBtnSplit, viewBtnOrig].forEach(b => {
+                b.className = 'px-2 py-1 text-amber-900 hover:bg-amber-300 rounded';
+            });
+
+            if (mode === 'pixel') {
+                viewBtnPixel.className = 'px-2 py-1 bg-amber-800 text-amber-100 rounded';
+                splitDivider.classList.add('hidden');
+            } else if (mode === 'split') {
+                viewBtnSplit.className = 'px-2 py-1 bg-amber-800 text-amber-100 rounded';
+                splitDivider.classList.remove('hidden');
+                updateSplitterPosition();
+            } else {
+                viewBtnOrig.className = 'px-2 py-1 bg-amber-800 text-amber-100 rounded';
+                splitDivider.classList.add('hidden');
+            }
+
+            renderDisplayCanvas();
+        }
+
+        function startDragging(e) {
+            if (viewMode !== 'split') return;
+            isDraggingSplitter = true;
+            dragSplitter(e);
+        }
+
+        function dragSplitter(e) {
+            if (!isDraggingSplitter || viewMode !== 'split') return;
+            const rect = displayCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let pos = (clientX - rect.left) / rect.width;
+            splitPosition = Math.max(0, Math.min(1, pos));
+            updateSplitterPosition();
+            renderDisplayCanvas();
+        }
+
+        function stopDragging() {
+            isDraggingSplitter = false;
+        }
+
+        function updateSplitterPosition() {
+            const rect = displayCanvas.getBoundingClientRect();
+            const containerRect = previewContainer.getBoundingClientRect();
+            const canvasLeftOffset = rect.left - containerRect.left;
+            const posX = canvasLeftOffset + (rect.width * splitPosition);
+            splitDivider.style.left = `${posX}px`;
+        }
+
+        window.onload = () => {
+            initPaletteUI();
+            setupEventListeners();
+            createSampleImage();
+        };
+    </script>
+</body>
+</html>

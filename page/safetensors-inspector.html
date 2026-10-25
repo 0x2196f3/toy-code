@@ -91,24 +91,92 @@ input[type="file"] {
 #result-container {
   display: none;
 }
-.card {
+
+.icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+}
+
+details.card {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 20px;
   overflow: hidden;
+  transition: all 0.2s ease;
 }
-.card-header {
+details.card summary {
   padding: 15px 20px;
-  border-bottom: 1px solid var(--border);
   font-weight: 600;
   font-size: 16px;
-  margin: 0;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
   background: var(--card-bg);
+  border-bottom: 1px solid transparent;
 }
+details.card[open] summary {
+  border-bottom-color: var(--border);
+}
+details.card summary::-webkit-details-marker {
+  display: none;
+}
+details.card summary::after {
+  content: none;
+}
+
+.card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copy-btn, .expand-btn, .scroll-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px;
+  cursor: pointer;
+  color: var(--txt);
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.copy-btn:hover, .expand-btn:hover, .scroll-btn:hover {
+  opacity: 1;
+  background: var(--pre-bg);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.copy-btn.copied {
+  color: #10b981;
+  border-color: #10b981;
+  opacity: 1;
+}
+
+details.card[open] summary .expand-btn .icon {
+  transform: rotate(180deg);
+}
+.expand-btn .icon {
+  transition: transform 0.2s ease;
+}
+
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 15px;
   padding: 20px;
 }
@@ -117,6 +185,7 @@ input[type="file"] {
   padding: 15px;
   border-radius: 6px;
   border: 1px solid var(--border);
+  min-width: 0;
 }
 .stat-label {
   font-size: 12px;
@@ -125,66 +194,79 @@ input[type="file"] {
   margin-bottom: 5px;
 }
 .stat-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
-details.card {
-  transition: all 0.2s ease;
+
+.raw-metadata-container {
+  position: relative;
+  margin: 20px;
 }
-details.card summary {
-  padding: 15px 20px;
-  font-weight: 600;
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-details.card summary::-webkit-details-marker {
-  display: none;
-}
-details.card summary::after {
-  content: "▼";
-  font-size: 12px;
-  transition: transform 0.2s;
-}
-details.card[open] summary::after {
-  transform: rotate(180deg);
+.raw-header-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
 }
 pre {
   background: var(--pre-bg);
   padding: 15px;
-  margin: 0 20px 20px;
+  margin: 0;
   border-radius: 6px;
   overflow-x: auto;
   font-size: 13px;
   white-space: pre-wrap;
-  word-wrap: break-word;
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
+#raw-metadata-content {
+  padding-top: 38px;
+}
+
 .kv-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  table-layout: fixed;
 }
 .kv-table th, .kv-table td {
   padding: 12px 20px;
   border-bottom: 1px solid var(--border);
   text-align: left;
   vertical-align: top;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .kv-table th {
-  width: 30%;
+  width: 35%;
   font-weight: 500;
   opacity: 0.8;
-  white-space: nowrap;
+  white-space: normal;
 }
 .kv-table tr:last-child th, .kv-table tr:last-child td {
   border-bottom: none;
 }
+
+.val-wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+.val-content {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 .data-table-container {
   overflow-x: auto;
   max-height: 600px;
+  will-change: scroll-position;
 }
 .data-table {
   width: 100%;
@@ -204,6 +286,8 @@ pre {
 .data-table td {
   padding: 10px 20px;
   border-bottom: 1px solid var(--border);
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .data-table tbody tr:hover {
   background: var(--table-row-hover);
@@ -234,9 +318,53 @@ pre {
 @media (min-width: 768px) {
   .parsed-section { grid-template-columns: 1fr 1fr; }
 }
+.parsed-section > .card {
+  min-width: 0;
+}
+
+.scroll-nav {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease-in-out;
+}
+.scroll-nav.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.scroll-btn {
+  width: 40px;
+  height: 40px;
+  background: var(--card-bg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 50%;
+}
 </style>
 </head>
 <body>
+
+<svg style="display: none;">
+  <symbol id="icon-copy" viewBox="0 0 24 24">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+  </symbol>
+  <symbol id="icon-check" viewBox="0 0 24 24">
+    <polyline points="20 6 9 17 4 12"></polyline>
+  </symbol>
+  <symbol id="icon-chevron-down" viewBox="0 0 24 24">
+    <polyline points="6 9 12 15 18 9"></polyline>
+  </symbol>
+  <symbol id="icon-chevron-up" viewBox="0 0 24 24">
+    <polyline points="18 15 12 9 6 15"></polyline>
+  </symbol>
+</svg>
+
 <div class="container">
   <div id="dropzone" class="dropzone">
     <h3 style="margin-top:0">Safetensors Inspector</h3>
@@ -249,17 +377,44 @@ pre {
       <h2 id="filename-display"></h2>
       <button id="export-btn" class="btn">Export as JSON</button>
     </div>
-    <div class="card" id="basic-info-card">
+    
+    <details class="card" id="basic-info-card" open>
+      <summary>
+        <span class="card-title">Basic Info</span>
+        <button class="expand-btn" title="Toggle Section">
+          <svg class="icon"><use href="#icon-chevron-down"/></svg>
+        </button>
+      </summary>
       <div class="stats-grid" id="stats-grid"></div>
-    </div>
-    <details class="card" id="raw-metadata-card">
-      <summary>Raw Metadata</summary>
-      <pre id="raw-metadata-content"></pre>
     </details>
+    
+    <details class="card" id="raw-metadata-card">
+      <summary>
+        <span class="card-title">Raw Metadata</span>
+        <button class="expand-btn" title="Toggle Section">
+          <svg class="icon"><use href="#icon-chevron-down"/></svg>
+        </button>
+      </summary>
+      <div class="raw-metadata-container">
+        <div class="raw-header-actions">
+          <button class="copy-btn" id="raw-copy-btn" title="Copy Raw Metadata">
+            <svg class="icon"><use href="#icon-copy"/></svg>
+          </button>
+        </div>
+        <pre id="raw-metadata-content"></pre>
+      </div>
+    </details>
+
     <div class="parsed-section" id="parsed-metadata-container"></div>
-    <div class="card" id="tensors-card">
-      <div class="card-header">Tensors (<span id="tensor-count">0</span>)</div>
-      <div class="data-table-container">
+
+    <details class="card" id="tensors-card" open>
+      <summary>
+        <span class="card-title">Tensors (<span id="tensor-count">0</span>)</span>
+        <button class="expand-btn" title="Toggle Section">
+          <svg class="icon"><use href="#icon-chevron-down"/></svg>
+        </button>
+      </summary>
+      <div class="data-table-container" id="data-table-container">
         <table class="data-table">
           <thead>
             <tr>
@@ -274,9 +429,19 @@ pre {
           <tbody id="tensors-body"></tbody>
         </table>
       </div>
-    </div>
+    </details>
   </div>
 </div>
+
+<div id="scroll-nav" class="scroll-nav">
+  <button id="scroll-top-btn" class="scroll-btn" title="Scroll to Top">
+    <svg class="icon" style="width:16px;height:16px;"><use href="#icon-chevron-up"/></svg>
+  </button>
+  <button id="scroll-bottom-btn" class="scroll-btn" title="Scroll to Bottom">
+    <svg class="icon" style="width:16px;height:16px;"><use href="#icon-chevron-down"/></svg>
+  </button>
+</div>
+
 <script>
 window.SafetensorsParser = (function() {
   const HEADER_SIZE_BYTES = 8;
@@ -466,6 +631,7 @@ window.SafetensorsParser = (function() {
   return { parseFile, analyzeSafetensors };
 })();
 </script>
+
 <script>
   const dropzone = document.getElementById('dropzone');
   const fileInput = document.getElementById('file-input');
@@ -478,8 +644,47 @@ window.SafetensorsParser = (function() {
   const parsedMetadataContainer = document.getElementById('parsed-metadata-container');
   const tensorCount = document.getElementById('tensor-count');
   const tensorsBody = document.getElementById('tensors-body');
+  const dataTableContainer = document.getElementById('data-table-container');
+  const scrollNav = document.getElementById('scroll-nav');
+  const scrollTopBtn = document.getElementById('scroll-top-btn');
+  const scrollBottomBtn = document.getElementById('scroll-bottom-btn');
+  
   let currentData = null;
   let currentFilename = '';
+
+  let currentTensors = [];
+  let renderedTensorCount = 0;
+  const CHUNK_SIZE = 100;
+
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function makeCopyableValue(rawVal, displayHtml) {
+    let attrVal = '';
+    if (typeof rawVal === 'string') {
+      attrVal = rawVal;
+    } else if (typeof rawVal === 'number' || typeof rawVal === 'boolean') {
+      attrVal = String(rawVal);
+    } else if (rawVal !== null && rawVal !== undefined) {
+      attrVal = JSON.stringify(rawVal);
+    }
+    
+    return `
+      <div class="val-wrapper">
+        <div class="val-content">${displayHtml}</div>
+        <button class="copy-btn" title="Copy value" data-copy="${escapeHtml(attrVal)}">
+          <svg class="icon"><use href="#icon-copy"/></svg>
+        </button>
+      </div>
+    `;
+  }
 
   function formatBytes(bytes, decimals = 2) {
     if (!+bytes) return '0 Bytes';
@@ -497,12 +702,12 @@ window.SafetensorsParser = (function() {
   function formatValue(val) {
     if (Array.isArray(val)) {
       if (val.length === 0) return '-';
-      return val.map(v => `<span class="badge">${v}</span>`).join('');
+      return val.map(v => `<span class="badge">${escapeHtml(v)}</span>`).join('');
     }
     if (typeof val === 'object' && val !== null) {
-      return `<pre style="margin:0;padding:8px">${JSON.stringify(val, null, 2)}</pre>`;
+      return `<pre style="margin:0;padding:8px">${escapeHtml(JSON.stringify(val, null, 2))}</pre>`;
     }
-    return val !== null && val !== undefined && val !== '' ? val : '-';
+    return val !== null && val !== undefined && val !== '' ? escapeHtml(val) : '-';
   }
 
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
@@ -537,48 +742,59 @@ window.SafetensorsParser = (function() {
     rawMetadataContent.textContent = '';
     parsedMetadataContainer.innerHTML = '';
     tensorsBody.innerHTML = '';
-    try {
-      const result = await window.SafetensorsParser.parseFile(file, { include_tensors: true });
-      currentData = result;
-      renderBasicInfo(result);
-      renderRawMetadata(result);
-      renderParsedMetadata(result);
-      renderTensors(result);
-      resultContainer.style.display = 'block';
-    } catch (err) {
-      alert("Error parsing file: " + err.message);
-    } finally {
-      loading.style.display = 'none';
-      fileInput.value = '';
-    }
+    
+    setTimeout(async () => {
+      try {
+        const result = await window.SafetensorsParser.parseFile(file, { include_tensors: true });
+        currentData = result;
+        renderBasicInfo(result);
+        renderRawMetadata(result);
+        renderParsedMetadata(result);
+        initTensorTable(result.tensors || []);
+        resultContainer.style.display = 'block';
+        checkScrollability();
+      } catch (err) {
+        alert("Error parsing file: " + err.message);
+      } finally {
+        loading.style.display = 'none';
+        fileInput.value = '';
+      }
+    }, 20);
   }
 
   function renderBasicInfo(data) {
-    const stats = [
-      { label: 'Model Type', value: data.model_type.toUpperCase() },
-      { label: 'File Size', value: formatBytes(data.file_stats.file_size) },
-      { label: 'Total Parameters', value: formatNumber(data.file_stats.total_parameters) },
-      { label: 'Tensor Count', value: formatNumber(data.file_stats.tensor_count) },
-      { label: 'Data Types', value: formatValue(data.file_stats.data_types) }
-    ];
     let frameworks = [];
     for (const [k, v] of Object.entries(data.compatibility)) {
       if (v) frameworks.push(k);
     }
-    stats.push({ label: 'Compatibility', value: formatValue(frameworks) });
+    const stats = [
+      { label: 'Model Type', value: data.model_type.toUpperCase(), raw: data.model_type.toUpperCase() },
+      { label: 'File Size', value: formatBytes(data.file_stats.file_size), raw: formatBytes(data.file_stats.file_size) },
+      { label: 'Total Parameters', value: formatNumber(data.file_stats.total_parameters), raw: data.file_stats.total_parameters },
+      { label: 'Tensor Count', value: formatNumber(data.file_stats.tensor_count), raw: data.file_stats.tensor_count },
+      { label: 'Data Types', value: formatValue(data.file_stats.data_types), raw: (data.file_stats.data_types || []).join(', ') },
+      { label: 'Compatibility', value: formatValue(frameworks), raw: frameworks.join(', ') }
+    ];
+    
     statsGrid.innerHTML = stats.map(s => `
       <div class="stat-box">
         <div class="stat-label">${s.label}</div>
-        <div class="stat-value">${s.value}</div>
+        <div class="stat-value">${makeCopyableValue(s.raw, s.value)}</div>
       </div>
     `).join('');
   }
 
   function renderRawMetadata(data) {
-    rawMetadataContent.textContent = Object.keys(data.raw_metadata).length ? JSON.stringify(data.raw_metadata, null, 2) : '{}';
+    const jsonStr = Object.keys(data.raw_metadata).length ? JSON.stringify(data.raw_metadata, null, 2) : '{}';
+    rawMetadataContent.textContent = jsonStr;
+    const rawCopyBtn = document.getElementById('raw-copy-btn');
+    if (rawCopyBtn) {
+      rawCopyBtn.setAttribute('data-copy', jsonStr);
+    }
   }
 
   function renderParsedMetadata(data) {
+    parsedMetadataContainer.innerHTML = '';
     const sections = [
       { key: 'model_spec', title: 'Model Specification' },
       { key: 'training', title: 'Training Info' },
@@ -591,28 +807,54 @@ window.SafetensorsParser = (function() {
       let rows = '';
       for (const [k, v] of Object.entries(obj)) {
         if (v === undefined || v === null || (Array.isArray(v) && v.length === 0)) continue;
-        rows += `<tr><th>${k.replace(/_/g, ' ')}</th><td>${formatValue(v)}</td></tr>`;
+        
+        let rawCopyVal = v;
+        if (typeof v === 'object' && v !== null) {
+          rawCopyVal = JSON.stringify(v, null, 2);
+        } else if (Array.isArray(v)) {
+          rawCopyVal = v.join(', ');
+        }
+        
+        const formatted = formatValue(v);
+        const valWithCopy = makeCopyableValue(rawCopyVal, formatted);
+        rows += `<tr><th>${k.replace(/_/g, ' ')}</th><td>${valWithCopy}</td></tr>`;
       }
       if (!rows) return;
-      const card = document.createElement('div');
+      const card = document.createElement('details');
       card.className = 'card';
+      card.open = true;
       card.innerHTML = `
-        <div class="card-header">${sec.title}</div>
+        <summary>
+          <span class="card-title">${sec.title}</span>
+          <button class="expand-btn" title="Toggle Section">
+            <svg class="icon"><use href="#icon-chevron-down"/></svg>
+          </button>
+        </summary>
         <table class="kv-table"><tbody>${rows}</tbody></table>
       `;
       parsedMetadataContainer.appendChild(card);
     });
   }
 
-  function renderTensors(data) {
-    const tensors = data.tensors || [];
+  function initTensorTable(tensors) {
+    currentTensors = tensors;
+    renderedTensorCount = 0;
     tensorCount.textContent = formatNumber(tensors.length);
+    tensorsBody.innerHTML = '';
+    renderNextTensorChunk();
+  }
+
+  function renderNextTensorChunk() {
+    if (renderedTensorCount >= currentTensors.length) return;
+
+    const nextBatch = currentTensors.slice(renderedTensorCount, renderedTensorCount + CHUNK_SIZE);
     const frag = document.createDocumentFragment();
-    tensors.forEach(t => {
+
+    nextBatch.forEach(t => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="word-break:break-all; max-width:300px;">${t.name}</td>
-        <td><span class="badge">${t.dtype}</span></td>
+        <td style="max-width:300px;">${makeCopyableValue(t.name, escapeHtml(t.name))}</td>
+        <td><span class="badge">${escapeHtml(t.dtype)}</span></td>
         <td>[${t.shape.join(', ')}]</td>
         <td>${formatBytes(t.size)}</td>
         <td>[${t.data_offsets.join(', ')}]</td>
@@ -620,8 +862,92 @@ window.SafetensorsParser = (function() {
       `;
       frag.appendChild(tr);
     });
+
     tensorsBody.appendChild(frag);
+    renderedTensorCount += nextBatch.length;
   }
+
+  dataTableContainer.addEventListener('scroll', () => {
+    if (dataTableContainer.scrollTop + dataTableContainer.clientHeight >= dataTableContainer.scrollHeight - 300) {
+      renderNextTensorChunk();
+    }
+  }, { passive: true });
+
+  document.addEventListener('click', function(e) {
+    const summary = e.target.closest('summary');
+    if (!summary) return;
+
+    e.preventDefault();
+
+    const expandBtn = e.target.closest('.expand-btn');
+    if (expandBtn) {
+      const details = summary.closest('details');
+      if (details) {
+        details.open = !details.open;
+        checkScrollability();
+      }
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.copy-btn');
+    if (!btn) return;
+
+    e.stopPropagation();
+    e.preventDefault();
+
+    let textToCopy = btn.getAttribute('data-copy');
+    if (textToCopy === null || textToCopy === undefined) {
+      const valContent = btn.parentElement ? btn.parentElement.querySelector('.val-content') : null;
+      if (valContent) {
+        textToCopy = valContent.innerText || valContent.textContent;
+      }
+    }
+
+    if (textToCopy !== null && textToCopy !== undefined) {
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        btn.classList.add('copied');
+        btn.innerHTML = `<svg class="icon"><use href="#icon-check"/></svg>`;
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = `<svg class="icon"><use href="#icon-copy"/></svg>`;
+        }, 1500);
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+      });
+    }
+  });
+
+  let isTicking = false;
+  function checkScrollability() {
+    const isScrollable = document.documentElement.scrollHeight > window.innerHeight + 20;
+    if (isScrollable) {
+      scrollNav.classList.add('visible');
+    } else {
+      scrollNav.classList.remove('visible');
+    }
+  }
+
+  function requestCheckScrollability() {
+    if (!isTicking) {
+      requestAnimationFrame(() => {
+        checkScrollability();
+        isTicking = false;
+      });
+      isTicking = true;
+    }
+  }
+
+  window.addEventListener('scroll', requestCheckScrollability, { passive: true });
+  window.addEventListener('resize', requestCheckScrollability, { passive: true });
+
+  scrollTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  scrollBottomBtn.addEventListener('click', () => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  });
 
   exportBtn.addEventListener('click', () => {
     if (!currentData) return;

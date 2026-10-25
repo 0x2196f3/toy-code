@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Capability Checker</title>
+    
+    <!-- HTML5 element Shiv for IE8 -->
+    <!--[if lt IE 9]>
+    <script>
+        document.createElement('header');
+        document.createElement('main');
+        document.createElement('section');
+    </script>
+    <![endif]-->
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.42857143;
+            color: #333333;
+            background-color: #f8f9fa;
+            padding: 20px 15px;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            zoom: 1;
+        }
+
+        .page-header {
+            padding-bottom: 9px;
+            margin: 0 0 20px 0;
+            border-bottom: 1px solid #eeeeee;
+            display: block;
+        }
+
+        .page-header h1 {
+            font-size: 30px;
+            font-weight: 500;
+            color: #333333;
+            margin-bottom: 5px;
+        }
+
+        .page-header p {
+            color: #777777;
+            font-size: 14px;
+        }
+
+        .actions {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 6px 12px;
+            margin-bottom: 0;
+            font-size: 14px;
+            font-weight: normal;
+            line-height: 1.42857143;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            cursor: pointer;
+            border: 1px solid #2e6da4;
+            border-radius: 4px;
+            color: #ffffff;
+            background-color: #337ab7;
+        }
+
+        .btn:hover {
+            background-color: #286090;
+            border-color: #204d74;
+        }
+
+        .grid-container {
+            width: 100%;
+            zoom: 1;
+        }
+
+        .grid-container:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        .panel {
+            margin-bottom: 20px;
+            background-color: #ffffff;
+            border: 1px solid #dddddd;
+            border-radius: 4px;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+            width: 48.5%;
+            float: left;
+            margin-right: 3%;
+            box-sizing: border-box;
+        }
+
+        .panel.panel-even {
+            margin-right: 0;
+        }
+
+        .panel-heading {
+            color: #333333;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #dddddd;
+            padding: 10px 15px;
+            border-top-left-radius: 3px;
+            border-top-right-radius: 3px;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0;
+            color: #333333;
+        }
+
+        .panel-body {
+            padding: 15px;
+        }
+
+        .item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eeeeee;
+            zoom: 1;
+        }
+
+        .item:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .item-info {
+            float: left;
+            width: 65%;
+        }
+
+        .item-badge-wrap {
+            float: right;
+            width: 33%;
+            text-align: right;
+        }
+
+        .item-name {
+            font-weight: bold;
+            font-size: 13px;
+            display: block;
+            color: #333333;
+        }
+
+        .item-detail {
+            font-size: 11px;
+            color: #777777;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .label {
+            display: inline-block;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1;
+            color: #ffffff;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 3px;
+        }
+
+        .label-success {
+            background-color: #5cb85c;
+        }
+
+        .label-danger {
+            background-color: #d9534f;
+        }
+
+        .label-warning {
+            background-color: #f0ad4e;
+        }
+
+        @media screen and (max-width: 768px) {
+            .panel {
+                width: 100%;
+                float: none;
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="page-header">
+        <h1>Browser Capability Inspector</h1>
+        <p>Comprehensive client-side check for WebGPU, WebAssembly, HTML5, and Modern Web APIs</p>
+    </header>
+
+    <div class="actions">
+        <button class="btn" onclick="copyResultsJSON()">Copy Results (JSON)</button>
+    </div>
+
+    <div class="grid-container" id="test-grid">
+        <!-- Panels injected dynamically -->
+    </div>
+</div>
+
+<script>
+var testSuite = [
+    {
+        category: "System & Environment",
+        tests: [
+            {
+                name: "User Agent",
+                detail: "Browser user agent string",
+                test: function() { return { status: true, info: navigator.userAgent }; }
+            },
+            {
+                name: "Hardware Concurrency",
+                detail: "Logical CPU cores available",
+                test: function() { return { status: true, info: (navigator.hardwareConcurrency || 'Unknown') + ' Cores' }; }
+            },
+            {
+                name: "Device Memory",
+                detail: "Approximate RAM capacity",
+                test: function() {
+                    var hasMem = 'deviceMemory' in navigator;
+                    return { status: hasMem, info: navigator.deviceMemory ? ('~' + navigator.deviceMemory + ' GB') : 'Unsupported' };
+                }
+            },
+            {
+                name: "Touch Support",
+                detail: "Touch screen interaction capability",
+                test: function() {
+                    var isTouch = 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+                    return { status: isTouch, info: (navigator.maxTouchPoints || 0) + ' touch points' };
+                }
+            }
+        ]
+    },
+    {
+        category: "Graphics & Hardware Acceleration",
+        tests: [
+            {
+                name: "WebGPU API",
+                detail: "Core API availability in navigator",
+                test: function() { return { status: 'gpu' in navigator, info: ('gpu' in navigator) ? 'API Present' : 'API Missing' }; }
+            },
+            {
+                name: "WebGPU Hardware Adapter",
+                detail: "Requests actual GPU adapter access",
+                isAsync: true,
+                test: function(done) {
+                    if (!('gpu' in navigator) || !navigator.gpu || !navigator.gpu.requestAdapter) {
+                        done({ status: false, info: 'WebGPU Unsupported' });
+                        return;
+                    }
+                    try {
+                        navigator.gpu.requestAdapter().then(function(adapter) {
+                            if (!adapter) {
+                                done({ status: false, info: 'No Adapter Found' });
+                            } else {
+                                done({ status: true, info: adapter.isFallbackAdapter ? 'Fallback (Software)' : 'Hardware Accelerated' });
+                            }
+                        })['catch'](function(e) {
+                            done({ status: false, info: 'Error: ' + (e.message || e) });
+                        });
+                    } catch (e) {
+                        done({ status: false, info: 'Error: ' + e.message });
+                    }
+                }
+            },
+            {
+                name: "WebGL 1.0",
+                detail: "Basic 3D graphics rendering context",
+                test: function() {
+                    try {
+                        var canvas = document.createElement('canvas');
+                        if (!canvas.getContext) return { status: false, info: 'Context Failed' };
+                        var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                        return { status: !!gl, info: gl ? (gl.getParameter(gl.RENDERER) || 'Supported') : 'Context Failed' };
+                    } catch (e) {
+                        return { status: false, info: 'Context Failed' };
+                    }
+                }
+            },
+            {
+                name: "WebGL 2.0",
+                detail: "Modern OpenGL ES 3.0 graphics context",
+                test: function() {
+                    try {
+                        var canvas = document.createElement('canvas');
+                        if (!canvas.getContext) return { status: false, info: 'Context Failed' };
+                        var gl = canvas.getContext('webgl2');
+                        return { status: !!gl, info: gl ? (gl.getParameter(gl.RENDERER) || 'Supported') : 'Context Failed' };
+                    } catch (e) {
+                        return { status: false, info: 'Context Failed' };
+                    }
+                }
+            },
+            {
+                name: "OffscreenCanvas",
+                detail: "Canvas rendering outside the DOM",
+                test: function() {
+                    var exists = typeof OffscreenCanvas !== 'undefined';
+                    return { status: exists, info: exists ? 'Supported' : 'Unsupported' };
+                }
+            }
+        ]
+    },
+    {
+        category: "WebAssembly (Wasm)",
+        tests: [
+            {
+                name: "WebAssembly Core",
+                detail: "Wasm binary execution support",
+                test: function() {
+                    var supported = typeof WebAssembly === 'object' && WebAssembly !== null && typeof WebAssembly.instantiate === 'function';
+                    return { status: supported, info: supported ? 'Supported' : 'Unsupported' };
+                }
+            },
+            {
+                name: "Wasm SIMD Support",
+                detail: "Fixed-width SIMD vector operations",
+                test: function() {
+                    if (typeof WebAssembly !== 'object' || !WebAssembly || typeof Uint8Array === 'undefined') {
+                        return { status: false, info: 'Wasm Unavailable' };
+                    }
+                    try {
+                        var bytes = new Uint8Array([0,97,115,109,1,0,0,0,1,5,1,96,0,1,123,3,2,1,0,10,9,1,7,0,65,0,253,15,11]);
+                        var valid = WebAssembly.validate(bytes);
+                        return { status: valid, info: valid ? 'Supported' : 'Unsupported' };
+                    } catch (e) {
+                        return { status: false, info: 'Unsupported' };
+                    }
+                }
+            },
+            {
+                name: "Wasm Threads (Shared Memory)",
+                detail: "SharedArrayBuffer & Atomics support",
+                test: function() {
+                    var supported = typeof SharedArrayBuffer !== 'undefined' && typeof Atomics !== 'undefined';
+                    return { status: supported, info: supported ? 'Supported (Cross-Origin Isolated)' : 'Unsupported or COOP/COEP disabled' };
+                }
+            }
+        ]
+    },
+    {
+        category: "HTML Version & DOM Standards",
+        tests: [
+            {
+                name: "HTML Standard Mode",
+                detail: "Document rendering in Standards Mode",
+                test: function() { return { status: document.compatMode === "CSS1Compat", info: document.compatMode }; }
+            },
+            {
+                name: "HTML5 Canvas",
+                detail: "2D surface rendering",
+                test: function() {
+                    var canvas = document.createElement('canvas');
+                    var supported = !!(canvas.getContext && canvas.getContext('2d'));
+                    return { status: supported, info: supported ? 'Supported' : 'Unsupported' };
+                }
+            },
+            {
+                name: "Custom Elements (Web Components)",
+                detail: "v1 Custom element API",
+                test: function() { return { status: 'customElements' in window, info: ('customElements' in window) ? 'Supported' : 'Unsupported' }; }
+            },
+            {
+                name: "Shadow DOM",
+                detail: "Encapsulated DOM trees",
+                test: function() {
+                    var supported = !!(window.Element && Element.prototype && Element.prototype.attachShadow);
+                    return { status: supported, info: supported ? 'Supported' : 'Unsupported' };
+                }
+            },
+            {
+                name: "Local & Session Storage",
+                detail: "Client-side key-value storage",
+                test: function() {
+                    try {
+                        if (typeof localStorage === 'undefined') return { status: false, info: 'Unsupported' };
+                        localStorage.setItem('__test', '1');
+                        localStorage.removeItem('__test');
+                        return { status: true, info: 'Supported' };
+                    } catch (e) {
+                        return { status: false, info: 'Disabled/Blocked' };
+                    }
+                }
+            },
+            {
+                name: "IndexedDB",
+                detail: "Transactional database API",
+                test: function() { return { status: 'indexedDB' in window, info: ('indexedDB' in window) ? 'Supported' : 'Unsupported' }; }
+            }
+        ]
+    },
+    {
+        category: "Network & Realtime",
+        tests: [
+            {
+                name: "Web Workers",
+                detail: "Background thread execution",
+                test: function() { var s = typeof Worker !== 'undefined'; return { status: s, info: s ? 'Supported' : 'Unsupported' }; }
+            },
+            {
+                name: "Service Workers",
+                detail: "Offline caching & background tasks",
+                test: function() { return { status: 'serviceWorker' in navigator, info: ('serviceWorker' in navigator) ? 'Supported' : 'Unsupported' }; }
+            },
+            {
+                name: "WebSockets",
+                detail: "Full-duplex TCP connections",
+                test: function() { return { status: 'WebSocket' in window, info: ('WebSocket' in window) ? 'Supported' : 'Unsupported' }; }
+            },
+            {
+                name: "WebRTC",
+                detail: "Peer-to-peer real-time communication",
+                test: function() { return { status: 'RTCPeerConnection' in window, info: ('RTCPeerConnection' in window) ? 'Supported' : 'Unsupported' }; }
+            },
+            {
+                name: "WebTransport",
+                detail: "Multiplexed transport protocol",
+                test: function() { var s = typeof WebTransport !== 'undefined'; return { status: s, info: s ? 'Supported' : 'Unsupported' }; }
+            }
+        ]
+    }
+];
+
+var resultsData = {};
+
+function runCapabilityChecks() {
+    var grid = document.getElementById('test-grid');
+    grid.innerHTML = '';
+
+    for (var i = 0; i < testSuite.length; i++) {
+        var group = testSuite[i];
+        resultsData[group.category] = {};
+
+        var panel = document.createElement('div');
+        panel.className = 'panel' + (i % 2 === 1 ? ' panel-even' : '');
+
+        var heading = document.createElement('div');
+        heading.className = 'panel-heading';
+
+        var title = document.createElement('h2');
+        title.className = 'panel-title';
+        title.innerHTML = group.category;
+        heading.appendChild(title);
+        panel.appendChild(heading);
+
+        var body = document.createElement('div');
+        body.className = 'panel-body';
+
+        for (var j = 0; j < group.tests.length; j++) {
+            (function(test) {
+                var item = document.createElement('div');
+                item.className = 'item';
+
+                var infoDiv = document.createElement('div');
+                infoDiv.className = 'item-info';
+
+                var name = document.createElement('span');
+                name.className = 'item-name';
+                name.innerHTML = test.name;
+
+                var detail = document.createElement('span');
+                detail.className = 'item-detail';
+                detail.innerHTML = test.detail;
+
+                infoDiv.appendChild(name);
+                infoDiv.appendChild(detail);
+
+                var badgeWrap = document.createElement('div');
+                badgeWrap.className = 'item-badge-wrap';
+
+                var badge = document.createElement('span');
+                badge.className = 'label label-warning';
+                badge.innerHTML = test.isAsync ? 'Testing...' : 'Checking';
+
+                badgeWrap.appendChild(badge);
+                item.appendChild(infoDiv);
+                item.appendChild(badgeWrap);
+                body.appendChild(item);
+
+                var processResult = function(result) {
+                    badge.className = 'label ' + (result.status ? 'label-success' : 'label-danger');
+                    badge.innerHTML = result.info || (result.status ? 'Supported' : 'Unsupported');
+                    resultsData[group.category][test.name] = {
+                        supported: result.status,
+                        detail: result.info
+                    };
+                };
+
+                if (test.isAsync) {
+                    test.test(processResult);
+                } else {
+                    processResult(test.test());
+                }
+            })(group.tests[j]);
+        }
+
+        panel.appendChild(body);
+        grid.appendChild(panel);
+    }
+}
+
+function stringifyJSON(obj) {
+    if (typeof JSON !== 'undefined' && JSON.stringify) {
+        return JSON.stringify(obj, null, 2);
+    }
+    var parts = [];
+    for (var key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            parts.push('"' + key + '": ' + (typeof obj[key] === 'object' ? stringifyJSON(obj[key]) : '"' + obj[key] + '"'));
+        }
+    }
+    return '{\n' + parts.join(',\n') + '\n}';
+}
+
+function copyResultsJSON() {
+    var jsonStr = stringifyJSON(resultsData);
+    
+    if (window.clipboardData && window.clipboardData.setData) {
+        window.clipboardData.setData('Text', jsonStr);
+        alert('Results copied to clipboard as JSON!');
+        return;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(jsonStr).then(function() {
+            alert('Results copied to clipboard as JSON!');
+        })['catch'](function(err) {
+            alert('Failed to copy: ' + err);
+        });
+        return;
+    }
+
+    var textarea = document.createElement('textarea');
+    textarea.value = jsonStr;
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        alert('Results copied to clipboard as JSON!');
+    } catch (e) {
+        alert('Clipboard functionality unsupported in this browser.');
+    }
+    document.body.removeChild(textarea);
+}
+
+if (window.addEventListener) {
+    window.addEventListener('DOMContentLoaded', runCapabilityChecks, false);
+} else if (window.attachEvent) {
+    window.attachEvent('onload', runCapabilityChecks);
+} else {
+    window.onload = runCapabilityChecks;
+}
+</script>
+
+</body>
+</html>
