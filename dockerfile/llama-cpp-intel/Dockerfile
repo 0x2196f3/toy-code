@@ -2,7 +2,7 @@ ARG UBUNTU_VERSION=24.04
 ARG MARCH=alderlake
 ARG APP_VERSION=b10156
 
-FROM docker.io/intel/oneapi-toolkit:2026.1.0-devel-ubuntu$UBUNTU_VERSION AS build
+FROM docker.io/intel/oneapi-toolkit:2026.2.0-devel-ubuntu$UBUNTU_VERSION AS build
 
 ARG MARCH
 ARG APP_VERSION
@@ -50,7 +50,7 @@ RUN mkdir -p /app/full \
     && cp requirements.txt /app/full \
     && cp .devops/tools.sh /app/full/tools.sh
 
-FROM docker.io/intel/oneapi-toolkit:2026.1.0-devel-ubuntu$UBUNTU_VERSION AS final
+FROM docker.io/intel/oneapi-toolkit:2026.2.0-devel-ubuntu$UBUNTU_VERSION AS final
 
 RUN apt-get update \
     && apt-get install -y libgomp1 curl ffmpeg \

@@ -12,7 +12,7 @@ on:
         required: false
         default: '26.04'
   schedule:
-    - cron: '0 0 * * 0'
+    - cron: '0 0 1 * *'
 
 env:
   REGISTRY: ghcr.io
@@ -36,10 +36,10 @@ jobs:
           sudo docker image prune --all --force
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Get Latest ComfyUI Version and Define Args
         id: prep
@@ -57,7 +57,7 @@ jobs:
           echo "LOWER_IMAGE_NAME=$(echo ${{ env.IMAGE_NAME }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Log in to the Container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -65,7 +65,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.LOWER_IMAGE_NAME }}
           tags: |
@@ -73,7 +73,7 @@ jobs:
             type=raw,value=latest-cu${{ env.CUDA_VERSION }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: ./dockerfile
           file: ./dockerfile/comfyui/Dockerfile
